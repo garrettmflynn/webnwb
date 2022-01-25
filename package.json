@@ -32,6 +32,7 @@
     "webpack-cli": "^4.9.1"
   },
   "dependencies": {
+    "h5wasm": "^0.1.8",
     "install": "^0.13.0",
     "jsfive": "git+https://github.com/usnistgov/jsfive.git",
     "npm": "^8.3.2"

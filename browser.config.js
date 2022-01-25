@@ -15,7 +15,7 @@ var config = {
     filename: '[name].js',
     library: {
       type: 'umd',
-      name: 'nwb',
+      name: 'jsnwb',
       export: 'default',
       umdNamedDefine: true,
     },

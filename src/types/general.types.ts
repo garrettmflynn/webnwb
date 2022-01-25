@@ -1,0 +1,1 @@
+export type FileMethods = "w" | "r" | "r+" | "a" | "w-" | "x"
