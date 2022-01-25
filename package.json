@@ -1,0 +1,39 @@
+{
+  "name": "jsnwb",
+  "version": "0.0.0",
+  "description": "A JavaScript API for working with Neurodata stored in the NWB Format",
+  "main": "./dist/index.js",
+  "types": "./src/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "start": "cd docs && yarn && yarn run start",
+    "typecheck": "tsc --watch --preserveWatchOutput --noEmit",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack --config browser.config.js --mode production"
+  },
+  "keywords": [
+    "neuroscience",
+    "data"
+  ],
+  "repository": "https://github.com/brainsatplay/jsnwb.git",
+  "author": "Garrett Flynn <gflynn@usc.edu>",
+  "license": "AGPL-3.0",
+  "private": false,
+  "devDependencies": {
+    "@babel/core": "^7.16.7",
+    "babel-loader": "^8.2.3",
+    "ts-loader": "^9.2.6",
+    "tslib": "^2.3.1",
+    "typescript": "^4.5.4",
+    "webpack": "^5.66.0",
+    "webpack-cli": "^4.9.1"
+  },
+  "dependencies": {
+    "install": "^0.13.0",
+    "jsfive": "git+https://github.com/usnistgov/jsfive.git",
+    "npm": "^8.3.2"
+  }
+}
