@@ -6,3 +6,6 @@ A JavaScript API for working with Neurodata stored in the NWB Format
 
 - https://github.com/NeurodataWithoutBorders/nwbinspector
 - https://github.com/agencyenterprise/ndx-nirs
+
+## Dependencies
+- **h5wasm:** https://github.com/usnistgov/h5wasm

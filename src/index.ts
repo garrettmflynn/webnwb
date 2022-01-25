@@ -1,7 +1,7 @@
 import { File } from "h5wasm";
 import { FileMethods } from './types/general.types';
 import { NWBFile } from './file';
-import { TimeSeries, ProcessingModule } from './base';
+import { TimeSeries } from './base';
 
 export class NWBHDF5IO {
   hdf5?: any;
@@ -43,7 +43,7 @@ export class NWBHDF5IO {
 
       if (this.mode == 'r') this.hdf5.close()
       return this.file
-      }
+      } else return
     }
 
   write = (file: NWBFile) => {

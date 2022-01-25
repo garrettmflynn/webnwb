@@ -2,7 +2,7 @@
 .DS_Store
 node_modules
 _bundles
-# docs/docs/reference
+docs/docs/reference
 
 # Library Builds
 **/dist

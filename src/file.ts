@@ -13,26 +13,26 @@ export class NWBFile {
     // ------------------ Trial Methods ------------------
 
     addTrialColumn(label: string, description: string){
-
+        console.error('nwbjs.addTrialColumn not implemented', label, description)
     }
 
     addTrial(start:number, end:number, label: string){
-
+        console.error('nwbjs.addTrial not implemented', start, end, label)
     }
 
     // ------------------ Epoch Methods ------------------
     addEpoch(start:number, end:number, labels: string[], series: TimeSeries[] = []){
-
+        console.error('nwbjs.addEpoch not implemented', start, end, labels, series)
     }
 
     // ------------------ Unit Methods ------------------
 
     addUnitColumn(label:string, description:string){
-
+        console.error('nwbjs.addUnitColumn not implemented', label, description)
     }
     
     addUnit(id:number, spikeTimes:number[], obsIntervals:(number[])[], location:string, quality:number){
-        
+        console.error('nwbjs.addUnit not implemented', id, spikeTimes, obsIntervals, location, quality)
     }
 
     // ------------------ Module Methods ------------------
