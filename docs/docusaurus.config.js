@@ -7,7 +7,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'JSNWB',
-  tagline: 'Read/Write NWB Files with JavaSsript',
+  tagline: 'Neurodata without Borders in JavaScript',
   url: 'https://brainsatplay.com',
   baseUrl: '/',
   onBrokenLinks: 'warn',

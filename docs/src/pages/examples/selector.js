@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import styles from './examples.module.css';
 import BasicExample from './components/basic';
 import { useHistory } from 'react-router';
+import FileExample from './components/file';
 
 export default function ExampleSelector({server}) {
    const history = useHistory();
@@ -15,6 +16,8 @@ export default function ExampleSelector({server}) {
         switch(name) {
           case 'basic':
             return <BasicExample/>
+          case 'file':
+            return <FileExample/>
         }
       }
 
@@ -28,6 +31,9 @@ export default function ExampleSelector({server}) {
       <nav className={clsx(styles.nav)}>
         <button onClick={() => set('basic')}>
           Basic
+        </button>
+        <button onClick={() => set('file')}>
+          File
         </button>
         </nav>
 
