@@ -9,7 +9,7 @@
     "dist"
   ],
   "scripts": {
-    "start": "cd docs && yarn && yarn run start",
+    "start": "cd docs && yarn && yarn run build",
     "typecheck": "tsc --watch --preserveWatchOutput --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --config browser.config.js --mode production",
