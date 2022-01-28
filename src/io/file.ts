@@ -1,3 +1,4 @@
+export const test = () => {}
 // export class NWBFileMap {
 
 //     constructor(spec){

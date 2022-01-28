@@ -1,0 +1,8 @@
+[[headers]]
+  for = "/*"
+    [headers.values]
+    Access-Control-Allow-Origin = "*"
+
+[context.website]
+  publish = "docs/build/"
+  command = "npm run build"
