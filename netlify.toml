@@ -3,6 +3,6 @@
     [headers.values]
     Access-Control-Allow-Origin = "*"
 
-[context.website]
+[context.main]
   publish = "docs/build/"
-  command = "npm run build"
+  command = "npm run build:docs"
