@@ -6,3 +6,5 @@ docs/docs/reference
 
 # Library Builds
 **/dist
+**.lock
+**.log
