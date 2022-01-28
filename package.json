@@ -9,11 +9,11 @@
     "dist"
   ],
   "scripts": {
-    "start": "cd docs && yarn && yarn run build",
+    "start": "cd docs && yarn && yarn run start",
     "typecheck": "tsc --watch --preserveWatchOutput --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --config browser.config.js --mode production",
-    "build:docs": "cd docs && yarn && yarn run start"
+    "build:docs": "cd docs && yarn && yarn run build"
   },
   "keywords": [
     "neuroscience",
