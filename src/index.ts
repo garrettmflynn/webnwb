@@ -75,17 +75,17 @@ export class NWBHDF5IO {
       this.file = new NWBFile()
 
       let parseGroup = (o:any) => {
-        // console.log('Attributes', o.attrs)
+        console.log('Attributes', o.attrs)
         if (o.keys instanceof Function){
           let keys = o.keys()
-          // console.log('Keys', keys)
+          console.log('Keys', keys)
           keys.forEach((k:string) => {
             const group = o.get(k)
-            // console.log(k, group)
+            console.log('Group', k, group)
             parseGroup(group)
           })
         } else {
-          // console.log('Dataset', o.value)
+          console.log('Dataset', o.value)
         }
       }
 
