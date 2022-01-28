@@ -3,7 +3,7 @@ import Layout from '@theme/Layout';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import ExampleSelector from './selector';
 
-const SERVER_URI = (window.location.href.includes('localhost')) ? 'http://localhost:443' : 'http://localhost:443' // Replace with production server URI
+const SERVER_URI = (globalThis.location?.href?.includes('localhost')) ? 'http://localhost:443' : 'http://localhost:443' // Replace with production server URI
 
 export default function Examples() {
   const {siteConfig} = useDocusaurusContext();

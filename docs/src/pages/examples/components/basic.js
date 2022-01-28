@@ -1,18 +1,19 @@
 import React, { useEffect, useRef } from 'react';
 import clsx from 'clsx';
-import * as jsnwb from '../../../../../src';
 
-export default function BasicExample() {
+export default function DemoExample() {
+
 
   const get = useRef(null);
   const output = useRef(null);
 
-  const examplePath = '../../data/FergusonEtAl2015.nwb'
+  useEffect(async () => {
 
-  useEffect(() => {
+    let jsnwb = await import('../../../../../src')
 
     const main = async () => {
 
+      
       // 1. Create NWB File
       const sessionStartTime = Date.now()
       const fileCreateDate = Date.now()

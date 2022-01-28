@@ -2,6 +2,34 @@
  * CSS files with the .module.css suffix will be treated as CSS modules
  * and scoped locally.
  */
+
+ .terminal {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  background : black;
+  height: 300px;
+  width: 100vw;
+  color: white;
+  padding: 25px;
+  padding-top: 45px;
+  overflow: scroll;
+  z-index: 1000;
+ }
+
+ .terminal::before {
+   content: 'Output';
+   position: absolute;
+   padding: 5px 25px;
+   font-size: 80%;
+   /* transform: translateY(-100%); */
+   top: 0;
+   left: 0;
+   width: 100vw;
+   background: rgb(24, 24, 24);
+ }
+
+
  .overlay {
     background: black;
     opacity: 0;
@@ -111,7 +139,6 @@
 /* .deviceDiv > div > * {
   width: 100%;
 } */
-
 
 .deviceDiv > div > *:first-child{
   width: 100px;

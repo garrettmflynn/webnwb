@@ -4,10 +4,13 @@ import { NWBFile } from './file';
 // import { TimeSeries } from './base';
 
 export class NWBHDF5IO {
+
   hdf5?: any;
   file?: NWBFile;
   name: string;
-  mode: FileMethods
+  mode: FileMethods;
+  element?: HTMLElement;
+
   constructor(name:string, mode:FileMethods = "r") {
     this.name = name
     this.mode = mode
@@ -36,18 +39,18 @@ export class NWBHDF5IO {
     a.style.display = "none";
 
     // IE 10 / 11
-    const nav = (window.navigator as any);
-    if (nav.msSaveOrOpenBlob) {
+    const nav = (globalThis.navigator as any);
+    if (nav?.msSaveOrOpenBlob) {
         nav.msSaveOrOpenBlob(blob, name);
     } else {
-        var url = window.URL.createObjectURL(blob);
+        var url = globalThis.URL?.createObjectURL(blob);
         a.href = url;
         let nameNoExtension = name.split('.')?.pop()
         a.download = nameNoExtension + '.nwb' // Add NWB Extension
         a.target = "_blank";
-        //window.open(url, '_blank', fileName);
+        //globalThis.open(url, '_blank', fileName);
         a.click();
-        setTimeout(function () { window.URL.revokeObjectURL(url) }, 1000);
+        setTimeout(function () { globalThis.URL.revokeObjectURL(url) }, 1000);
     }
   }
 
@@ -71,21 +74,52 @@ export class NWBHDF5IO {
     if (['r','a'].includes(this.mode)){
       this.hdf5 = new File(this.name, this.mode);
 
+      if (this.element) {
+        this.element.insertAdjacentHTML('beforeend', `<p><strong>HDF5 File</strong></p>`)
+        // this.element.insertAdjacentHTML('afterbegin', JSON.stringify(this.hdf5, null, 2))
+        this.element.insertAdjacentHTML('beforeend', `<i>Keys</i>`)
+        this.element.insertAdjacentHTML('beforeend', `<p>${this.hdf5.keys()}</p>`)
+        this.element.insertAdjacentHTML('beforeend', `<i>Attributes</i>`)
+        this.element.insertAdjacentHTML('beforeend', `<p>${this.hdf5.attrs}</p>`)
+      }
+
       console.log('Raw HDF5', this.hdf5, this.hdf5.keys(), this.hdf5.attrs)
       this.file = new NWBFile()
 
       let parseGroup = (o:any) => {
-        console.log('Attributes', o.attrs)
+        // console.log('Attributes', o.attrs)
+
+        if (this.element) {
+          this.element.insertAdjacentHTML('beforeend', `<p><i>Attributes</i></p>`)
+          this.element.insertAdjacentHTML('beforeend', `<p>${o.attrs}</p>`)
+        }
+
         if (o.keys instanceof Function){
           let keys = o.keys()
-          console.log('Keys', keys)
+          // console.log('Keys', keys)
+
+          if (this.element) {
+            this.element.insertAdjacentHTML('beforeend', `<i>Keys</i>`)
+            this.element.insertAdjacentHTML('beforeend', `<p>${keys}</p>`)
+          }
+
           keys.forEach((k:string) => {
             const group = o.get(k)
-            console.log('Group', k, group)
+            // console.log('Group', k, group)
+
+            if (this.element) {
+              this.element.insertAdjacentHTML('beforeend', `<p><strong>Group ${k}</strong></p>`)
+              // this.element.insertAdjacentHTML('beforeend', JSON.stringify(group, null, 2))
+            }
+
             parseGroup(group)
           })
         } else {
-          console.log('Dataset', o.value)
+          // console.log('Dataset', o.value)
+          if (this.element) {
+            this.element.insertAdjacentHTML('beforeend', `<p><strong>Dataset</strong></p>`)
+            this.element.insertAdjacentHTML('beforeend', `<p>Length: ${o.value?.length}</p>`)
+          }
         }
       }
 
