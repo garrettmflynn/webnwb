@@ -9,7 +9,6 @@ export class NWBHDF5IO {
   file?: NWBFile;
   name: string;
   mode: FileMethods;
-  element?: HTMLElement;
 
   constructor(name:string, mode:FileMethods = "r") {
     this.name = name
@@ -74,86 +73,35 @@ export class NWBHDF5IO {
     if (['r','a'].includes(this.mode)){
       this.hdf5 = new File(this.name, this.mode);
 
-      if (this.element) {
-        this.element.insertAdjacentHTML('beforeend', `<p><strong>HDF5 File</strong></p>`)
-        // this.element.insertAdjacentHTML('afterbegin', JSON.stringify(this.hdf5, null, 2))
-        this.element.insertAdjacentHTML('beforeend', `<i>Keys</i>`)
-        this.element.insertAdjacentHTML('beforeend', `<p>${this.hdf5.keys()}</p>`)
-        this.element.insertAdjacentHTML('beforeend', `<i>Attributes</i>`)
-        this.element.insertAdjacentHTML('beforeend', `<p>${this.hdf5.attrs}</p>`)
-      }
-
-      console.log('Raw HDF5', this.hdf5, this.hdf5.keys(), this.hdf5.attrs)
       this.file = new NWBFile()
 
-      let parseGroup = (o:any) => {
-        // console.log('Attributes', o.attrs)
+      let parseGroup = (o:any, aggregator:{[x:string]:any}={}) => {
 
-        if (this.element) {
-          this.element.insertAdjacentHTML('beforeend', `<p><i>Attributes</i></p>`)
-          this.element.insertAdjacentHTML('beforeend', `<p>${o.attrs}</p>`)
+        // Set Attributes
+        if (!o.attrs.value){
+          for (let a in o.attrs){
+            aggregator[a] = o.attrs[a].value // Exclude shape and dType
+          }
         }
 
+        // Drill Group
         if (o.keys instanceof Function){
-          let keys = o.keys()
-          // console.log('Keys', keys)
-
-          if (this.element) {
-            this.element.insertAdjacentHTML('beforeend', `<i>Keys</i>`)
-            this.element.insertAdjacentHTML('beforeend', `<p>${keys}</p>`)
-          }
-
+          let keys = o.keys()          
           keys.forEach((k:string) => {
             const group = o.get(k)
-            // console.log('Group', k, group)
-
-            if (this.element) {
-              this.element.insertAdjacentHTML('beforeend', `<p><strong>Group ${k}</strong></p>`)
-              // this.element.insertAdjacentHTML('beforeend', JSON.stringify(group, null, 2))
-            }
-
-            parseGroup(group)
+            aggregator[k] = parseGroup(group, aggregator[k])
           })
-        } else {
-          // console.log('Dataset', o.value)
-          if (this.element) {
-            this.element.insertAdjacentHTML('beforeend', `<p><strong>Dataset</strong></p>`)
-            this.element.insertAdjacentHTML('beforeend', `<p>Length: ${o.value?.length}</p>`)
-          }
+        } 
+        
+        // Set Dataset
+        else {
+          aggregator = o.value
         }
+
+        return aggregator
       }
 
-      parseGroup(this.hdf5)
-
-      // Get Specifications
-      const spec = this.hdf5.get("specifications")
-      console.log('spec', spec, spec.keys(), spec.attrs)
-
-        // // Regenerate Acquisition
-        // const acquisition = this.hdf5.get("acquisition")
-        // console.log(acquisition, acquisition?.keys)
-        // if (acquisition) {
-        //   const keys = acquisition.keys
-        //   if (keys) keys.forEach((str:string) => {
-        //     const data = this.hdf5.get(`acquisition/${str}`)
-        //     let ts = new TimeSeries(str, data.value, 'm', {})
-        //     if (this.file) this.file.addAcquisition(ts)
-        //   })
-        // }
-
-        // // Regenerate Processing
-        // const processing = this.hdf5.get("processing")
-        // console.log(processing)
-        // console.log(processing, processing?.keys)
-
-        // if (processing) {
-        //   const keys = processino.keys
-        //   if (keys) keys.forEach((str:string) => {
-        //     const group = this.hdf5.get(`processing/${str}`)
-        //     const attrs = group.attrs
-        //     if (this.file && attrs) this.file.createProcessingModule(attrs.name?.value, attrs.description?.value)
-        //   })
-        // }
+      parseGroup(this.hdf5, this.file)
 
       if (this.mode == 'r') this.hdf5.close()
       return this.file
