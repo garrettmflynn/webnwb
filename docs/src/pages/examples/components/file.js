@@ -19,7 +19,7 @@ export default function FileExample() {
       // 1. Fetch and Save Remote NWB File
     load.current.onclick = () => {
       io = new jsnwb.NWBHDF5IO()
-      io.element = terminal.current
+      // io.element = terminal.current
 
       io.fetch(examplePath).then(file => {
         console.log('File', file)
@@ -30,7 +30,7 @@ export default function FileExample() {
     // 2. Allow User to Load their own NWB File
     input.current.onchange = async (ev) => {
       io = new jsnwb.NWBHDF5IO()
-      io.element = terminal.current
+      // io.element = terminal.current
       const name = ev.target.files[0].name
       await io.upload(ev)
       let file = io.read(name)
@@ -55,7 +55,7 @@ export default function FileExample() {
           <input type={'file'} ref={input}></input>
           <button ref={get} className="button button--secondary button--lg">Download</button>
         </div>
-        <div className={styles.terminal}><span ref={terminal}></span></div>
+        {/* <div className={styles.terminal}><span ref={terminal}></span></div> */}
       </div>
     </header>
   );
