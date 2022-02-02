@@ -1,4 +1,4 @@
-import { File, FS } from "h5wasm";
+import * as hdf5 from "h5wasm";
 import { FileMethods } from './types/general.types';
 import { NWBFile } from './file';
 // import { TimeSeries } from './base';
@@ -24,7 +24,7 @@ export class NWBHDF5IO {
       await Promise.all(Array.from(input.files).map(async f => {
         this.name = f.name
         let ab = await f.arrayBuffer();
-        FS.writeFile(this.name, new Uint8Array(ab))
+        await this._write(ab)
       }))
     }
   }
@@ -32,7 +32,7 @@ export class NWBHDF5IO {
   // Allow Download of NWB-Formatted HDF5 Files fromthe  Browser
   download = (file = this.hdf5, name=file.filename) => {
     file.flush();
-    const blob = new Blob([FS.readFile(file.filename)], {type: 'application/x-hdf5'});
+    const blob = new Blob([hdf5.FS.readFile(file.filename)], {type: 'application/x-hdf5'});
     var a = document.createElement("a");
     document.body.appendChild(a);
     a.style.display = "none";
@@ -63,15 +63,25 @@ export class NWBHDF5IO {
       if (filename) this.name = filename.split('.')[0]
     }
 
-    FS.writeFile(this.name, new Uint8Array(ab));
+    await this._write(ab)
     this.file = this.read()
     return this.file
+  }
+
+  //Iteratively Check FS to Write File
+  _write = (ab:ArrayBuffer) => {
+    return new Promise(resolve => {
+      if (hdf5.FS) {
+        hdf5.FS.writeFile(this.name, new Uint8Array(ab));
+        resolve()
+      } else setTimeout(this._write, 10) // Wait and check again
+    })
   }
 
   // ---------------------- Core HDF5IO Methods ----------------------
   read = () => {
     if (['r','a'].includes(this.mode)){
-      this.hdf5 = new File(this.name, this.mode);
+      this.hdf5 = new hdf5.File(this.name, this.mode);
 
       this.file = new NWBFile()
 
@@ -110,7 +120,7 @@ export class NWBHDF5IO {
 
   write = (file: NWBFile) => {
     if (['w','a'].includes(this.mode)){
-      this.hdf5 = new File(this.name, this.mode);
+      this.hdf5 = new hdf5.File(this.name, this.mode);
 
       // Save Acquisitions
       this.hdf5.create_attribute("new_attr", "something wicked this way comes");

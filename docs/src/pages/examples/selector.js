@@ -4,6 +4,7 @@ import styles from './examples.module.css';
 import DemoExample from './components/basic';
 import { useHistory } from 'react-router';
 import FileExample from './components/file';
+import NeuromatchExample from './components/neuromatch';
 
 export default function ExampleSelector({server}) {
    const history = useHistory();
@@ -18,6 +19,8 @@ export default function ExampleSelector({server}) {
             return <DemoExample/>
           case 'file':
             return <FileExample/>
+          case 'neuromatch':
+            return <NeuromatchExample/>
         }
       }
 
@@ -34,6 +37,9 @@ export default function ExampleSelector({server}) {
         </button> */}
         <button onClick={() => set('file')}>
           File
+        </button>
+        <button onClick={() => set('neuromatch')}>
+          Neuromatch
         </button>
         </nav>
 

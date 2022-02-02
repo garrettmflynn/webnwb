@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import clsx from 'clsx';
-import styles from '../examples.module.css'
 
 export default function FileExample() {
 
@@ -8,7 +7,6 @@ export default function FileExample() {
   const get = useRef(null);
   const output = useRef(null);
   const input = useRef(null);
-  const terminal = useRef(null);
 
   let io;
   const examplePath = '../../data/FergusonEtAl2015.nwb'
