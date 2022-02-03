@@ -42,6 +42,7 @@ export default function DemoExample() {
       nwbFile.getAcquisition('testTimeseries')
 
       // 3. Save NWB File
+      console.log('Write This', nwbFile)
       const io = new jsnwb.NWBHDF5IO('example_file_path.nwb', 'w')
       io.write(nwbFile)
       io.close()
@@ -50,6 +51,7 @@ export default function DemoExample() {
       // 4. Read Saved NWB File
       const io2 = new jsnwb.NWBHDF5IO('example_file_path.nwb', 'r')
       const nwbFileIn = await io2.read()
+      console.log('From Saved', nwbFileIn)
 
       const timeseriesIn = nwbFileIn.acquisition['testTimeseries']
       console.log(timeseriesIn)

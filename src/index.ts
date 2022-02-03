@@ -73,7 +73,7 @@ export class NWBHDF5IO {
     return new Promise(resolve => {
       if (hdf5.FS) {
         hdf5.FS.writeFile(this.name, new Uint8Array(ab));
-        resolve()
+        resolve(true)
       } else setTimeout(this._write, 10) // Wait and check again
     })
   }
@@ -92,7 +92,7 @@ export class NWBHDF5IO {
           for (let a in o.attrs){
             aggregator[a] = o.attrs[a].value // Exclude shape and dType
           }
-        }
+        } 
 
         // Drill Group
         if (o.keys instanceof Function){
@@ -104,8 +104,9 @@ export class NWBHDF5IO {
         } 
         
         // Set Dataset
-        else {
-          aggregator = o.value
+        else if (o instanceof hdf5.Dataset) {
+          if (Object.keys(aggregator)) aggregator.value = o.value
+          else aggregator = o.value
         }
 
         return aggregator
@@ -122,22 +123,40 @@ export class NWBHDF5IO {
     if (['w','a'].includes(this.mode)){
       this.hdf5 = new hdf5.File(this.name, this.mode);
 
-      // Save Acquisitions
-      this.hdf5.create_attribute("new_attr", "something wicked this way comes");
+      // Write Arbitrary Object to HDF5 File
+      let writeObject = (o:any, key?:String) => {
 
-      this.hdf5.create_group("acquisition");
-      for (let key in file.acquisition){
-        this.hdf5.get("acquisition").create_dataset(key, file.acquisition[key].data);
+        const group = (key) ? this.hdf5.get(key) : this.hdf5
+        for (let k in o){
+          const newKey = `${(key) ? `${key}/` : ''}${k}`
+          if (!(o[k] instanceof Function)){
+            if (typeof o[k] === 'object') {
+              // if ('data' in o[k]) {
+              //   console.log(o[k])
+              //   const dataset = group.create_dataset(k, o[k].data);
+              //   const o2 = Object.assign({}, o)
+              //   delete o2.data
+              //  o2[k]['neurodata_type'] = o[k].constructor.name // Grab ClassName as neurodata_type
+              //   // writeObject(o2[k], newKey)
+              //   for (let k2 in o2[k]){
+              //     // console.log('attr', k2, o2[k], o2[k][k2])
+              //     if (typeof o2[k][k2] !== 'object') dataset.create_attribute(k2, o2[k][k2]) // TODO: Allow objects to be saved (e.g. options.timestamps)
+              //   }
+              // } else {
+                if (o[k] instanceof Array) group.create_dataset(k, o[k]);
+                else {
+                  this.hdf5.create_group(newKey);
+                  writeObject(o[k], newKey)
+                }
+              // }
+            } else {
+              group.create_attribute(k, o[k]);
+            }
+          }
+        }
       }
 
-      this.hdf5.create_group("processing");
-      for (let key in file.processing){
-        const o = file.processing[key]
-        const group = this.hdf5.create_group(`processing/${key}`);
-        group.create_attribute("name", o.name);
-        group.create_attribute("description", o.description);
-        for (let name in o.dataInterfaces) group.create_dataset(name, [0]); // TOOO: Actually add object
-      }
+      writeObject(file)
     }
   }
 

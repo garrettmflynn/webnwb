@@ -32,9 +32,9 @@ export default function ExampleSelector({server}) {
     return (
         <>
       <nav className={clsx(styles.nav)}>
-        {/* <button onClick={() => set('demo')}>
+        <button onClick={() => set('demo')}>
           Demo
-        </button> */}
+        </button>
         <button onClick={() => set('file')}>
           File
         </button>
