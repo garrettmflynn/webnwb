@@ -18,3 +18,7 @@ https://nwb-schema.readthedocs.io/en/latest/
 
 ## Dependencies
 - **h5wasm:** https://github.com/usnistgov/h5wasm
+## Contributors 
+Garrett Flynn (gflynn@usc.edu)
+ 
+Chandhana Sathishkumar (chandhanasathishkumar@gmail.com)
