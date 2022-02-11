@@ -1,12 +1,9 @@
 // import * as reader from "h5wasm";
-import { FileMethods } from './types/general.types';
 import { NWBFile } from './file';
 // import { TimeSeries } from './base';
 
 export class NWBHDF5IO {
 
-  hdf5?: any;
-  file?: NWBFile;
   reader: any;
   files: Map<string, {
     name: string,
@@ -18,9 +15,7 @@ export class NWBHDF5IO {
 
   // Note: Must pass an "h5wasm" instance here
   constructor(reader:any) {
-
     this.reader = reader
-
   }
 
   // ---------------------- New HDF5IO Methods ----------------------
@@ -41,12 +36,14 @@ export class NWBHDF5IO {
   }
 
   // Allow Download of NWB-Formatted HDF5 Files fromthe  Browser
-  download = (file:any, name:string) => {
-    if (!file) file = [...this.files.values()][0]
+  download = (name:string, file:any) => {
+    if (!file) file = (name) ? this.files.get(name) : [...this.files.values()][0]
     if (file){
-      if (!name) name = file.hdf5.filename // Get Default Name
-      file.hdf5.flush();
-      const blob = new Blob([this.reader.FS.readFile(file.hdf5.filename)], { type: 'application/x-hdf5' });
+      if (!name) name = file.name // Get Default Name
+      if (file.write) file.write.flush();
+      if (file.read) file.read.flush();
+
+      const blob = new Blob([this.reader.FS.readFile(file.name)], { type: 'application/x-hdf5' });
       var a = document.createElement("a");
       document.body.appendChild(a);
       a.style.display = "none";
@@ -58,8 +55,7 @@ export class NWBHDF5IO {
       } else {
         var url = globalThis.URL?.createObjectURL(blob);
         a.href = url;
-        let nameNoExtension = name.split('.')?.pop()
-        console.log(name, nameNoExtension)
+        let nameNoExtension = name.replace(/(.+)\.(.+)/, '$1')
         a.download = nameNoExtension + '.nwb' // Add NWB Extension
         a.target = "_blank";
         //globalThis.open(url, '_blank', fileName);
@@ -80,15 +76,10 @@ export class NWBHDF5IO {
     }
 
     //  Get File from Name
-    const file = this.get(name, 'a')
-
-    console.log('Name', file.name)
-
-    this.file = this.read()
-    console.log('Trying to Get File', this.file)
+    let {nwb} = this.files.get(name) ?? {}
 
     // Only Fetch if NO Locally Cached Version
-    if (!this.file){
+    if (!nwb){
 
     const tick = performance.now()
 
@@ -133,13 +124,11 @@ export class NWBHDF5IO {
 
     const tock = performance.now()
 
-    console.log(`Got in ${tock - tick} ms`)
-
-
-    await this._write(file.name, ab)
-    this.read(file.name)
-  }
-    return file.nwb
+    console.log(`Fetched in ${tock - tick} ms`)
+    await this._write(name, ab)
+    nwb = this.read(name)
+  } else console.log(`Returning cached version.`)
+    return nwb
   }
 
   // Iteratively Check FS to Write File
@@ -160,8 +149,10 @@ export class NWBHDF5IO {
   // ---------------------- Core HDF5IO Methods ----------------------
   read = (name=[...this.files.keys()][0]) => {
 
-    let file = this.get(name)
-    if (file && file.read) {
+    let file = this.get(name, 'r')
+
+    if (file?.read?.file_id) {
+
       const tick = performance.now()
 
 
@@ -196,24 +187,26 @@ export class NWBHDF5IO {
         const tock = performance.now()
         console.log(`Read file in ${tock - tick} ms`)
         return file.nwb
+
     } else return
   }
 
   // Get File by Name
-  get = (name:string = [...this.files.keys()][0], mode='r') => {
+  get = (name:string = [...this.files.keys()][0], mode?:string) => {
 
     let o = this.files.get(name)
-    console.log('Getting', name, o, this.files, mode)
 
     if (!o) {
       o = {name, nwb: new NWBFile()}
       this.files.set(name, o)
     }
 
-    let hdf5 = new this.reader.File(name, mode);
-    if (mode === 'w') o.write = hdf5
-    else if (mode === 'r') o.read = hdf5
-    else if (mode === 'a') o.read = o.write = hdf5
+    if (mode){
+      let hdf5 = new this.reader.File(name, mode);
+      if (mode === 'w') o.write = hdf5
+      else if (mode === 'r') o.read = hdf5
+      else if (mode === 'a') o.read = o.write = hdf5
+    }
 
     // if (o.hdf5.fileId) 
     return o
@@ -224,7 +217,7 @@ export class NWBHDF5IO {
 
     let file = this.get(name, 'w')
 
-    if (file) {
+    if (file?.write?.file_id) {
 
       const tick = performance.now()
 
@@ -255,13 +248,11 @@ export class NWBHDF5IO {
               }
               // }
             } else {
-              group.create_attribute(k, o[k]);
+              if (o[k]) group.create_attribute(k, o[k]);
             }
           }
         }
       }
-
-      console.log('Writing', o, file.write)
 
       writeObject(o)
 

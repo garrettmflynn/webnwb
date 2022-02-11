@@ -26,60 +26,64 @@ export default function FileExample() {
   const input = useRef(null);
   const progressDiv = useRef(null);
 
-  let io;
   const examplePath = '../../data/FergusonEtAl2015.nwb'
   let twophoton = 'https://api.dandiarchive.org/api/assets/827b4c2f-4235-4350-b40f-02e120211dcd/download/'
 
   useEffect(async () => {
 
     let jsnwb = await import('../../../../../src')
+    let io = new jsnwb.NWBHDF5IO(reader)
 
     let file = examplePath
+    let name = 'test.nwb'
     function runFetch() {
-      io = new jsnwb.NWBHDF5IO(reader)
       // io.element = terminal.current
 
-      io.fetch(file, (ratio, length) => {
+      io.fetch(file, name, (ratio, length) => {
 
         progressDiv.current.innerHTML = `${formatBytes(ratio*length,2)} of ${formatBytes(length, 2)}`
 
-      }).then(file => {
+      }).then((file) => {
         console.log('File', file)
-        output.current.innerHTML = 'Loaded ' + io.name + '. Check the console for output.'
+        output.current.innerHTML = 'Loaded ' + name + '. Check the console for output.'
       })
     }
 
       // 1. Fetch and Save Remote NWB File
     local.current.onclick = () => {
       file = examplePath
+      name = 'local.nwb'
       runFetch()
     }
     
     normal.current.onclick = () => {
       file = 'https://api.dandiarchive.org/api/assets/1d82605e-be09-4519-8ae1-6977b91a4526/download/'
+      name = 'normal.nwb'
+      runFetch()
     }
 
 
     huge.current.onclick = () => {
       file = 'https://api.dandiarchive.org/api/assets/3bd3a651-f6cc-47a8-adbe-b4d82dbbe4d8/download/'
+      name = 'huge.nwb'
+      runFetch()
     }
 
     // 2. Allow User to Load their own NWB File
     input.current.onchange = async (ev) => {
       io = new jsnwb.NWBHDF5IO(reader)
       // io.element = terminal.current
-      const name = ev.target.files[0].name
+      name = ev.target.files[0].name
       await io.upload(ev)
-      io.name = name
-      let file = io.read()
+      let file = io.read(name)
       console.log('File', file)
-      output.current.innerHTML = 'Loaded ' + io.name + '. Check the console for output.'
+      output.current.innerHTML = 'Loaded ' + name + '. Check the console for output.'
     }
 
 
     // 3. Allow User to Download an NWB File off the Browser
     get.current.onclick = () => {
-      if (io) io.download()
+      if (io) io.download(name)
     }
   })
 
