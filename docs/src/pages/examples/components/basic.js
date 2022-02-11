@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import clsx from 'clsx';
+import * as reader from 'h5wasm'
 
 export default function DemoExample() {
 
@@ -18,6 +19,8 @@ export default function DemoExample() {
       const sessionStartTime = Date.now()
       const fileCreateDate = Date.now()
 
+
+      const fileName = 'example_file_path.nwb'
       const nwbFile = new jsnwb.NWBFile({
         session_description: 'demonstrate NWBFile basics',
         identifier: 'NWB123',
@@ -43,14 +46,12 @@ export default function DemoExample() {
 
       // 3. Save NWB File
       console.log('Write This', nwbFile)
-      const io = new jsnwb.NWBHDF5IO('example_file_path.nwb', 'w')
-      io.write(nwbFile)
-      io.close()
+      const io = new jsnwb.NWBHDF5IO(reader)
+      io.write(nwbFile, fileName)
 
 
       // 4. Read Saved NWB File
-      const io2 = new jsnwb.NWBHDF5IO('example_file_path.nwb', 'r')
-      const nwbFileIn = await io2.read()
+      const nwbFileIn = await io.read()
       console.log('From Saved', nwbFileIn)
 
       const timeseriesIn = nwbFileIn.acquisition['testTimeseries']
@@ -109,12 +110,10 @@ export default function DemoExample() {
       nwbFile.addUnit(3, [1.2, 2.3, 3.3, 4.5], [[1, 10], [20, 30]], 'CA1', 0.90)
 
 
-      const io3 = new jsnwb.NWBHDF5IO('example_file_path.nwb', 'w')
-      io3.write(nwbFile)
-      io3.close()
+      io.write(nwbFile)
+      // io.close() // Done
 
       // 10. Append Information to an Existing NWB File
-      // const io4 = new jsnwb.NWBHDF5IO('example_file_path.nwb', 'a')
       // const nwbFile2 = io4.read()
       // const position2 = nwbFile2.processing['behavior'].dataInterfaces['Position']
       // const data2 = Array.from({length: 10}, (v,i) => 300 + 10*i)

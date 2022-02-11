@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="./dist/browser.js"></script>
+</head>
+<body>
+    
+</body>
+<script type="module">
+
+
+import * as jsnwb from './dist/module.js'
+import * as hdf5 from "https://cdn.jsdelivr.net/npm/h5wasm@latest/dist/esm/hdf5_hl.js";
+
+const io = new jsnwb.NWBHDF5IO({reader: hdf5})
+
+const examplePath = './docs/static/data/FergusonEtAl2015.nwb'
+io.fetch(examplePath).then(file => {
+    console.log('File', file)
+})
+
+</script>
+</html>

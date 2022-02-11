@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import clsx from 'clsx';
+import * as reader from 'h5wasm'
 
 export default function NeuromatchExample() {
 
@@ -14,7 +15,7 @@ export default function NeuromatchExample() {
     let jsnwb = await import('../../../../../src')
 
     // Load NWB File
-      const io = new jsnwb.NWBHDF5IO()
+      const io = new jsnwb.NWBHDF5IO(reader)
       let file = await io.fetch(examplePath)
       console.log('File', file)
 
