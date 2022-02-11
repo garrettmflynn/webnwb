@@ -66,15 +66,8 @@ export class NWBHDF5IO {
   }
 
   // Fetch NWB Files from a URL
-  fetch = async (url: string, name:string, progressCallback: (ratio: number, length: number) => void = () => { }) => {
-
-    // Get Name
-    if (!name) {
-      const filename = url.split('/').pop()
-      if (filename) name = filename.split('.')[0] + '.nwb'
-      if (!name) name = Math.floor(Date.now()) + '.nwb'
-    }
-
+  fetch = async (url: string, name:string = 'default.nwb', progressCallback: (ratio: number, length: number) => void = () => { }) => {
+    
     //  Get File from Name
     let {nwb} = this.files.get(name) ?? {}
 
@@ -103,7 +96,7 @@ export class NWBHDF5IO {
                   return;
                 }
 
-                received += value.length
+                received += value?.length ?? 0
                 progressCallback(received / length, length)
                 controller.enqueue(value);
                 push()
@@ -134,15 +127,17 @@ export class NWBHDF5IO {
   // Iteratively Check FS to Write File
   _write = (name:string, ab: ArrayBuffer) => {
     return new Promise(resolve => {
-      if (this.reader.FS) {
+      const tick = performance.now()
 
-        const tick = performance.now()
-        this.reader.FS.writeFile(name, new Uint8Array(ab));
-        const tock = performance.now()
-        console.log(`Wrote raw file in ${tock - tick} ms`)
-
-        resolve(true)
-      } else setTimeout(this._write, 10) // Wait and check again
+      let check = () => {
+        if (this.reader.FS) {
+          this.reader.FS.writeFile(name, new Uint8Array(ab));
+          const tock = performance.now()
+          console.log(`Wrote raw file in ${tock - tick} ms`)
+          resolve(true)
+        } else setTimeout(check, 10) // Wait and check again
+      }
+      check()
     })
   }
 
@@ -272,35 +267,34 @@ export class NWBHDF5IO {
   }
 }
 
-import * as __io from './io'
-export * from './core'
-export * from './base'
-export * from './file'
+// import * as __io from './io'
+// export * from './core'
+// export * from './base'
+// export * from './file'
 
-import * as behavior from './behavior'
-import * as device from './device'
-import * as ecephys from './ecephys'
-import * as epoch from './epoch'
-import * as icephys from './icephys'
-import * as image from './image'
-import * as misc from './misc'
-import * as ogen from './ogen'
-import * as ophys from './ophys'
-import * as retinotopy from './retinotopy'
-// export * as legacy from './legacy' 
+// import * as behavior from './behavior'
+// import * as device from './device'
+// import * as ecephys from './ecephys'
+// import * as epoch from './epoch'
+// import * as icephys from './icephys'
+// import * as image from './image'
+// import * as misc from './misc'
+// import * as ogen from './ogen'
+// import * as ophys from './ophys'
+// import * as retinotopy from './retinotopy'
 
-export {
-  __io,
-  behavior,
-  device,
-  ecephys,
-  epoch,
-  icephys,
-  image,
-  misc,
-  ogen,
-  ophys,
-  retinotopy
-}
+// export {
+//   __io,
+//   behavior,
+//   device,
+//   ecephys,
+//   epoch,
+//   icephys,
+//   image,
+//   misc,
+//   ogen,
+//   ophys,
+//   retinotopy
+// }
 
 export default NWBHDF5IO

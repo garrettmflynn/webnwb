@@ -16,10 +16,12 @@
 import * as jsnwb from './dist/module.js'
 import * as hdf5 from "https://cdn.jsdelivr.net/npm/h5wasm@latest/dist/esm/hdf5_hl.js";
 
-const io = new jsnwb.NWBHDF5IO({reader: hdf5})
+const io = new jsnwb.NWBHDF5IO(hdf5)
 
 const examplePath = './docs/static/data/FergusonEtAl2015.nwb'
-io.fetch(examplePath).then(file => {
+io.fetch(examplePath, 'FergusonEtAl2015.nwb', (ratio) => {
+    console.log(ratio)
+}).then(file => {
     console.log('File', file)
 })
 
