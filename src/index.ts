@@ -5,17 +5,19 @@ import { NWBFile } from './file';
 export class NWBHDF5IO {
 
   reader: any;
+  debug: boolean;
   files: Map<string, {
     name: string,
     read?: any,
     write?: any,
     nwb: NWBFile,
-  }> = new Map()
+  }> = new Map();
 
 
   // Note: Must pass an "h5wasm" instance here
-  constructor(reader:any) {
-    this.reader = reader
+  constructor(reader:any, debug=false) {
+    this.reader = reader;
+    this.debug = debug;
   }
 
   // ---------------------- New HDF5IO Methods ----------------------
@@ -117,10 +119,11 @@ export class NWBHDF5IO {
 
     const tock = performance.now()
 
-    console.log(`Fetched in ${tock - tick} ms`)
+    if (this.debug) console.log(`Fetched in ${tock - tick} ms`)
+
     await this._write(name, ab)
     nwb = this.read(name)
-  } else console.log(`Returning cached version.`)
+  } else if (this.debug) console.log(`Returning cached version.`)
     return nwb
   }
 
@@ -133,7 +136,7 @@ export class NWBHDF5IO {
         if (this.reader.FS) {
           this.reader.FS.writeFile(name, new Uint8Array(ab));
           const tock = performance.now()
-          console.log(`Wrote raw file in ${tock - tick} ms`)
+          if (this.debug) console.log(`Wrote raw file in ${tock - tick} ms`)
           resolve(true)
         } else setTimeout(check, 10) // Wait and check again
       }
@@ -180,7 +183,7 @@ export class NWBHDF5IO {
         // if (!file.write) this.close()
 
         const tock = performance.now()
-        console.log(`Read file in ${tock - tick} ms`)
+        if (this.debug) console.log(`Read file in ${tock - tick} ms`)
         return file.nwb
 
     } else return
@@ -252,7 +255,7 @@ export class NWBHDF5IO {
       writeObject(o)
 
       const tock = performance.now()
-      console.log(`Wrote NWB File object to disk in ${tock - tick} ms`)
+      if (this.debug) console.log(`Wrote NWB File object to disk in ${tock - tick} ms`)
     }
   }
 
