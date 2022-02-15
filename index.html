@@ -14,13 +14,17 @@
 <script type="module">
 
 
-// import * as jsnwb from './dist/module.js'
+// import * as jsnwb from './dist/index.esm.js'
+// import * as jsnwb from 'https://cdn.jsdelivr.net/npm/jsnwb/dist/index.esm.js'
 import * as hdf5 from "https://cdn.jsdelivr.net/npm/h5wasm@latest/dist/esm/hdf5_hl.js";
 
 const io = new jsnwb.NWBHDF5IO(hdf5, true)
 
-const examplePath = './docs/static/data/FergusonEtAl2015.nwb'
-io.fetch(examplePath, 'FergusonEtAl2015.nwb', (ratio) => {
+// const path = './docs/static/data/intracellular.nwb' // Intracellular Electrophysiology
+// const path = './docs/static/data/calcium_image.nwb' // Calcium Imaging
+const path = './docs/static/data/calcium_timeseries.nwb' // Calcium Imaging
+// const path = 'https://api.dandiarchive.org/api/assets/1d82605e-be09-4519-8ae1-6977b91a4526/download/' // Other
+io.fetch(path, 'file.nwb', (ratio) => {
     console.log(ratio)
 }).then(file => {
     console.log('File', file)

@@ -17,22 +17,17 @@ import { wasm } from '@rollup/plugin-wasm';
 /**
  * @type {import('rollup').RollupOptions}
  */
+
 const config = {
   input: './src/index.ts', // our source file
   output: [
     {
       file: pkg.main,
-      format: 'cjs'
+      format: 'umd', // the preferred format
+      exports: 'named',
+      name: 'jsnwb'
     },
-    {
-      file: pkg.module,
-      format: 'es' // the preferred format
-    },
-    {
-      file: pkg.browser,
-      format: 'iife',
-      name: 'jsnwb' // the global which can be used in a browser
-    }
+    { file: pkg.module, format: 'es'  }
   ],
   //  external: [
   //   ...Object.keys(pkg.dependencies || {})
