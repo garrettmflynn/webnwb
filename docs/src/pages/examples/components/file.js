@@ -52,7 +52,6 @@ export default function FileExample() {
     loaderDiv.current.insertAdjacentElement('beforeend', loader)
 
     await import('https://cdn.plot.ly/plotly-2.9.0.min.js') // Loaded Plotly
-    await import('../../../../static/libraries/whammy/index.js') // Loaded Plotly
 
     let jsnwb = await import('../../../../../src')
     let io = new jsnwb.NWBHDF5IO(reader)
@@ -89,33 +88,14 @@ export default function FileExample() {
           waiter.style.margin = `50px`;
           plot.current.insertAdjacentElement('beforeend', waiter)
 
-
-          let encoder = new Whammy.Video(15); 
-
-          function processForWhammy(src, outputFormat) {
+          function createImg(src, outputFormat) {
             return new Promise(resolve => {
             // Create an Image object
             var img = new Image();
             // Add CORS approval to prevent a tainted canvas
             img.crossOrigin = 'Anonymous';
             img.onload = function() {
-              // Create an html canvas element
-              var canvas = document.createElement('CANVAS');
-              // Create a 2d context
-              var ctx = canvas.getContext('2d');
-              var dataURL;
-              // Resize the canavas to the original image dimensions
-              canvas.height = this.naturalHeight;
-              canvas.width = this.naturalWidth;
-              // // Draw the image to a canvas
-              ctx.drawImage(this, 0, 0);
-              // // Convert the canvas to a data url
-              // dataURL = canvas.toDataURL(outputFormat);
-              // Return the data url via callback
-              resolve(canvas);
-              // Mark the canvas to be ready for garbage 
-              // collection
-              // canvas = null;
+              resolve(img);
             };
             // Load the image
             img.src = src;
@@ -130,31 +110,17 @@ export default function FileExample() {
 
           }
 
-          const arr = await Promise.all(file.acquisition[key].external_file.value.map((src) => processForWhammy(src, 'image/webp')))
+          const arr = await Promise.all(file.acquisition[key].external_file.value.map((src) => createImg(src)))
 
 
           arr.forEach(o => {
             o.style.width = '100px'
             o.style.height = 'auto'
-            encoder.add(o)
             gallery.current.insertAdjacentElement('beforeend', o)
           })
 
-          encoder.compile(false, function(output){
-
-            var url = (window.webkitURL || window.URL).createObjectURL(output);
-            var vid = document.createElement('video');
-            vid.controls = true;
-            vid.src = url;
-            vid.onended = function() {
-              URL.revokeObjectURL(url);
-            }
-
-            waiter.remove()
-            waiter = undefined
-  
-            plot.current.insertAdjacentElement('afterbegin', vid)
-          });
+          waiter.remove()
+          waiter = undefined
         }
         
         // Show TimeSeries
