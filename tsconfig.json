@@ -2,9 +2,9 @@
   "compilerOptions": {
       /* -- Basic Options -- */
       "target": "ES2020", /* Specify ECMAScript target version: 'ES3' (default), 'ES5', 'ES2015', 'ES2016', 'ES2017', or 'ESNEXT'. */
-      "rootDir": "./src", /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
+      "rootDir": "./", /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */
       "outDir": "dist/", /* Redirect output structure to the directory. */
-      "module": "es2015", /* Specify module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', or 'ESNext'. */
+      "module": "ES2015", /* Specify module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', or 'ESNext'. */
       "declaration": true, /* Generates corresponding '.d.ts' file. */
       "lib": ["dom", "es5"],
       "importHelpers": true, /* Import emit helpers from 'tslib'. */
@@ -43,8 +43,11 @@
       "baseUrl": "./",
   },
   "exclude": [
-    //   "node_modules",
-      "**/__test__/**"
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/__test__/**",
+    "./docs",
+    "rollup.config.js"
   ],
-  "include": ["src"],
+  "include": ["./"],
 }

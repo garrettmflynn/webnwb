@@ -1,4 +1,4 @@
-import { ArbitraryObject, AttributeType, GroupType, LinkType, DatasetType } from './types';
+import { ArbitraryObject, AttributeType, GroupType, LinkType, DatasetType } from './types/general.types';
 import schemas from './schema'
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 
@@ -203,7 +203,7 @@ export default class API {
     })
 
     const tock = performance.now()
-    if (this._debug) console.log(`Generated ${key} API in ${tock - tick} ms`)
-  } else console.warn(`NWBJS API: ${key} unable to be generasted from file specification.`)
+    if (this._debug) console.log(`JSNWB API: Generated ${key} in ${tock - tick} ms`)
+  } else console.warn(`JSNWB API: ${key} unable to be generated from file specification.`)
   }
 }

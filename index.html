@@ -5,28 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>JSNWB</title>
-    <!-- <script src="./dist/browser.js"></script> -->
-    <script src="https://cdn.jsdelivr.net/npm/jsnwb"></script>
+
+    <!-- Browser Import (local) -->
+    <script src="./dist/index.js"></script>
+
+    <!-- Browser Import (remote) -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/jsnwb@0.0.9"></script> -->
 </head>
 <body>
     
 </body>
 <script type="module">
-
-
-// import * as nwb from './dist/index.esm.js'
-// import * as nwb from 'https://cdn.jsdelivr.net/npm/jsnwb/dist/index.esm.js'
+import * as nwb from './dist/index.esm.js' // ES6 Fallback
+// import * as nwb from 'https://cdn.jsdelivr.net/npm/jsnwb@0.0.9/dist/index.esm.js'
 import * as hdf5 from "https://cdn.jsdelivr.net/npm/h5wasm@latest/dist/esm/hdf5_hl.js";
 
-const io = new nwb.NWBHDF5IO(hdf5, true)
+const io = new nwb.IO(hdf5, true)
+const api = new nwb.API()
 
-// const path = './docs/static/data/intracellular.nwb' // Intracellular Electrophysiology
-// const path = './docs/static/data/calcium_image.nwb' // Calcium Imaging
-const path = './docs/static/data/calcium_timeseries.nwb' // Calcium Imaging
-// const path = 'https://api.dandiarchive.org/api/assets/1d82605e-be09-4519-8ae1-6977b91a4526/download/' // Other
-io.fetch(path, 'file.nwb', (ratio) => {
-    console.log(ratio)
-}).then(file => {
+console.log(io, api)
+
+const path = 'https://raw.githubusercontent.com/OpenSourceBrain/NWBShowcase/master/FergusonEtAl2015/FergusonEtAl2015.nwb'
+io.fetch(path, 'file.nwb').then(file => {
     console.log('File', file)
 })
 

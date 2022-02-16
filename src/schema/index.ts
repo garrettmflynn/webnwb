@@ -1,4 +1,4 @@
-import { ArbitraryObject } from 'src/types'
+import { ArbitraryObject } from '../types/general.types'
 
 // Types
 const latest = '2.4.0'

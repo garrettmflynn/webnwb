@@ -1,6 +1,6 @@
 // import * as reader from "h5wasm";
 import API from './api';
-import { ArbitraryObject } from './types';
+import { ArbitraryObject } from './types/general.types';
 
 type NWBFile = any
 

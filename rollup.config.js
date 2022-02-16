@@ -12,7 +12,7 @@ import css from "rollup-plugin-import-css";
 import node_resolve from "@rollup/plugin-node-resolve";
 import { babel } from '@rollup/plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
-import { wasm } from '@rollup/plugin-wasm';
+// import { wasm } from '@rollup/plugin-wasm';
 import yaml from '@rollup/plugin-yaml';
 
 /**
@@ -28,18 +28,21 @@ const config = {
       exports: 'named',
       name: 'nwb'
     },
-    { file: pkg.module, format: 'es'  }
-  ],
+    {
+      file: pkg.module,
+      format: 'es', // the preferred format
+     },
+   ],
   //  external: [
   //   ...Object.keys(pkg.dependencies || {})
   //  ],
   plugins: [
+    commonjs(),
     node_resolve(),
     babel({
-      babelHelpers: 'bundled',
-      plugins: ["@babel/plugin-proposal-class-properties"]
+        babelHelpers: 'bundled',
+        plugins: ["@babel/plugin-proposal-class-properties"]
     }),
-    yaml(),
     css(),
     // Resolve bare module specifiers to relative paths
     resolve(),
@@ -47,26 +50,26 @@ const config = {
     minifyHTML(),
     // Minify JS
     terser(
-      // {
-      // ecma: 2020,
-      // module: true,
-      // warnings: true,
-      // }
+        // {
+        // ecma: 2020,
+        // module: true,
+        // warnings: true,
+        // }
     ),
     // Print bundle summary
     summary(),
     // Optional: copy any static assets to build directory
     copy({
-      patterns: ['./src/styles/**/*', './node_modules/h5wasm/**/*.wasm'],
+      patterns: ['./src/styles/**/*'],
     }),
-    commonjs(),
     // Support Typescript
-    typescript({
-      typescript: require('typescript'),
-    }),
+  typescript({ 
+   typescript: require('typescript'),
+  }),
+  yaml(),
 
-    // Support WASM (issues...)
-    wasm()
+    // // Support WASM (issues...)
+    // wasm()
   ],
   //  preserveEntrySignatures: 'strict',
 }
