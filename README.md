@@ -18,6 +18,10 @@ https://nwb-schema.readthedocs.io/en/latest/
 
 ## Dependencies
 - **h5wasm:** https://github.com/usnistgov/h5wasm
+- **YAML Loaders**
+    - Rollup: https://www.npmjs.com/package/@rollup/plugin-yaml
+    - Webpack: https://github.com/eemeli/yaml-loader
+
 
 
 ## Acknowledgments

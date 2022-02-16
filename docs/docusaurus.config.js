@@ -21,6 +21,7 @@ const config = {
 
   // ---------------------- TypeDoc Configuration ----------------------
   plugins: [
+    './plugins/webpack',
     [
       'docusaurus-plugin-typedoc',
 

@@ -1,4 +1,6 @@
-import { NWBDataInterface } from './io/core';
+// import { NWBDataInterface } from './io/core';
+
+type NWBDataInterface = any
 
 export class TimeSeries   {
     name: string;
@@ -22,13 +24,15 @@ export class TimeSeries   {
     They should not be instantiated directly
 */
 
-export class ProcessingModule extends NWBDataInterface {
+export class ProcessingModule 
+// extends NWBDataInterface 
+{
 
     description: string;
     dataInterfaces: {[x:string]: NWBDataInterface} = {}
 
-    constructor(name:string, description:string, interfaces:NWBDataInterface[]=[]) {
-        super(name)
+    constructor(_:string, description:string, interfaces:NWBDataInterface[]=[]) {
+        // super(name)
         this.description = description
         if (Array.isArray(interfaces)) interfaces.forEach(o => this.dataInterfaces[o.name] = o)
         else this.dataInterfaces = interfaces

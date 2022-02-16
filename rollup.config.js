@@ -13,6 +13,7 @@ import node_resolve from "@rollup/plugin-node-resolve";
 import { babel } from '@rollup/plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
 import { wasm } from '@rollup/plugin-wasm';
+import yaml from '@rollup/plugin-yaml';
 
 /**
  * @type {import('rollup').RollupOptions}
@@ -38,6 +39,7 @@ const config = {
       babelHelpers: 'bundled',
       plugins: ["@babel/plugin-proposal-class-properties"]
     }),
+    yaml(),
     css(),
     // Resolve bare module specifiers to relative paths
     resolve(),

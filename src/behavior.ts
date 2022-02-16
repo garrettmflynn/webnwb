@@ -1,12 +1,16 @@
-import { TimeSeries } from './base'
-import { NWBDataInterface } from './io/core'
+// import { TimeSeries } from './base'
+// import { NWBDataInterface } from './io/core'
 
-export class Position extends NWBDataInterface {
+export class Position 
+// extends NWBDataInterface 
+{
 
     series: {[x:string]: SpatialSeries} = {}
+    name: string;
 
     constructor(name:string='Position') {
-        super(name)
+        this.name = name
+        // super(name)
     }
 
     createSpatialSeries = (name:string, data:any, referenceFrame:string, unit:string='meters', options: {[x: string] : any}) => {
@@ -19,12 +23,16 @@ export class Position extends NWBDataInterface {
     }
 }
 
-export class SpatialSeries extends TimeSeries {
+export class SpatialSeries 
+// extends TimeSeries 
+{
 
     referenceFrame:string;
+    name:string;
 
-    constructor(name:string, data:any, referenceFrame:string, unit:string='meters', options: {[x: string] : any}) {
-        super(name, data, unit, options)
+    constructor(name:string, _:any, referenceFrame:string, __:string='meters', ___: {[x: string] : any}) {
+        // super(name, data, unit, options)
+        this.name = name
         this.referenceFrame = referenceFrame
     }
 

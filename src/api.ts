@@ -1,11 +1,15 @@
 import { ArbitraryObject, AttributeType, GroupType, LinkType, DatasetType } from './types';
 
+const latest = '2.4.0'
+import latestSchema from './schema/2.4.0'
+const schemas = new Map([[latest, {core: {[latest]: latestSchema}}]])
+
 type SpecificationType = {'core':ArbitraryObject} & ArbitraryObject
 // API Generator
-// Generates the NWB API from included specifications
+// Generates the NWB API from included specification
 export default class API {
 
-  _specifications: SpecificationType
+  _specification: SpecificationType
 //   NWBFile?: ArbitraryObject;
   _debug: boolean;
   _namespaceToSchema: ArbitraryObject = {};
@@ -13,17 +17,22 @@ export default class API {
 
   [x: string]: any;
 
-  constructor(specifications: SpecificationType, debug=false) {
+  constructor(
+      specification: SpecificationType = schemas.get(latest) ?? {core: {}}, // Fallback to latest schema or empty specification
+      debug=false // Show Debug Messages
+    ) {
     this._debug = debug
-    this._specifications = specifications
+    this._specification = specification
 
-    this._generate('core', specifications)
-    for (let key in specifications) {
-      if (key !== 'core') {
-        console.warn(`Loading ${key} extension.`)
-        this._generate(key,specifications)
-      }
-    }
+    for (let key in specification) this._load(key, specification)
+  }
+
+  _load = (key:string, specification:SpecificationType) => {
+
+    if (key !== 'core') console.warn(`Loading ${key} extension.`)
+    this._generate(key, specification) // Generate Classes from Specification
+    this._specification[key] = specification[key] // Add to Specification Registry
+
   }
 
 
@@ -135,16 +144,18 @@ export default class API {
     }
   }
 
-  _generate(key:string, specs: any = this._specifications) {
+  _generate(key:string, specs: any = this._specification) {
 
-    const o = specs[key]
+    const o = specs?.[key]
     const tick = performance.now()
     const version = Object.keys(o)[0]
 
-    const namespaceInfo = o[version]?.namespace?.value
+    // Account for File vs Schema Specification Formats
+    const namespaceInfo = o[version]?.namespace?.value ?? o[version]?.namespace // File OR Specification Format
+    const namespace = (typeof namespaceInfo === 'string') ? JSON.parse(namespaceInfo) : namespaceInfo
+
     const schemas:string[] = []
-    if (namespaceInfo){
-    const namespace = JSON.parse(namespaceInfo)
+    if (namespace){
     namespace.namespaces.forEach((namespace: any) => {
       this._namespaceToSchema[namespace.name] = {} // Track all generated objects on a flat map
       namespace.schema.forEach((schema: any) => {
@@ -157,14 +168,21 @@ export default class API {
           if (extension && !this.extensions[namespace.name]) this.extensions[namespace.name] = {}
 
           // Set Schema Information
-          const name = schema.source.replace('nwb.', '').replace('.extensions', '')
+          const name = schema.source
+                        .replace('nwb.', '')
+                        .replace('.extensions', '')
+                        .replace('.yaml', '')
+
           const base = (extension) ? this.extensions[namespace.name] : this
 
           // Don't Overwrite Redundant Namespaces / Schemas
           if (!base[name]){
             base[name] = {}
             schemas.push(name)
-            const info = JSON.parse(o[version][schema.source].value)
+
+            // Account for File vs Schema Specification Formats
+            const schemaInfo = o[version][schema.source]?.value ?? o[version][name]
+            const info = (typeof schemaInfo === 'string') ? JSON.parse(schemaInfo) : schemaInfo
 
             this._setFromObject(info, base[name])
 
@@ -188,6 +206,6 @@ export default class API {
 
     const tock = performance.now()
     if (this._debug) console.log(`Generated ${key} API in ${tock - tick} ms`)
-  } else console.warn('NWBJS API: Core unable to be generasted from file specifications.')
+  } else console.warn(`NWBJS API: ${key} unable to be generasted from file specification.`)
   }
 }

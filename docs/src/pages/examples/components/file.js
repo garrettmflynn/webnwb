@@ -17,6 +17,7 @@ function formatBytes(bytes, decimals = 2) {
 
 
 export default function FileExample() {
+  
 
 
   const links = {
@@ -102,6 +103,9 @@ export default function FileExample() {
     await import('https://cdn.plot.ly/plotly-2.9.0.min.js') // Loaded Plotly
 
     let nwb = await import('../../../../../src')
+
+    const api = new nwb.API()
+    console.log(api)
     let io = new nwb.IO(reader, true)
 
     for (let type in links) {

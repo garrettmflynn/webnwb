@@ -46,5 +46,10 @@
   },
   "peerDependencies": {
     "h5wasm": "^0.1.8"
+  },
+  "dependencies": {
+    "install": "^0.13.0",
+    "js-yaml": "^4.1.0",
+    "npm": "^8.5.0"
   }
 }
