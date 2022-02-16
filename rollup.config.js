@@ -25,7 +25,7 @@ const config = {
       file: pkg.main,
       format: 'umd', // the preferred format
       exports: 'named',
-      name: 'jsnwb'
+      name: 'nwb'
     },
     { file: pkg.module, format: 'es'  }
   ],

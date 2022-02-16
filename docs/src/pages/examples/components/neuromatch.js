@@ -12,10 +12,10 @@ export default function NeuromatchExample() {
   const examplePath = '../../data/FergusonEtAl2015.nwb'
 
   useEffect(async () => {
-    let jsnwb = await import('../../../../../src')
+    let nwb = await import('../../../../../src')
 
     // Load NWB File
-      const io = new jsnwb.NWBHDF5IO(reader)
+      const io = new nwb.IO(reader)
       let file = await io.fetch(examplePath)
       console.log('File', file)
 

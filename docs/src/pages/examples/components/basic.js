@@ -10,7 +10,7 @@ export default function DemoExample() {
 
   useEffect(async () => {
 
-    let jsnwb = await import('../../../../../src')
+    let nwb = await import('../../../../../src')
 
     const main = async () => {
 
@@ -21,7 +21,7 @@ export default function DemoExample() {
 
 
       const fileName = 'example_file_path.nwb'
-      const nwbFile = new jsnwb.NWBFile({
+      const nwbFile = new nwb.NWBFile({
         session_description: 'demonstrate NWBFile basics',
         identifier: 'NWB123',
         sessionStartTime,
@@ -33,7 +33,7 @@ export default function DemoExample() {
       const timestamps = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
       const data = Array.from(timestamps, e => 100 + e * 10)
 
-      const testTs = new jsnwb.TimeSeries('testTimeseries', data, 'm',
+      const testTs = new nwb.TimeSeries('testTimeseries', data, 'm',
         {
           // starting_time:0.0,
           // rate:1.0,
@@ -46,7 +46,7 @@ export default function DemoExample() {
 
       // 3. Save NWB File
       console.log('Write This', nwbFile)
-      const io = new jsnwb.NWBHDF5IO(reader)
+      const io = new nwb.IO(reader)
       io.write(nwbFile, fileName)
 
 
@@ -60,17 +60,17 @@ export default function DemoExample() {
 
       // 5. Add a Data Interface to the NWB File (https://pynwb.readthedocs.io/en/stable/overview_nwbFile.html#modules-overview)
 
-      const position = new jsnwb.behavior.Position()
+      const position = new nwb.behavior.Position()
       const positionData = Array.from({ length: 20 }, (e, i) => i * (1 / 20))
 
-      const spatialSeries = new jsnwb.behavior.SpatialSeries('position2', positionData, 'starting gate', { rate: 50 })
+      const spatialSeries = new nwb.behavior.SpatialSeries('position2', positionData, 'starting gate', { rate: 50 })
 
       position.addSpatialSeries(spatialSeries)
       position.createSpatialSeries('position1', positionData, 'starting gate', { rate: 50 })
 
       // 6. Add Processing Modules to the NWB File
       const behaviorModule = new nwbFile.createProcessingModule('behavior', 'preprocessed behavioral data')
-      const ecephysModule = new jsnwb.ProcessingModule('ecephys', 'preprocessed extracellular electrophysiology')
+      const ecephysModule = new nwb.ProcessingModule('ecephys', 'preprocessed extracellular electrophysiology')
       nwbFile.addProcessingModule(ecephysModule)
       console.log(nwbFile.processing)
       nwbFile.processing['behavior'].add(position) // TODO: Check since this was 'behavior'
@@ -87,7 +87,7 @@ export default function DemoExample() {
       nwbFile.addEpoch(6.0, 8.0, ['second', 'example'], [testTs,])
 
       // 8. Specify Other Time Interval in NWB File
-      //       sleepStages = new jsnwb.epoch.TimeIntervals(
+      //       sleepStages = new nwb.epoch.TimeIntervals(
       //           name="sleepStages",
       //           description="intervals for each sleep stage as determined by EEG",
       //       )
@@ -118,7 +118,7 @@ export default function DemoExample() {
       // const position2 = nwbFile2.processing['behavior'].dataInterfaces['Position']
       // const data2 = Array.from({length: 10}, (v,i) => 300 + 10*i)
 
-      // const testSpatialSeries = new jsnwb.behavior.SpatialSeries('test_spatialseries2', data2, 'starting_gate', {timestamps})
+      // const testSpatialSeries = new nwb.behavior.SpatialSeries('test_spatialseries2', data2, 'starting_gate', {timestamps})
       // position2.addSpatialSeries(testSpatialSeries)
       // io4.write(nwbFile2)
       // io4.close()

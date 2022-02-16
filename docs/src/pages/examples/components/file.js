@@ -53,6 +53,13 @@ export default function FileExample() {
       'Packer et al. 2015': [
         'https://raw.githubusercontent.com/OpenSourceBrain/CalciumImagingDriftingGrating/master/neurofinder.01.01.jpg.nwb'
       ]
+    },
+    'Functional Near Infrared Spectroscopy (fNIRS)': {
+      'Erat Sleiter et al. 2021': [
+        'https://api.dandiarchive.org/api/assets/37f5e3ce-e1b7-48a7-a47d-6745875eacaa/download/',
+        'https://api.dandiarchive.org/api/assets/3af36329-5e0c-4c20-a283-87207b5569f1/download/',
+        'https://api.dandiarchive.org/api/assets/24aac547-1947-4f3f-a6e7-354ad9f5122d/download/'
+      ]
     }
   }
 
@@ -94,8 +101,8 @@ export default function FileExample() {
 
     await import('https://cdn.plot.ly/plotly-2.9.0.min.js') // Loaded Plotly
 
-    let jsnwb = await import('../../../../../src')
-    let io = new jsnwb.NWBHDF5IO(reader, true)
+    let nwb = await import('../../../../../src')
+    let io = new nwb.IO(reader, true)
 
     for (let type in links) {
       const section = document.createElement('div')
@@ -260,7 +267,7 @@ export default function FileExample() {
 
     // 2. Allow User to Load their own NWB File
     input.current.onchange = async (ev) => {
-      io = new jsnwb.NWBHDF5IO(reader, true)
+      io = new nwb.IO(reader, true)
       // io.element = terminal.current
       name = ev.target.files[0].name
       await io.upload(ev)
