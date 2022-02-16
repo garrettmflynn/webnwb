@@ -95,7 +95,7 @@ export default function FileExample() {
     await import('https://cdn.plot.ly/plotly-2.9.0.min.js') // Loaded Plotly
 
     let jsnwb = await import('../../../../../src')
-    let io = new jsnwb.NWBHDF5IO(reader)
+    let io = new jsnwb.NWBHDF5IO(reader, true)
 
     for (let type in links) {
       const section = document.createElement('div')
@@ -260,7 +260,7 @@ export default function FileExample() {
 
     // 2. Allow User to Load their own NWB File
     input.current.onchange = async (ev) => {
-      io = new jsnwb.NWBHDF5IO(reader)
+      io = new jsnwb.NWBHDF5IO(reader, true)
       // io.element = terminal.current
       name = ev.target.files[0].name
       await io.upload(ev)

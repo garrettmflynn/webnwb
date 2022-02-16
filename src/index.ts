@@ -1,6 +1,140 @@
 // import * as reader from "h5wasm";
 import { NWBFile } from './file';
+import { ArbitraryObject, AttributeType, GroupType, LinkType, DatasetType } from './types/general.types';
 // import { TimeSeries } from './base';
+
+
+type SpecificationType = {'core':ArbitraryObject} & ArbitraryObject
+// API Generator
+// Generates the NWB API from included specifications
+export class API {
+
+  NWBFile?: ArbitraryObject;
+  debug: boolean;
+  _namespaceToSchema: ArbitraryObject = {};
+  [x: string]: any;
+
+  constructor(specifications: SpecificationType, debug=false) {
+    this.debug = debug
+    this._generateCore(specifications.core)
+  }
+
+
+  _inherit = (namespace: string, key:string, parentObject?:ArbitraryObject) => {
+    const schema = this._namespaceToSchema[namespace][key]
+    if (!parentObject) parentObject = this[schema]
+
+    if (parentObject){
+      const o = parentObject[key]
+
+      const inheritedName = o.inherits
+      const inheritedSchema = this._namespaceToSchema[namespace][inheritedName]
+      const inherit = (inheritedSchema) ? this[inheritedSchema][inheritedName] : undefined
+      delete parentObject[key].inherits
+
+      if (inherit) {
+        if (inherit.inherits) this._inherit(namespace, inheritedName) // Finish inheritance for parent first
+        const deep = JSON.parse(JSON.stringify(inherit))
+      
+        parentObject[key] = Object.assign(deep, o)
+      } else if (o.inherits) console.log(`Cannot inherit ${inheritedName}`, o, namespace, schema, key)
+
+      // Drill Into Objects
+      if (typeof parentObject[key] === 'object')for (let k in parentObject[key]) this._inherit(namespace, k, parentObject[key])
+    }
+  }
+  
+
+  _setFromObject(o: any, aggregator: ArbitraryObject = {}) {
+
+    const name = o.neurodata_type_def ?? o.name ?? o.default_name
+    const inherit = o.neurodata_type_inc
+
+    // console.log(inherit, this.core[inherit])
+
+    if (name) aggregator[name] = o.value ?? o.default_value ?? {}
+
+
+
+    // Skip Checking Links
+    if (inherit && aggregator[name]) {
+      aggregator[name].inherits = inherit
+    }
+
+
+    // Attributes
+    if (o.attributes) {
+      o.attributes.forEach((attr: AttributeType) => {
+        this._setFromObject(attr, aggregator[name] ?? aggregator)
+      })
+    }
+
+    // Groups
+    if (o.groups) {
+      o.groups.forEach((group: GroupType) => {
+        // console.log('Group', group)
+        this._setFromObject(group, aggregator[name] ?? aggregator)
+        // aggregator[name][attr.name] = attr.value ?? attr.default_value
+      })
+
+    }
+
+    // Links
+    if (o.links) {
+      o.links.forEach((link: LinkType) => {
+        // console.log('Link', link)
+        this._setFromObject(link, aggregator[name] ?? aggregator)
+
+        // aggregator[name][attr.name] = attr.value ?? attr.default_value
+      })
+    }
+
+    // Datasets
+    if (o.datasets) {
+      o.datasets.forEach((dataset: DatasetType) => {
+        // console.log('Dataset', dataset)
+        this._setFromObject(dataset, aggregator[name] ?? aggregator)
+      })
+    }
+  }
+
+  _generateCore(o: any) {
+
+    const tick = performance.now()
+    const version = Object.keys(o)[0]
+
+    const namespace = JSON.parse(o[version].namespace.value)
+    namespace.namespaces.forEach((namespace: any) => {
+      this._namespaceToSchema[namespace.name] = {} // Track all generated objects on a flat map
+      namespace.schema.forEach((schema: any) => {
+
+        // Grabbing Schema
+        if (schema.source) {
+          const name = schema.source.replace('nwb.', '')
+          this[name] = {}
+          const info = JSON.parse(o[version][schema.source].value)
+
+          this._setFromObject(info, this[name])
+
+          // Register Objects
+          for (let key in this[name]){
+            this._namespaceToSchema[namespace.name][key] = name
+          }
+        }
+      })
+
+      // Ensure All Namespace Objects Inherit from Each Other
+      for (let key in this._namespaceToSchema[namespace.name]) {
+        this._inherit(namespace.name, key)
+      }
+    })
+
+    const tock = performance.now()
+    if (this.debug) console.log(`Generated core API in ${tock - tick} ms`)
+  }
+}
+
+
 
 export class NWBHDF5IO {
 
@@ -10,12 +144,14 @@ export class NWBHDF5IO {
     name: string,
     read?: any,
     write?: any,
-    nwb: NWBFile,
+    nwb?: NWBFile,
   }> = new Map();
+
+  apis: Map<string, API> = new Map()
 
 
   // Note: Must pass an "h5wasm" instance here
-  constructor(reader:any, debug=false) {
+  constructor(reader: any, debug = false) {
     this.reader = reader;
     this.debug = debug;
   }
@@ -38,9 +174,9 @@ export class NWBHDF5IO {
   }
 
   // Allow Download of NWB-Formatted HDF5 Files fromthe  Browser
-  download = (name:string, file:any) => {
+  download = (name: string, file: any) => {
     if (!file) file = (name) ? this.files.get(name) : [...this.files.values()][0]
-    if (file){
+    if (file) {
       if (!name) name = file.name // Get Default Name
       if (file.write) file.write.flush();
       if (file.read) file.read.flush();
@@ -68,67 +204,67 @@ export class NWBHDF5IO {
   }
 
   // Fetch NWB Files from a URL
-  fetch = async (url: string, name:string = 'default.nwb', progressCallback: (ratio: number, length: number) => void = () => { }) => {
-    
+  fetch = async (url: string, fileName: string = 'default.nwb', progressCallback: (ratio: number, length: number) => void = () => { }) => {
+
     //  Get File from Name
-    let {nwb} = this.files.get(name) ?? {}
+    let o = this.files.get(fileName) ?? { nwb: undefined }
 
     // Only Fetch if NO Locally Cached Version
-    if (!nwb){
+    if (!o.nwb) {
 
-    const tick = performance.now()
+      const tick = performance.now()
 
-    let response = await fetch(url).then(res => {
+      let response = await fetch(url).then(res => {
 
-      // Use the Streams API
-      if (res.body) {
-        const reader = res.body.getReader()
-        const length = res.headers.get("Content-Length") as any
-        let received = 0
+        // Use the Streams API
+        if (res.body) {
+          const reader = res.body.getReader()
+          const length = res.headers.get("Content-Length") as any
+          let received = 0
 
-        // On Stream Chunk
-        const stream = new ReadableStream({
-          start(controller) {
+          // On Stream Chunk
+          const stream = new ReadableStream({
+            start(controller) {
 
-            const push = async () => {
+              const push = async () => {
 
-              reader.read().then(({ value, done }) => {
-                if (done) {
-                  controller.close();
-                  return;
-                }
+                reader.read().then(({ value, done }) => {
+                  if (done) {
+                    controller.close();
+                    return;
+                  }
 
-                received += value?.length ?? 0
-                progressCallback(received / length, length)
-                controller.enqueue(value);
-                push()
-              })
+                  received += value?.length ?? 0
+                  progressCallback(received / length, length)
+                  controller.enqueue(value);
+                  push()
+                })
+              }
+
+              push()
             }
+          })
 
-            push()
-          }
-        })
-
-        // Read the Response
-        return new Response(stream, { headers: res.headers });
-      } else return new Response()
-    })
+          // Read the Response
+          return new Response(stream, { headers: res.headers });
+        } else return new Response()
+      })
 
 
-    let ab = await response.arrayBuffer();
+      let ab = await response.arrayBuffer();
 
-    const tock = performance.now()
+      const tock = performance.now()
 
-    if (this.debug) console.log(`Fetched in ${tock - tick} ms`)
+      if (this.debug) console.log(`Fetched in ${tock - tick} ms`)
 
-    await this._write(name, ab)
-    nwb = this.read(name)
-  } else if (this.debug) console.log(`Returning cached version.`)
-    return nwb
+      await this._write(fileName, ab)
+      o.nwb = this.read(fileName)
+    } else if (this.debug) console.log(`Returning cached version.`)
+    return o.nwb
   }
 
   // Iteratively Check FS to Write File
-  _write = (name:string, ab: ArrayBuffer) => {
+  _write = (name: string, ab: ArrayBuffer) => {
     return new Promise(resolve => {
       const tick = performance.now()
 
@@ -145,7 +281,7 @@ export class NWBHDF5IO {
   }
 
   // ---------------------- Core HDF5IO Methods ----------------------
-  read = (name=[...this.files.keys()][0]) => {
+  read = (name = [...this.files.keys()][0]) => {
 
     let file = this.get(name, 'r')
 
@@ -153,53 +289,66 @@ export class NWBHDF5IO {
 
       const tick = performance.now()
 
+      let api:API;
 
-        let parseGroup = (o: any, aggregator: { [x: string]: any } = {}) => {
+      // Parse File Information with API Knowledge
+      let parseGroup = (o: any, aggregator: { [x: string]: any } = {}) => {
 
-          // Set Attributes
-          if (o instanceof this.reader.Dataset) {
-            if (Object.keys(aggregator)) aggregator.value = o.value
-            else aggregator = o.value
-          } else if (!o.attrs.value) {
-            for (let a in o.attrs) {
-              aggregator[a] = o.attrs[a].value // Exclude shape and dType
-            }
+        // Set Attributes
+        if (o instanceof this.reader.Dataset) {
+          if (Object.keys(aggregator)) aggregator.value = o.value
+          else aggregator = o.value
+        } else if (!o.attrs.value) {
+          for (let a in o.attrs) {
+            aggregator[a] = o.attrs[a].value // Exclude shape and dType
           }
-
-          // Drill Group
-          if (o.keys instanceof Function) {
-            let keys = o.keys()
-            keys.forEach((k: string) => {
-              const group = o.get(k)
-              aggregator[k] = parseGroup(group, aggregator[k])
-            })
-          }
-
-          return aggregator
         }
 
-        parseGroup(file.read, file.nwb)
+        // Drill Group
+        if (o.keys instanceof Function) {
+          let keys = o.keys()
+          keys.forEach((k: string) => {
+            const group = o.get(k)
+            aggregator[k] = parseGroup(group, aggregator[k])
+          })
+        }
 
-        // if (!file.write) this.close()
+        return aggregator
+      }
 
-        const tock = performance.now()
-        if (this.debug) console.log(`Read file in ${tock - tick} ms`)
-        return file.nwb
+      // Immediately Grab Version + Specification
+      let version = file.read.attrs['nwb_version'].value
+      let specifications = parseGroup(file.read.get('specifications'), {})
+      
+      api = this.apis.get(version) ?? new API(specifications as any, this.debug)
+      this.apis.set(version, api)      
+
+      // Parse All Information
+      const aggregator = JSON.parse(JSON.stringify(api.file.NWBFile))
+      parseGroup(file.read, aggregator)
+
+      file.nwb = new NWBFile(aggregator)
+
+      // if (!file.write) this.close()
+
+      const tock = performance.now()
+      if (this.debug) console.log(`Read file in ${tock - tick} ms`)
+      return file.nwb
 
     } else return
   }
 
   // Get File by Name
-  get = (name:string = [...this.files.keys()][0], mode?:string) => {
+  get = (name: string = [...this.files.keys()][0], mode?: string) => {
 
     let o = this.files.get(name)
 
     if (!o) {
-      o = {name, nwb: new NWBFile()}
+      o = { name, nwb: undefined }
       this.files.set(name, o)
     }
 
-    if (mode){
+    if (mode) {
       let hdf5 = new this.reader.File(name, mode);
       if (mode === 'w') o.write = hdf5
       else if (mode === 'r') o.read = hdf5
@@ -211,7 +360,7 @@ export class NWBHDF5IO {
     // else throw 'File does not exist.'
   }
 
-  write = (o: NWBFile, name=[...this.files.keys()][0]) => {
+  write = (o: NWBFile, name = [...this.files.keys()][0]) => {
 
     let file = this.get(name, 'w')
 
@@ -259,9 +408,9 @@ export class NWBHDF5IO {
     }
   }
 
-  close = (name=[...this.files.keys()][0]) => {
+  close = (name = [...this.files.keys()][0]) => {
     const fileObj = this.files.get(name)
-    if (fileObj){
+    if (fileObj) {
       if (fileObj.read) fileObj.read.close()
       if (fileObj.write) fileObj.write.close()
 
