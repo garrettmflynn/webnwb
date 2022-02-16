@@ -9,6 +9,7 @@ type SpecificationType = {'core':ArbitraryObject} & ArbitraryObject
 // Generates the NWB API from included specifications
 export class API {
 
+  specifications: SpecificationType
   NWBFile?: ArbitraryObject;
   debug: boolean;
   _namespaceToSchema: ArbitraryObject = {};
@@ -16,7 +17,10 @@ export class API {
 
   constructor(specifications: SpecificationType, debug=false) {
     this.debug = debug
+    this.specifications = specifications
     this._generateCore(specifications.core)
+
+    for (let key in specifications) if (key !== 'core') console.warn(`${key} specification ignored.`)
   }
 
 
@@ -98,12 +102,14 @@ export class API {
     }
   }
 
-  _generateCore(o: any) {
+  _generateCore(o: any = {}) {
 
     const tick = performance.now()
     const version = Object.keys(o)[0]
 
-    const namespace = JSON.parse(o[version].namespace.value)
+    const namespaceInfo = o[version]?.namespace?.value
+    if (namespaceInfo){
+    const namespace = JSON.parse(namespaceInfo)
     namespace.namespaces.forEach((namespace: any) => {
       this._namespaceToSchema[namespace.name] = {} // Track all generated objects on a flat map
       namespace.schema.forEach((schema: any) => {
@@ -131,6 +137,7 @@ export class API {
 
     const tock = performance.now()
     if (this.debug) console.log(`Generated core API in ${tock - tick} ms`)
+  } else console.warn('NWBJS API: Core unable to be generated from file specifications.')
   }
 }
 
@@ -289,11 +296,12 @@ export class NWBHDF5IO {
 
       const tick = performance.now()
 
-      let api:API;
+      let api: any = {}
 
       // Parse File Information with API Knowledge
       let parseGroup = (o: any, aggregator: { [x: string]: any } = {}) => {
 
+        if (o){
         // Set Attributes
         if (o instanceof this.reader.Dataset) {
           if (Object.keys(aggregator)) aggregator.value = o.value
@@ -312,19 +320,24 @@ export class NWBHDF5IO {
             aggregator[k] = parseGroup(group, aggregator[k])
           })
         }
+        }
 
         return aggregator
       }
 
       // Immediately Grab Version + Specification
       let version = file.read.attrs['nwb_version'].value
-      let specifications = parseGroup(file.read.get('specifications'), {})
-      
-      api = this.apis.get(version) ?? new API(specifications as any, this.debug)
-      this.apis.set(version, api)      
 
-      // Parse All Information
-      const aggregator = JSON.parse(JSON.stringify(api.file.NWBFile))
+      let specifications = parseGroup(file.read.get('specifications'), {})
+      if (specifications){
+        api = this.apis.get(version) ?? new API(specifications as any, this.debug)
+        this.apis.set(version, api)   
+      } 
+
+      // Parse All Information (fallback to object aggregation if no api)
+      let aggregator = {}
+      if (api?.file?.NWBFile) aggregator = JSON.parse(JSON.stringify(api.file.NWBFile))
+      else console.warn('API generation failed. Will parse the raw file structure instead.')
       parseGroup(file.read, aggregator)
 
       file.nwb = new NWBFile(aggregator)
