@@ -51,7 +51,7 @@ export default function FileExample() {
     },
     'Calcium fluorescence imaging (image series)': {
       'Packer et al. 2015': [
-        'https://raw.githubusercontent.com/OpenSourceBrain/CalciumImagingDriftingGrating/master/neurofinder.01.01.png.nwb'
+        'https://raw.githubusercontent.com/OpenSourceBrain/CalciumImagingDriftingGrating/master/neurofinder.01.01.jpg.nwb'
       ]
     }
   }
