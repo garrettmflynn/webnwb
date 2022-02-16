@@ -15,11 +15,51 @@ function formatBytes(bytes, decimals = 2) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
+
 export default function FileExample() {
 
-  const local = useRef(null);
-  const calciumButton = useRef(null);
-  const calcium_jpgButton = useRef(null);
+
+  const links = {
+    'Intracellular Electrophysiology':
+    {
+      'Ferguson et al. 2015': [
+        'https://raw.githubusercontent.com/OpenSourceBrain/NWBShowcase/master/FergusonEtAl2015/FergusonEtAl2015.nwb',
+        'https://raw.githubusercontent.com/OpenSourceBrain/NWBShowcase/master/FergusonEtAl2015/FergusonEtAl2015_PYR2.nwb',
+        'https://raw.githubusercontent.com/OpenSourceBrain/NWBShowcase/master/FergusonEtAl2015/FergusonEtAl2015_PYR3.nwb',
+        'https://raw.githubusercontent.com/OpenSourceBrain/NWBShowcase/master/FergusonEtAl2015/FergusonEtAl2015_PYR4.nwb',
+        'https://raw.githubusercontent.com/OpenSourceBrain/NWBShowcase/master/FergusonEtAl2015/FergusonEtAl2015_PYR5_rebound.nwb'
+      ],
+      'Lantyer et al. 2018': [
+        'https://raw.githubusercontent.com/vrhaynes/NWBShowcase/master/Lantyer/LantyerEtAl2018_170502_AL_257_CC.nwb',
+        'https://raw.githubusercontent.com/vrhaynes/NWBShowcase/master/Lantyer/LantyerEtAl2018_170315_AL_216_VC.nwb',
+        'https://raw.githubusercontent.com/vrhaynes/NWBShowcase/master/Lantyer/LantyerEtAl2018_170328_AB_277_ST50_C.nwb',
+        'https://raw.githubusercontent.com/vrhaynes/NWBShowcase/master/Lantyer/LantyerEtAl2018_170328_AL_238_VC.nwb',
+        'https://raw.githubusercontent.com/vrhaynes/NWBShowcase/master/Lantyer/LantyerEtAl2018_171220_NC_156_ST100_C.nwb',
+        'https://raw.githubusercontent.com/vrhaynes/NWBShowcase/master/Lantyer/LantyerEtAl2018_180817_ME_9_CC.nwb'
+      ],
+      'Lanore et al. 2019': [
+        'https://raw.githubusercontent.com/OpenSourceBrain/NWBShowcase/master/IgorPro/141210c3.nwb'
+      ],
+    },
+    'Calcium fluorescence imaging (time series)': {
+      'Triplett et al. 2018': [
+        'https://raw.githubusercontent.com/OpenSourceBrain/NWBShowcase/master/TriplettEtAl2018/TriplettEtAl2018.nwb'
+      ],
+      'Kato et al. 2015': [
+        'https://raw.githubusercontent.com/OpenSourceBrain/NWBShowcase/master/KatoEtAl2015/KatoEtAl2018.WT_Stim.6.nwb'
+      ]
+    },
+    'Calcium fluorescence imaging (image series)': {
+      'Packer et al. 2015': [
+        'https://raw.githubusercontent.com/OpenSourceBrain/CalciumImagingDriftingGrating/master/neurofinder.01.01.png.nwb'
+      ]
+    }
+  }
+
+  let file, name, loader;
+
+  const buttons = useRef(null);
+
   const gallery = useRef(null);
 
   const normal = useRef(null);
@@ -34,10 +74,6 @@ export default function FileExample() {
   const progressDiv = useRef(null);
   const loaderDiv = useRef(null);
 
-  const intracellular = '../../data/intracellular.nwb'
-  const calcium_jpg = '../../data/calcium.jpg.nwb'
-  const calcium = '../../data/calcium.nwb'
-
   // let twophoton = 'https://api.dandiarchive.org/api/assets/827b4c2f-4235-4350-b40f-02e120211dcd/download/'
 
   useEffect(async () => {
@@ -48,7 +84,12 @@ export default function FileExample() {
       align-items: center;
     `
 
-    let loader = new components.Loader({color: '#7aff80', type: 'linear'})
+    loader = new components.Loader({ color: '#7aff80', type: 'linear', text: 'Select a file', showPercent: false, textBackground: 'black', textColor: 'white'})
+    loader.style = 'position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;'
+    // loader.text = 'No file'
+    // loader.textBackground = 'black'
+    // loader.textColor = 'white'
+
     loaderDiv.current.insertAdjacentElement('beforeend', loader)
 
     await import('https://cdn.plot.ly/plotly-2.9.0.min.js') // Loaded Plotly
@@ -56,45 +97,77 @@ export default function FileExample() {
     let jsnwb = await import('../../../../../src')
     let io = new jsnwb.NWBHDF5IO(reader)
 
-    let file = intracellular
-    let name = 'intracellular.nwb'
-    function runFetch() {
-      // io.element = terminal.current
+    for (let type in links) {
+      const section = document.createElement('div')
+      const header = document.createElement('h3')
+      header.innerHTML = type
+      section.insertAdjacentElement('afterbegin', header)
 
-      io.fetch(file, name, (ratio, length) => {
+      for (let paperName in links[type]) {
+        const paper = document.createElement('div')
+        const linkArr = links[type][paperName]
 
-        progressDiv.current.innerHTML = `${formatBytes(ratio*length,2)} of ${formatBytes(length, 2)}`
-        loader.progress = ratio
+        if (linkArr.length > 1){
+          const h4 = document.createElement('h4')
+          h4.innerHTML = paperName
+          paper.insertAdjacentElement('afterbegin', h4)
+        }
 
-      }).then(async (file) => {
+        linkArr.forEach((src, i) => {
+          const button = document.createElement('button')
+          button.class = 'button button--secondary button'
+          // const link = document.createElement('a')
+          // link.insertAdjacentElement('beforeend', button)
+          // link.src = src
 
-        plot.current.innerHTML = ''
+          const displayName = `${(linkArr.length > 1) ? `${paperName.split(' ')[0]} ${i + 1}` : `${paperName}`}`
+          button.innerHTML = displayName
+          paper.insertAdjacentElement('beforeend', button)
+          button.onclick = () => {
+            loader.progress = 0
+            file = src
+            name = `${displayName.replaceAll(/\s+/g, '')}.nwb` // Must change name for new files to request
+            console.log(name)
+            runFetch()
+          }
+        })
 
-        console.log('File', file)
-        progressDiv.current.innerHTML = 'Loaded ' + name + '. Check the console for output.'
+        section.insertAdjacentElement('beforeend', paper)
+      }
+      buttons.current.insertAdjacentElement('beforeend', section)
 
-        
-        // file.acquisition
-        let key = Object.keys(file.acquisition)[0]
-        let stimKey = Object.keys(file.stimulus.presentation)[0]
+    }
 
-        const lines = []
+    async function parseFile(file){
+      loader.progress = 1
+      plot.current.innerHTML = ''
+      gallery.current.innerHTML = ''
+
+      console.log('File', file)
+      // progressDiv.current.innerHTML = 'Loaded ' + name + '. Check the console for output.'
 
 
-        // Show Images
-        if (file.acquisition[key].external_file){
+      // file.acquisition
+      let key = Object.keys(file.acquisition)[0]
+      let stimKey = Object.keys(file.stimulus.presentation)[0]
 
-          let waiter = new components.Loader({showPercent: false})
-          waiter.style.margin = `50px`;
-          plot.current.insertAdjacentElement('beforeend', waiter)
+      const lines = []
 
-          function createImg(src, outputFormat) {
-            return new Promise(resolve => {
+
+      // Show Images
+      if (file.acquisition[key].external_file) {
+
+        let waiter = new components.Loader({ showPercent: false })
+        waiter.style.margin = `50px`;
+        plot.current.insertAdjacentElement('beforeend', waiter)
+
+        function createImg(src) {
+          return new Promise(resolve => {
             // Create an Image object
             var img = new Image();
             // Add CORS approval to prevent a tainted canvas
             img.crossOrigin = 'Anonymous';
-            img.onload = function() {
+            img.onload = function () {
               resolve(img);
             };
             // Load the image
@@ -108,80 +181,70 @@ export default function FileExample() {
             }
           })
 
-          }
-
-          const arr = await Promise.all(file.acquisition[key].external_file.value.map((src) => createImg(src)))
-
-
-          arr.forEach(o => {
-            o.style.width = '100px'
-            o.style.height = 'auto'
-            gallery.current.insertAdjacentElement('beforeend', o)
-          })
-
-          waiter.remove()
-          waiter = undefined
-        }
-        
-        // Show TimeSeries
-        else {
-
-          console.log('Data', file.acquisition[key])
-          const dataValue = file.acquisition[key].data?.value
-
-          if (key) lines.push({
-            name: 'Acquisition',
-            x: file.acquisition[key]?.timestamps?.value ?? Array.from({length: dataValue.length}, (_,i) => i),
-            y: dataValue
-          })
         }
 
+        const arr = await Promise.all(file.acquisition[key].external_file.value.map((src) => createImg(src)))
 
-        // Show Stimulus
-        if (stimKey) lines.push({
-          name: 'Stimulus',
-          x: file.stimulus.presentation[stimKey]?.timestamps?.value ?? Array.from({length: file.stimulus.presentation[stimKey].data.value.length}, (_,i) => i),
-          y: file.stimulus.presentation[stimKey].data.value,
-          yaxis: 'y2',
-          opacity: 0.5,
+
+        arr.forEach(o => {
+          o.style.width = '100px'
+          o.style.height = 'auto'
+          gallery.current.insertAdjacentElement('beforeend', o)
         })
 
-        console.log(lines)
-        if (lines.length > 0) Plotly.newPlot( plot.current, lines, {
-          title: key ?? stimKey,
-          margin: { t: 0 },
-          yaxis: {title: 'Acquisition'},
-          yaxis2: {
-            title: 'Stimulus',
-            titlefont: {color: 'rgb(148, 103, 189)'},
-            tickfont: {color: 'rgb(148, 103, 189)'},
-            overlaying: 'y',
-            side: 'right'
-          }
-        } );
+        waiter.remove()
+        waiter = undefined
+      }
 
+      // Show TimeSeries
+      else {
+
+        const dataValue = file.acquisition[key].data?.value
+
+        if (key) lines.push({
+          name: 'Acquisition',
+          x: file.acquisition[key]?.timestamps?.value ?? Array.from({ length: dataValue.length }, (_, i) => i),
+          y: dataValue
+        })
+      }
+
+
+      // Show Stimulus
+      if (stimKey) lines.push({
+        name: 'Stimulus',
+        x: file.stimulus.presentation[stimKey]?.timestamps?.value ?? Array.from({ length: file.stimulus.presentation[stimKey].data.value.length }, (_, i) => i),
+        y: file.stimulus.presentation[stimKey].data.value,
+        yaxis: 'y2',
+        opacity: 0.5,
+      })
+
+      if (lines.length > 0) Plotly.newPlot(plot.current, lines, {
+        title: key ?? stimKey,
+        margin: { t: 0 },
+        yaxis: { title: 'Acquisition' },
+        yaxis2: {
+          title: 'Stimulus',
+          titlefont: { color: 'rgb(148, 103, 189)' },
+          tickfont: { color: 'rgb(148, 103, 189)' },
+          overlaying: 'y',
+          side: 'right'
+        }
+      });
+  }
+
+    function runFetch() {
+      // io.element = terminal.current
+
+      io.fetch(file, name, (ratio, length) => {
+
+        loader.progress = ratio
+        loader.text = `${formatBytes(ratio * length, 2)} of ${formatBytes(length, 2)} downloaded.`
+
+      }).then(async (file) => {
+        parseFile(file)
       })
     }
 
-      // 1. Fetch and Save Remote NWB File
-    local.current.onclick = () => {
-      file = intracellular
-      name = 'intracellular.nwb'
-      runFetch()
-    }
-
-    calciumButton.current.onclick = () => {
-      file = calcium
-      name = 'calcium.nwb'
-      runFetch()
-    }
-
-    calcium_jpgButton.current.onclick = () => {
-      file = calcium_jpg
-      name = 'calcium.jpg.nwb'
-      runFetch()
-    }
-    
     normal.current.onclick = () => {
       file = 'https://api.dandiarchive.org/api/assets/1d82605e-be09-4519-8ae1-6977b91a4526/download/'
       name = 'normal.nwb'
@@ -203,7 +266,8 @@ export default function FileExample() {
       await io.upload(ev)
       let file = io.read(name)
       console.log('File', file)
-      output.current.innerHTML = 'Loaded ' + name + '. Check the console for output.'
+      parseFile(file)
+      // output.current.innerHTML = 'Loaded ' + name + '. Check the console for output.'
     }
 
 
@@ -217,23 +281,26 @@ export default function FileExample() {
     <header className={clsx('hero hero--primary')}>
       <div className="container">
         <h1>File Test</h1>
-        <span ref={progressDiv}>...</span>
-        <br/><br/>
+        {/* <span ref={progressDiv}>...</span> */}
+        {/* <br /><br /> */}
         <div ref={loaderDiv}></div>
-        <br/><br/>
+        {/* <br /><br /> */}
         <div>
-          <button ref={local} className="button button--secondary button">Local Intracellular File</button>
-          <button ref={calciumButton} className="button button--secondary button">Local Calcium Imaging File</button>
-          <button ref={calcium_jpgButton} className="button button--secondary button">Local Calcium Imaging File (Images)</button>
-          <br/><br/>
-          <button ref={normal} className="button button--secondary button">Normal File</button>
-          <button ref={huge} className="button button--secondary button">Huge File</button>
+          <h2>NWB Showcase</h2>
+          <div ref={buttons}></div>
 
+          <br /><br />
+          <h2>DANDI</h2>
+          <button ref={normal}>Normal File</button>
+          <button ref={huge}>Huge File</button>
+
+          <br /><br />
+          <h2>Local Actions</h2>
           <input type={'file'} ref={input}></input>
-          <button ref={get} className="button button--secondary button--sm">Download</button>
+          <button ref={get}>Download</button>
         </div>
 
-        <br/><br/>
+        <br /><br />
         <div ref={plot}></div>
         <div ref={gallery}></div>
 
