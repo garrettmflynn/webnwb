@@ -1,8 +1,6 @@
 import { ArbitraryObject, AttributeType, GroupType, LinkType, DatasetType } from './types';
-
-const latest = '2.4.0'
-import latestSchema from './schema/2.4.0'
-const schemas = new Map([[latest, {core: {[latest]: latestSchema}}]])
+import schemas from './schema'
+const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 
 type SpecificationType = {'core':ArbitraryObject} & ArbitraryObject
 // API Generator
@@ -18,7 +16,7 @@ export default class API {
   [x: string]: any;
 
   constructor(
-      specification: SpecificationType = schemas.get(latest) ?? {core: {}}, // Fallback to latest schema or empty specification
+      specification: SpecificationType = schemas[latest] ?? {core: {}}, // Fallback to latest schema or empty specification
       debug=false // Show Debug Messages
     ) {
     this._debug = debug
