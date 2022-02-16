@@ -1,12 +1,14 @@
 {
   "name": "jsnwb",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "A JavaScript API for working with Neurodata stored in the NWB Format",
-  "main": "./dist/index.js",
-  "module": "./dist/index.esm.js",
-  "browser": "./dist/index.browser.js",
-  "type": "module",
-  "types": "./dist/index.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "browser": {
+    "dist/index.js": "dist/index.js",
+    "dist/index.esm.js": "dist/index.esm.js"
+  },
+  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
