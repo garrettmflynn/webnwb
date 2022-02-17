@@ -6,6 +6,11 @@ Neurodata without Borders — directly on the browser.
 ![size](https://img.shields.io/github/size/brainsatplay/jsnwb)
 ![lic](https://img.shields.io/npm/l/jsnwb)
 
+## TODO
+- Differentiate Datasets and Groups
+- Handle links, references, and tables with reference
+
+
 ## Dependencies
 **h5wasm:** https://github.com/usnistgov/h5wasm
 > Note: [h5wasm](https://github.com/usnistgov/h5wasm) cannot be bundled with Rollup, so it's required as an argument to the `jsnwb.NWBHDF5IO` class.
