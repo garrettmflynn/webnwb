@@ -8,3 +8,5 @@ docs/docs/reference
 **/dist
 **.lock
 **.log
+
+*-lock/.j

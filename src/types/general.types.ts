@@ -19,6 +19,7 @@ export type DatasetType = {
     shape?: any[][]
     quantity?: string
     neurodata_type_inc?: string // Inherited object
+    data_type_inc?: string // Inherited object
 }
 
 export type ArbitraryObject = {[x:string]: any}
@@ -31,6 +32,9 @@ export type LinkType = {
 
 export type GroupType = {
     doc: string // Explanation
+    neurodata_type_def: string // Base object
+    data_type_def: string // Base object
     neurodata_type_inc: string // Inherited object
+    data_type_inc: string // Inherited object
     quantity: string // Amount?
 }

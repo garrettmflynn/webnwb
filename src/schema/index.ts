@@ -1,13 +1,12 @@
 import { ArbitraryObject } from '../types/general.types'
 
 // Types
-const latest = '2.4.0'
-import latestCore from './2.4.0'
+import {core, hdmf} from './2.4.0'
 
-// Note: Always place in reverse release order
-const schemas:ArbitraryObject = {
-    [latest]: {core: {[latest]: latestCore}},
-    // [ Add older or newer versions here ]
-}
+const schemas:ArbitraryObject = [
+    // [ Add newer versions here ]
+    {core, hdmf},
+    // [ Add older versions here ]
+]
 
 export default schemas

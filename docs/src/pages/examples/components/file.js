@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import clsx from 'clsx';
-import * as reader from 'h5wasm'
 import * as components from '../../../../static/libraries/components/dist/index.esm'
+
 
 function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
@@ -100,13 +100,11 @@ export default function FileExample() {
 
     loaderDiv.current.insertAdjacentElement('beforeend', loader)
 
-    await import('https://cdn.plot.ly/plotly-2.9.0.min.js') // Loaded Plotly
+    let reader = await import('h5wasm')
 
-    let nwb = await import('../../../../../src')
-
-    const api = new nwb.API()
-    console.log(api)
-    let io = new nwb.IO(reader, true)
+    const Plotly = await import('../../../../static/libraries/plotly/plotly-2.9.0.min') // Loaded Plotly
+    let nwb = (await import('../../../../../src'))?.default
+    let io = new nwb.NWBHDF5IO(reader, true)
 
     for (let type in links) {
       const section = document.createElement('div')
@@ -194,7 +192,7 @@ export default function FileExample() {
 
         }
 
-        const arr = await Promise.all(file.acquisition[key].external_file.value.map((src) => createImg(src)))
+        const arr = await Promise.all(file.acquisition[key].external_file.map((src) => createImg(src)))
 
 
         arr.forEach(o => {
@@ -210,11 +208,11 @@ export default function FileExample() {
       // Show TimeSeries
       else {
 
-        const dataValue = file.acquisition[key].data?.value
+        const dataValue = file.acquisition[key].data
 
         if (key) lines.push({
           name: 'Acquisition',
-          x: file.acquisition[key]?.timestamps?.value ?? Array.from({ length: dataValue.length }, (_, i) => i),
+          x: file.acquisition[key]?.timestamps ?? Array.from({ length: dataValue.length }, (_, i) => i),
           y: dataValue
         })
       }
@@ -223,8 +221,8 @@ export default function FileExample() {
       // Show Stimulus
       if (stimKey) lines.push({
         name: 'Stimulus',
-        x: file.stimulus.presentation[stimKey]?.timestamps?.value ?? Array.from({ length: file.stimulus.presentation[stimKey].data.value.length }, (_, i) => i),
-        y: file.stimulus.presentation[stimKey].data.value,
+        x: file.stimulus.presentation[stimKey]?.timestamps ?? Array.from({ length: file.stimulus.presentation[stimKey].data.length }, (_, i) => i),
+        y: file.stimulus.presentation[stimKey].data,
         yaxis: 'y2',
         opacity: 0.5,
       })
@@ -271,7 +269,7 @@ export default function FileExample() {
 
     // 2. Allow User to Load their own NWB File
     input.current.onchange = async (ev) => {
-      io = new nwb.IO(reader, true)
+      io = new nwb.NWBHDF5IO(reader, true)
       // io.element = terminal.current
       name = ev.target.files[0].name
       await io.upload(ev)

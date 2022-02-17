@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import clsx from 'clsx';
-import * as reader from 'h5wasm'
 
 export default function DemoExample() {
 
@@ -10,7 +9,8 @@ export default function DemoExample() {
 
   useEffect(async () => {
 
-    let nwb = await import('../../../../../src')
+    let reader = await import('h5wasm')
+    let nwb = (await import('../../../../../src'))?.default
 
     const main = async () => {
 
@@ -46,7 +46,7 @@ export default function DemoExample() {
 
       // 3. Save NWB File
       console.log('Write This', nwbFile)
-      const io = new nwb.IO(reader)
+      const io = new nwb.NWBHDF5IO(reader)
       io.write(nwbFile, fileName)
 
 

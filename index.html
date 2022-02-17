@@ -16,14 +16,15 @@
     
 </body>
 <script type="module">
-import * as nwb from './dist/index.esm.js' // ES6 Fallback
+import nwb from './dist/index.esm.js' // ES6 Fallback
+console.log(nwb)
+
 // import * as nwb from 'https://cdn.jsdelivr.net/npm/jsnwb@0.0.9/dist/index.esm.js'
 import * as hdf5 from "https://cdn.jsdelivr.net/npm/h5wasm@latest/dist/esm/hdf5_hl.js";
 
-const io = new nwb.IO(hdf5, true)
-const api = new nwb.API()
+const io = new nwb.NWBHDF5IO(hdf5, true)
 
-console.log(io, api)
+console.log(io)
 
 const path = 'https://raw.githubusercontent.com/OpenSourceBrain/NWBShowcase/master/FergusonEtAl2015/FergusonEtAl2015.nwb'
 io.fetch(path, 'file.nwb').then(file => {

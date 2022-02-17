@@ -25,7 +25,7 @@ const config = {
     {
       file: pkg.main,
       format: 'umd', // the preferred format
-      exports: 'named',
+      exports: 'default',
       name: 'nwb'
     },
     {

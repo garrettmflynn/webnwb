@@ -5,6 +5,7 @@ import DemoExample from './components/basic';
 import { useHistory } from 'react-router';
 import FileExample from './components/file';
 import NeuromatchExample from './components/neuromatch';
+import BehaviorExample from './components/behavior';
 
 export default function ExampleSelector({server}) {
    const history = useHistory();
@@ -20,6 +21,8 @@ export default function ExampleSelector({server}) {
           case 'file':
             return <FileExample/>
           case 'neuromatch':
+            return <BehaviorExample/>
+          case 'neuromatch':
             return <NeuromatchExample/>
         }
       }
@@ -32,15 +35,18 @@ export default function ExampleSelector({server}) {
     return (
         <>
       <nav className={clsx(styles.nav)}>
-        <button onClick={() => set('demo')}>
-          Demo
-        </button>
         <button onClick={() => set('file')}>
-          File
+          Basic Read
+        </button>
+        <button onClick={() => set('demo')}>
+          Basic Write
         </button>
         <button onClick={() => set('neuromatch')}>
-          Neuromatch
+          Behavior
         </button>
+        {/* <button onClick={() => set('neuromatch')}>
+          Analysis
+        </button> */}
         </nav>
 
         <header>

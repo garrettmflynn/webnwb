@@ -1,5 +1,5 @@
 # jsnwb
-A JavaScript API for working with Neurodata stored in the NWB Format
+Work with neurodata directly on the browser
 
 > Note: I was unable to bundle [h5wasm](https://github.com/usnistgov/h5wasm) with Rollup, so it is required as an argument to the `jsnwb.NWBHDF5IO` class.
 

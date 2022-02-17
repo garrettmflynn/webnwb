@@ -1,10 +1,10 @@
 // import * as reader from "h5wasm";
-import API from './api';
+import NWBAPI from './api';
 import { ArbitraryObject } from './types/general.types';
 
 type NWBFile = any
 
-export default class IO {
+export default class NWBHDF5IO {
 
   reader: any;
   debug: boolean;
@@ -15,7 +15,7 @@ export default class IO {
     nwb?: NWBFile, // Custom NWB File Format
   }> = new Map();
 
-  apis: Map<string, API> = new Map()
+  apis: Map<string, NWBAPI> = new Map()
 
 
   // Note: Must pass an "h5wasm" instance here
@@ -37,9 +37,18 @@ export default class IO {
     }
   }
 
-  list = () => {
-    return this.files.keys()
-  }
+  list = async (path:string='/') => {
+    await this._h5wasmFSReady()
+    let node = this.reader.FS.lookupPath(path).node;
+    if (node?.isFolder) {
+        let files = Object.values(node.contents).filter((v:any) => !(v.isFolder)).map((v:any) => v.name);
+        let subfolders = Object.values(node.contents).filter((v:any) => (v.isFolder)).map((v:any) => v.name);
+        return {files, subfolders}
+    }
+    else {
+        return {}
+    }
+}
 
   // Allow Download of NWB-Formatted HDF5 Files fromthe  Browser
   download = (name: string, file: any) => {
@@ -132,19 +141,20 @@ export default class IO {
   }
 
   // Iteratively Check FS to Write File
-  _write = (name: string, ab: ArrayBuffer) => {
-    return new Promise(resolve => {
+  _write = async (name: string, ab: ArrayBuffer) => {
       const tick = performance.now()
+      await this._h5wasmFSReady()
+      this.reader.FS.writeFile(name, new Uint8Array(ab));
+      const tock = performance.now()
+      if (this.debug) console.log(`Wrote raw file in ${tock - tick} ms`)
+      return true
+  }
 
-      let check = () => {
-        if (this.reader.FS) {
-          this.reader.FS.writeFile(name, new Uint8Array(ab));
-          const tock = performance.now()
-          if (this.debug) console.log(`Wrote raw file in ${tock - tick} ms`)
-          resolve(true)
-        } else setTimeout(check, 10) // Wait and check again
-      }
-      check()
+  _h5wasmFSReady = () => {
+    return new Promise(resolve => {
+      if (this.reader.FS) {
+        resolve(true)
+      } else setTimeout(this._h5wasmFSReady, 10) // Wait and check again
     })
   }
 
@@ -160,16 +170,23 @@ export default class IO {
       let api: any = {}
 
       // Parse File Information with API Knowledge
-      let parseGroup = (o: any, aggregator: { [x: string]: any } = {}) => {
+      let parseGroup = (o: any, aggregator: { [x: string]: any } = {}, key: string, keepDatasets:boolean = true) => {
 
         if (o){
         // Set Attributes
         if (o instanceof this.reader.Dataset) {
-          if (Object.keys(aggregator)) aggregator.value = o.value
-          else aggregator = o.value
+          if (Object.keys(aggregator[key])) {
+            // ToDO: Expose HDF5 Dataset objects
+            // if (keepDatasets) aggregator[key] = o // Expose HDF5 Dataset
+            // else 
+            aggregator[key] = o.value
+          }
+          else aggregator[key] = o.value
+
+          
         } else if (!o.attrs.value) {
           for (let a in o.attrs) {
-            aggregator[a] = o.attrs[a].value // Exclude shape and dType
+            aggregator[key][a] = o.attrs[a].value // Exclude shape and dType
           }
         }
 
@@ -178,32 +195,33 @@ export default class IO {
           let keys = o.keys()
           keys.forEach((k: string) => {
             const group = o.get(k)
-            aggregator[k] = parseGroup(group, aggregator[k])
+            aggregator[key][k] = {}
+            aggregator[key][k] = parseGroup(group, aggregator[key], k, keepDatasets)
           })
         }
         }
 
-        return aggregator
+        return aggregator[key]
       }
 
       // Immediately Grab Version + Specification
       let version = file.read.attrs['nwb_version'].value
 
-      let specifications = parseGroup(file.read.get('specifications'), {})
+      let specifications = parseGroup(file.read.get('specifications'), {res:{}}, 'res', false)
       if (specifications){
-        api = this.apis.get(version) ?? new API(specifications as any, this.debug)
+        api = this.apis.get(version) ?? new NWBAPI(specifications as any, this.debug)
         this.apis.set(version, api)   
       } 
 
       // Parse All Information (fallback to object aggregation if no api)
-      let aggregator:ArbitraryObject = {}
-      if (!api?.file?.NWBFile) console.warn('API generation failed. Will parse the raw file structure instead.')
-      parseGroup(file.read, aggregator)
+      let aggregator:ArbitraryObject = {res: {}}
+      if (!api?.NWBFile) console.warn('API generation failed. Will parse the raw file structure instead.')
+      parseGroup(file.read, aggregator, 'res')
 
 
       // Create NWB File
-      delete aggregator['.specloc']
-      file.nwb = new api.file.NWBFile(aggregator)
+      delete aggregator.res['.specloc']
+      file.nwb = new api.NWBFile(aggregator.res)
 
       // if (!file.write) this.close()
 
@@ -252,18 +270,6 @@ export default class IO {
           const newKey = `${(key) ? `${key}/` : ''}${k}`
           if (!(o[k] instanceof Function)) {
             if (typeof o[k] === 'object') {
-              // if ('data' in o[k]) {
-              //   console.log(o[k])
-              //   const dataset = group.create_dataset(k, o[k].data);
-              //   const o2 = Object.assign({}, o)
-              //   delete o2.data
-              //  o2[k]['neurodata_type'] = o[k].constructor.name // Grab ClassName as neurodata_type
-              //   // writeObject(o2[k], newKey)
-              //   for (let k2 in o2[k]){
-              //     // console.log('attr', k2, o2[k], o2[k][k2])
-              //     if (typeof o2[k][k2] !== 'object') dataset.create_attribute(k2, o2[k][k2]) // TODO: Allow objects to be saved (e.g. options.timestamps)
-              //   }
-              // } else {
               if (o[k] instanceof Array) group.create_dataset(k, o[k]);
               else {
                 file.write.create_group(newKey);

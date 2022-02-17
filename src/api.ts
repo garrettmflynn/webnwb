@@ -3,14 +3,14 @@ import schemas from './schema'
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 
 type SpecificationType = {'core':ArbitraryObject} & ArbitraryObject
-// API Generator
-// Generates the NWB API from included specification
-export default class API {
+
+// Generate the NWB API from included specification
+export default class NWBAPI {
 
   _specification: SpecificationType
 //   NWBFile?: ArbitraryObject;
   _debug: boolean;
-  _namespaceToSchema: ArbitraryObject = {};
+  _nameToSchema: ArbitraryObject = {};
   extensions: ArbitraryObject = {};
 
   [x: string]: any;
@@ -20,25 +20,19 @@ export default class API {
       debug=false // Show Debug Messages
     ) {
     this._debug = debug
-    this._specification = specification
 
-    for (let key in specification) this._load(key, specification)
-  }
+    this._specification = JSON.parse(JSON.stringify(specification)) // Deep copy
 
-  _load = (key:string, specification:SpecificationType) => {
-
-    if (key !== 'core') console.warn(`Loading ${key} extension.`)
-    this._generate(key, specification) // Generate Classes from Specification
-    this._specification[key] = specification[key] // Add to Specification Registry
-
+    this._generate(specification)
   }
 
 
-  _inherit = (namespace: string, key:string, parentObject?:ArbitraryObject) => {
-    const schema = this._namespaceToSchema[namespace][key]
+  _inherit = (key:string, parentObject?:ArbitraryObject) => {
+    const schema = this._nameToSchema[key]
+    const namespace = schema?.namespace
     
     if (!parentObject) {
-        schema.forEach((str:string) => {
+        schema.path.forEach((str:string) => {
             parentObject = this[str]
         })
     }
@@ -47,42 +41,54 @@ export default class API {
       const o = parentObject[key]
 
       const inheritedName = o.inherits
-      const inheritedSchema = this._namespaceToSchema[namespace][inheritedName]
+
+      const inheritedPath = this._nameToSchema[inheritedName]?.path
 
       let inherit:ArbitraryObject | undefined;
-      if (inheritedSchema){
+      if (inheritedPath){
         inherit = this
-        inheritedSchema.forEach((str:string) => {
+        inheritedPath.forEach((str:string) => {
             inherit = inherit?.[str] 
         })
         inherit = inherit?.[inheritedName]
     }
+    
       delete parentObject[key].inherits
 
       if (inherit) {
-        if (inherit.inherits) this._inherit(namespace, inheritedName) // Finish inheritance for parent first
+
+        if (inherit.inherits) this._inherit(inheritedName) // Finish inheritance for parent first
+
         const deep = JSON.parse(JSON.stringify(inherit))
       
         parentObject[key] = Object.assign(deep, o)
       } else if (o.inherits) console.log(`Cannot inherit ${inheritedName}`, o, namespace, schema, key)
 
       // Drill Into Objects
-      if (typeof parentObject[key] === 'object')for (let k in parentObject[key]) this._inherit(namespace, k, parentObject[key])
+      if (typeof parentObject[key] === 'object') for (let k in parentObject[key]) {
+          this._inherit(k, parentObject[key])
+      }
     }
   }
 
   _getClasses(schema:ArbitraryObject){
     for (let clsName in schema) {
-      // Construct Class
+
+
+      // Construct Class (attributes in function)
       const keys = Object.keys(schema[clsName])
-      schema[clsName] = new Function(
-          // `return function ${clsName}(${args.join(',')}){console.log(${args.join(',')})}`
-          `return function ${clsName}(o={}){for (let k in o) if (o[k]) this[k] = o[k] }`
+
+      const generatedClass = new Function(
+          `return function ${clsName}(o={}){
+              ${keys.map(k => `this.${k} = ${JSON.stringify(schema[clsName][k])}`).join(';')}
+              for (let k in o) if (o[k]) this[k] = o[k] 
+            }`
       )();
 
-      keys.forEach(k => {
-        schema[clsName].prototype[k] = schema[clsName][k]
-      })
+      // Create Helper Methods
+
+
+      schema[clsName] = generatedClass
     }
 
   }
@@ -90,8 +96,8 @@ export default class API {
 
   _setFromObject(o: any, aggregator: ArbitraryObject = {}) {
 
-    const name = o.neurodata_type_def ?? o.name ?? o.default_name
-    const inherit = o.neurodata_type_inc
+    const name = (o.neurodata_type_def ?? o.data_type_def) ?? o.name ?? o.default_name
+    const inherit = (o.neurodata_type_inc ?? o.data_type_inc)
 
     if (name) {
         const value = o.value ?? o.default_value ?? {}
@@ -116,9 +122,7 @@ export default class API {
     // Groups
     if (o.groups) {
       o.groups.forEach((group: GroupType) => {
-        // console.log('Group', group)
         this._setFromObject(group, aggregator[name] ?? aggregator)
-        // aggregator[name][attr.name] = attr.value ?? attr.default_value
       })
 
     }
@@ -126,36 +130,42 @@ export default class API {
     // Links
     if (o.links) {
       o.links.forEach((link: LinkType) => {
-        // console.log('Link', link)
         this._setFromObject(link, aggregator[name] ?? aggregator)
-
-        // aggregator[name][attr.name] = attr.value ?? attr.default_value
       })
     }
 
     // Datasets
     if (o.datasets) {
       o.datasets.forEach((dataset: DatasetType) => {
-        // console.log('Dataset', dataset)
         this._setFromObject(dataset, aggregator[name] ?? aggregator)
       })
     }
   }
 
-  _generate(key:string, specs: any = this._specification) {
+  _generate(spec: any = this._specification, key?:string) {
 
-    const o = specs?.[key]
-    const tick = performance.now()
-    const version = Object.keys(o)[0]
+    let keys = (key) ? [key] : Object.keys(spec)
+    keys.forEach((key:any) => {
+
+
+    const o = JSON.parse(JSON.stringify(spec[key])) // Deep Copy Spec
+
+    const isFormatted = !!o.namespace
+    const version = (!o.namespace) ? Object.values(o)[0] : o // File OR Specification Format
 
     // Account for File vs Schema Specification Formats
-    const namespaceInfo = o[version]?.namespace?.value ?? o[version]?.namespace // File OR Specification Format
+    const namespaceInfo = version?.namespace // File OR Specification Format
     const namespace = (typeof namespaceInfo === 'string') ? JSON.parse(namespaceInfo) : namespaceInfo
 
     const schemas:string[] = []
+
     if (namespace){
     namespace.namespaces.forEach((namespace: any) => {
-      this._namespaceToSchema[namespace.name] = {} // Track all generated objects on a flat map
+
+        const scopedSpec:ArbitraryObject = {}
+        const tick = performance.now()
+        if (namespace.name !== 'core') console.warn(`Loading ${namespace.name} extension.`)
+
       namespace.schema.forEach((schema: any) => {
 
         // Grabbing Schema
@@ -179,31 +189,54 @@ export default class API {
             schemas.push(name)
 
             // Account for File vs Schema Specification Formats
-            const schemaInfo = o[version][schema.source]?.value ?? o[version][name]
+            const schemaInfo = version[schema.source] ?? version[name]
             const info = (typeof schemaInfo === 'string') ? JSON.parse(schemaInfo) : schemaInfo
 
             this._setFromObject(info, base[name])
 
-            // Register Objects
+
+            // Track Object Namespaces and Paths
             for (let key in base[name]){
-                this._namespaceToSchema[namespace.name][key] = (extension) ? ['extensions', namespace.name, name] : [name]
+                this._nameToSchema[key] = (extension) ? {namespace: namespace.name, path: ['extensions', namespace.name, name]} : {namespace: namespace.name, path: [name]}
             }
-            }
+
+            scopedSpec[name] = base[name]
+
+        }
         }
       })
 
-      // Ensure All Namespace Objects Inherit from Each Other
-      for (let key in this._namespaceToSchema[namespace.name]) {
-        this._inherit(namespace.name, key)
-      }
+        // Generate Specification Registry
+        if (isFormatted) delete this._specification[key] // Delete Pre-Formatted Specs
+        this._specification[namespace.name] = {}
+        this._specification[namespace.name][namespace.version] = scopedSpec
+
+        // Show Performance
+        const tock = performance.now()
+        if (this._debug) console.log(`JSNWB API: Generated ${namespace.name} in ${tock - tick} ms`)
     })
+  } else console.warn(`JSNWB API: Unable to be generate API from file specification.`)
+
+
+      // Ensure All Objects Inherit from Each Other
+      for (let key in this._nameToSchema) {
+        this._inherit(key)
+    }
 
     schemas.forEach((name: string) => {
       this._getClasses(this[name])
     })
 
-    const tock = performance.now()
-    if (this._debug) console.log(`JSNWB API: Generated ${key} in ${tock - tick} ms`)
-  } else console.warn(`JSNWB API: ${key} unable to be generated from file specification.`)
+    // Flatten Schemas
+    const arr = ['base', 'file']
+    arr.forEach((schema:string) => {
+        for (let clsName in this[schema]){
+            this[clsName] = this[schema][clsName]
+            delete this[schema][clsName]
+        }
+        delete this[schema]
+    })
+})
+
   }
 }
