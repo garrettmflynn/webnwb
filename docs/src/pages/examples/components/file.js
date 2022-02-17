@@ -82,6 +82,7 @@ export default function FileExample() {
   const progressDiv = useRef(null);
   const loaderDiv = useRef(null);
 
+
   // let twophoton = 'https://api.dandiarchive.org/api/assets/827b4c2f-4235-4350-b40f-02e120211dcd/download/'
 
   useEffect(async () => {
@@ -105,6 +106,10 @@ export default function FileExample() {
     const Plotly = await import('../../../../static/libraries/plotly/plotly-2.9.0.min') // Loaded Plotly
     let nwb = (await import('../../../../../src'))?.default
     let io = new nwb.NWBHDF5IO(reader, true)
+
+    window.onbeforeunload = () => {
+      io.syncFS(false) // Sync IndexedDB
+    }
 
     for (let type in links) {
       const section = document.createElement('div')
@@ -249,7 +254,7 @@ export default function FileExample() {
         loader.progress = ratio
         loader.text = `${formatBytes(ratio * length, 2)} of ${formatBytes(length, 2)} downloaded.`
 
-      }).then(async (file) => {
+      }, (fromRemote) => { if (!fromRemote) loader.text = 'File loaded from local storage.'}).then(async (file) => {
         parseFile(file)
       })
     }
