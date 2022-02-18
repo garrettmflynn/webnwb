@@ -91,7 +91,7 @@ export default function FileExample() {
       flex-wrap; wrap;
       align-items: center;
     `
-    const components = await import('../../../../libraries/components/dist/index.esm.js')
+    const components = await import('../libraries/components/dist/index.esm.js')
 
     loader = new components.Loader({ color: '#7aff80', type: 'linear', text: 'Select a file', showPercent: false, textBackground: 'black', textColor: 'white'})
     loader.style = 'position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;'
@@ -101,7 +101,7 @@ export default function FileExample() {
 
     loaderDiv.current.insertAdjacentElement('beforeend', loader)
 
-    const Plotly = await import('../../../../libraries/plotly/plotly-2.9.0.min.js') // Loaded Plotly
+    const Plotly = await import('../libraries/plotly/plotly-2.9.0.min.js') // Loaded Plotly
     let reader = await import('h5wasm')
     let nwb = await import('../../../../../src')
     if (nwb?.default) nwb = nwb.default
