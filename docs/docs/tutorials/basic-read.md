@@ -6,7 +6,7 @@ sidebar_position: 2
 Coming soon...
 
 ### Slicing
-Through **h5wasm**, **jsnwb** supports slicing of large datasets.
+Through **h5wasm**, **WebNWB** supports slicing of large datasets.
 
 ```javascript
 // get full value
