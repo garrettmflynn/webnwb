@@ -82,6 +82,7 @@ export default function FileExample() {
   const progressDiv = useRef(null);
   const loaderDiv = useRef(null);
 
+
   // let twophoton = 'https://api.dandiarchive.org/api/assets/827b4c2f-4235-4350-b40f-02e120211dcd/download/'
 
   useEffect(async () => {
@@ -105,6 +106,11 @@ export default function FileExample() {
     const Plotly = await import('../../../../static/libraries/plotly/plotly-2.9.0.min') // Loaded Plotly
     let nwb = (await import('../../../../../src'))?.default
     let io = new nwb.NWBHDF5IO(reader, true)
+    console.log('API', nwb)
+
+    window.onbeforeunload = () => {
+      io.syncFS(false) // Sync IndexedDB
+    }
 
     for (let type in links) {
       const section = document.createElement('div')
@@ -136,7 +142,6 @@ export default function FileExample() {
             loader.progress = 0
             file = src
             name = `${displayName.replaceAll(/\s+/g, '')}.nwb` // Must change name for new files to request
-            console.log(name)
             runFetch()
           }
         })
@@ -244,12 +249,19 @@ export default function FileExample() {
     function runFetch() {
       // io.element = terminal.current
 
-      io.fetch(file, name, (ratio, length) => {
+      io.fetch(
+        file, 
+        name, 
+        (ratio, length) => {
 
         loader.progress = ratio
         loader.text = `${formatBytes(ratio * length, 2)} of ${formatBytes(length, 2)} downloaded.`
 
-      }).then(async (file) => {
+      }, 
+      (fromRemote) => { if (!fromRemote) loader.text = 'File loaded from local storage.'},
+      // true
+      )
+      .then(async (file) => {
         parseFile(file)
       })
     }
@@ -270,6 +282,7 @@ export default function FileExample() {
     // 2. Allow User to Load their own NWB File
     input.current.onchange = async (ev) => {
       io = new nwb.NWBHDF5IO(reader, true)
+
       // io.element = terminal.current
       name = ev.target.files[0].name
       await io.upload(ev)

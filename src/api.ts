@@ -164,7 +164,7 @@ export default class NWBAPI {
 
         const scopedSpec:ArbitraryObject = {}
         const tick = performance.now()
-        if (namespace.name !== 'core') console.warn(`Loading ${namespace.name} extension.`)
+        if (namespace.name !== 'core' && this._debug) console.log(`Loading ${namespace.name} extension.`)
 
       namespace.schema.forEach((schema: any) => {
 

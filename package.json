@@ -1,6 +1,6 @@
 {
   "name": "jsnwb",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "A JavaScript API for working with Neurodata stored in the NWB Format",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -8,7 +8,7 @@
     "dist/index.js": "dist/index.js",
     "dist/index.esm.js": "dist/index.esm.js"
   },
-  "types": "dist/index.d.ts",
+  "types": "dist/src/index.d.ts",
   "files": [
     "dist"
   ],
@@ -27,6 +27,9 @@
   "author": "Garrett Flynn <gflynn@usc.edu>",
   "license": "AGPL-3.0-or-later",
   "private": false,
+  "dependencies": {
+    "hdf5-io": "^0.0.3"
+  },
   "devDependencies": {
     "@babel/core": "^7.17.2",
     "@babel/plugin-proposal-class-properties": "^7.16.7",
@@ -49,11 +52,11 @@
     "typescript": "^4.5.4"
   },
   "peerDependencies": {
-    "h5wasm": "^0.1.8"
+    "h5wasm": "^0.2.2"
   },
-  "dependencies": {
-    "install": "^0.13.0",
-    "js-yaml": "^4.1.0",
-    "npm": "^8.5.0"
+  "peerDependenciesMeta": {
+    "h5wasm": {
+      "autoinstall": true
+    }
   }
 }

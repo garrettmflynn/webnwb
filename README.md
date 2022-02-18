@@ -5,9 +5,14 @@ Neurodata without Borders — directly on the browser.
 ![downloads](https://img.shields.io/npm/dt/jsnwb)
 ![lic](https://img.shields.io/npm/l/jsnwb)
 
+## TODO
+- Differentiate Datasets and Groups
+- Handle links, references, and tables with reference
+
+
 ## Dependencies
 **h5wasm:** https://github.com/usnistgov/h5wasm
-> Note: [h5wasm](https://github.com/usnistgov/h5wasm) cannot be bundled with Rollup, so it's required as an argument to the `jsnwb.NWBHDF5IO` class.
+> Note: [h5wasm](https://github.com/usnistgov/h5wasm) was difficult to bundle with Rollup, so it's required as an argument to the `jsnwb.NWBHDF5IO` class.
 
 **YAML Loaders:** [Rollup](https://www.npmjs.com/package/@rollup/plugin-yaml), [Webpack](https://github.com/eemeli/yaml-loader)
 ## Acknowledgments
