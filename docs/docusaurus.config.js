@@ -6,7 +6,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'JSNWB',
+  title: 'WebNWB',
   tagline: 'Neurodata without Borders in JavaScript',
   url: 'https://brainsatplay.com',
   baseUrl: '/',
@@ -14,7 +14,7 @@ const config = {
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
   organizationName: 'brainsatplay',
-  projectName: 'JSNWB',
+  projectName: 'WebNWB',
 
   themes: ['@docusaurus/theme-live-codeblock'],
 
@@ -56,11 +56,11 @@ const config = {
         docs: {
           // path: '../docs',
           sidebarPath: require.resolve('./sidebars.js'),
-          editUrl: 'https://github.com/brainsatplay/jsnwb',
+          editUrl: 'https://github.com/brainsatplay/webnwb',
         },
         blog: {
           showReadingTime: true,
-          editUrl: 'https://github.com/brainsatplay/jsnwb',
+          editUrl: 'https://github.com/brainsatplay/webnwb',
 
         },
         theme: {
@@ -79,7 +79,7 @@ const config = {
         disableSwitch: true,
       },
       navbar: {
-        title: 'JSNWB',
+        title: 'WebNWB',
         logo: {
           alt: 'Brains@Play Logo',
           src: 'img/logo_colorized-min.png',
@@ -107,7 +107,7 @@ const config = {
           // { href: helpUrl, label: "Need Help?", external: true }
           // {to: 'blog', label: 'Blog', position: 'left'},
           {
-            href: 'https://github.com/brainsatplay/jsnwb',
+            href: 'https://github.com/brainsatplay/webnwb',
             // label: 'GitHub',
             position: 'right',
             className: 'github-icon-menu',
@@ -135,7 +135,7 @@ const config = {
             items: [
               {
                 label: 'Stack Overflow',
-                href: 'https://stackoverflow.com/questions/tagged/jsnwb',
+                href: 'https://stackoverflow.com/questions/tagged/webnwb',
               },
               {
                 label: 'Discord',
@@ -156,7 +156,7 @@ const config = {
               // },
               {
                 label: 'GitHub',
-                href: 'https://github.com/brainsatplay/jsnwb',
+                href: 'https://github.com/brainsatplay/webnwb',
               },
             ],
           },

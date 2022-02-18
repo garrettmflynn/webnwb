@@ -213,9 +213,9 @@ export default class NWBAPI {
 
         // Show Performance
         const tock = performance.now()
-        if (this._debug) console.log(`JSNWB API: Generated ${namespace.name} in ${tock - tick} ms`)
+        if (this._debug) console.log(`WebNWB API: Generated ${namespace.name} in ${tock - tick} ms`)
     })
-  } else console.warn(`JSNWB API: Unable to be generate API from file specification.`)
+  } else console.warn(`WebNWB API: Unable to be generate API from file specification.`)
 
 
       // Ensure All Objects Inherit from Each Other
