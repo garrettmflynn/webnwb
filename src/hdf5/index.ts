@@ -58,7 +58,7 @@ export default class HDF5IO {
             break;
           case 10:
             console.warn(`Filesystem already mounted at ${path}`);
-            console.log('Active Filesystem', await this.list(path))
+            if (this._debug) console.log('Active Filesystem', await this.list(path))
             resolve(true)
             break;
           default: 
@@ -74,20 +74,21 @@ export default class HDF5IO {
   syncFS = (read:boolean= false, path=this._path) => {
     path = this._convertPath(path)
 
-    return new Promise (resolve => {
+    return new Promise(resolve => {
 
       this._FSReady().then(async () => {
-        if (this._debug && read) console.log(`Pushing all current files in ${path} to IndexedDB`)
+        if (this._debug && !read) console.log(`Pushing all current files in ${path} to IndexedDB`)
         this.reader.FS.syncfs(read, async (e?:Error) => {
           if (e) {
             console.error(e)
             resolve(false)
           } else {
             if (this._debug)  {
-              if (read) console.log(`IndexedDB successfully read into ${path}!`)
-              else console.log(`All current files in ${path} pushed to IndexedDB!`, await this.list(path))
-              resolve(true)
-            }
+              const list = await this.list(path)
+              if (read) console.log(`IndexedDB successfully read into ${path}!`, list)
+              else console.log(`All current files in ${path} pushed to IndexedDB!`, list)
+            } 
+            resolve(true)
           }
         })
       })
