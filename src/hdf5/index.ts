@@ -1,9 +1,9 @@
 // import * as reader from "h5wasm";
-import { ArbitraryObject } from './types/general.types';
+export type ArbitraryObject = {[x:string]: any}
 
 export default class HDF5IO {
 
-  h5wasm: any;
+  reader: any;
   files: Map<string, {
     name: string,
     read?: any,
@@ -11,62 +11,88 @@ export default class HDF5IO {
     file?: any
   }> = new Map();
 
-  _path: string = "/home/web_user"
+  _path: string = "/hdf5-io"
   _debug: boolean;
   _preprocess: Function = (_:any) => {} // Returns modifier for _parse
   _postprocess: Function = (o:any) => o // Returns processed file object
 
 
-  constructor(h5wasm: any, options:ArbitraryObject={}, debug = false) {
-    this.h5wasm = h5wasm;
+  constructor(reader: any, options:ArbitraryObject={}, debug = false) {
+    this.reader = reader;
     this._debug = debug;
-    if (options.preprocess) this._preprocess = options.preprocess
-    if (options.postprocess) this._postprocess = options.postprocess
+    if (options?.preprocess) this._preprocess = options.preprocess
+    if (options?.postprocess) this._postprocess = options.postprocess
   }
 
   // ---------------------- Local Filestorage Utilities ----------------------
 
+  // Ensure path has slash at the front
+  _convertPath = (path: string) => {
+    const hasSlash = path[0] === '/'
+    return path = (hasSlash) ? path : `/${path}` // add slash
+  }
+
   initFS = (path:string=this._path) => {
     
-    this.h5wasm.FS.mkdir(path);
-    this.h5wasm.FS.chdir(path);
+    // Note: Can wait for filesystem operations to complete
+    return new Promise(resolve => {
+    this._path = path = this._convertPath(path) // set latest path
+
 
     this._FSReady().then(async () => {
+
+      this.reader.FS.mkdir(path);
+      this.reader.FS.chdir(path);
+
       try {
         // Create a local mount of the IndexedDB filesystem:
-        this.h5wasm.FS.mount(this.h5wasm.FS.filesystems.IDBFS, {}, path)
-        if (this._debug) console.log(`Mounted IndexedDB filesystem to ${this._path}`)
+        this.reader.FS.mount(this.reader.FS.filesystems.IDBFS, {}, path)
+        if (this._debug) console.log(`Mounted IndexedDB filesystem to ${path}`)
         this.syncFS(true, path)
+        resolve(true)
       } catch (e) {
-        switch(e.errno){
+        switch((e as any).errno){
           case 44: 
             console.warn('Path does not exist');
+            resolve(false)
             break;
           case 10:
-            console.warn(`Filesystem already mounted at ${this._path}`);
+            console.warn(`Filesystem already mounted at ${path}`);
             console.log('Active Filesystem', await this.list(path))
+            resolve(true)
             break;
           default: 
             console.warn('Unknown filesystem error', e);
+            resolve(false)
         }
       }
     })
+  })
+
   }
  
   syncFS = (read:boolean= false, path=this._path) => {
-    this._FSReady().then(async () => {
-      if (this._debug && read) console.log(`Pushing all current files in ${this._path} to IndexedDB`)
-      this.h5wasm.FS.syncfs(read, (e?:Error) => {
-        if (e) console.error(e)
-        else {
-          if (this._debug)  {
-            if (read) console.log(`IndexedDB successfully read into ${this._path}!`)
-            else console.log(`All current files in ${this._path} pushed to IndexedDB!`)
+    path = this._convertPath(path)
+
+    return new Promise (resolve => {
+
+      this._FSReady().then(async () => {
+        if (this._debug && read) console.log(`Pushing all current files in ${path} to IndexedDB`)
+        this.reader.FS.syncfs(read, async (e?:Error) => {
+          if (e) {
+            console.error(e)
+            resolve(false)
+          } else {
+            if (this._debug)  {
+              if (read) console.log(`IndexedDB successfully read into ${path}!`)
+              else console.log(`All current files in ${path} pushed to IndexedDB!`, await this.list(path))
+              resolve(true)
+            }
           }
-          this.list(path).then(res => console.log('Active Filesystem', res))
-        }
+        })
       })
     })
+
   }
 
   // ---------------------- New HDF5IO Methods ----------------------
@@ -83,10 +109,12 @@ export default class HDF5IO {
   }
 
   list = async (path:string=this._path) => {
+    path = this._convertPath(path)
+
     await this._FSReady()
     let node;
 
-    try {node = (this.h5wasm.FS.lookupPath(path))?.node} 
+    try {node = (this.reader.FS.lookupPath(path))?.node} 
     catch (e) {console.warn(e)}
 
     if (node?.isFolder && node.contents) {
@@ -109,7 +137,7 @@ export default class HDF5IO {
       if (file.write) file.write.flush();
       if (file.read) file.read.flush();
 
-      const blob = new Blob([this.h5wasm.FS.readFile(file.name)], { type: 'application/x-hdf5' });
+      const blob = new Blob([this.reader.FS.readFile(file.name)], { type: 'application/x-hdf5' });
       var a = document.createElement("a");
       document.body.appendChild(a);
       a.style.display = "none";
@@ -203,7 +231,7 @@ export default class HDF5IO {
   _write = async (name: string, ab: ArrayBuffer) => {
       const tick = performance.now()
       await this._FSReady()
-      this.h5wasm.FS.writeFile(name, new Uint8Array(ab));
+      this.reader.FS.writeFile(name, new Uint8Array(ab));
       const tock = performance.now()
       if (this._debug) console.log(`Wrote raw file in ${tock - tick} ms`)
       return true
@@ -211,7 +239,7 @@ export default class HDF5IO {
 
   _FSReady = () => {
     return new Promise(resolve => {
-      if (this.h5wasm.FS) resolve(true)
+      if (this.reader.FS) resolve(true)
       else setTimeout(async () => resolve(await this._FSReady()), 10) // Wait and check again
     })
   }
@@ -221,7 +249,7 @@ export default class HDF5IO {
 
           if (o){
           // Set Attributes
-          if (o instanceof this.h5wasm.Dataset) {
+          if (o instanceof this.reader.Dataset) {
             if (Object.keys(aggregator[key])) {
               // ToDO: Expose HDF5 Dataset objects
               // if (keepDatasets) aggregator[key] = o // Expose HDF5 Dataset
@@ -289,7 +317,7 @@ export default class HDF5IO {
     }
 
     if (mode) {
-      let hdf5 = new this.h5wasm.File(name, mode);
+      let hdf5 = new this.reader.File(name, mode);
       if (mode === 'w') o.write = hdf5
       else if (mode === 'r') o.read = hdf5
       else if (mode === 'a') o.read = o.write = hdf5
@@ -301,7 +329,7 @@ export default class HDF5IO {
     return o
   }
 
-  save = () => this.syncFS(false)
+  save = (path:string) => this.syncFS(false, path)
 
   write = (o: ArbitraryObject, name = [...this.files.keys()][0]) => {
 

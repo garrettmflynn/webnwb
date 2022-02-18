@@ -8,7 +8,7 @@
     "dist/index.js": "dist/index.js",
     "dist/index.esm.js": "dist/index.esm.js"
   },
-  "types": "dist/index.d.ts",
+  "types": "dist/src/index.d.ts",
   "files": [
     "dist"
   ],
@@ -27,6 +27,9 @@
   "author": "Garrett Flynn <gflynn@usc.edu>",
   "license": "AGPL-3.0-or-later",
   "private": false,
+  "dependencies": {
+    "hdf5-io": "^0.0.2"
+  },
   "devDependencies": {
     "@babel/core": "^7.17.2",
     "@babel/plugin-proposal-class-properties": "^7.16.7",
@@ -55,10 +58,5 @@
     "h5wasm": {
       "autoinstall": true
     }
-  },
-  "dependencies": {
-    "install": "^0.13.0",
-    "js-yaml": "^4.1.0",
-    "npm": "^8.5.0"
   }
 }

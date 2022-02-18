@@ -3,7 +3,7 @@ Neurodata without Borders — directly on the browser.
 
 ![status](https://img.shields.io/npm/v/jsnwb) 
 ![downloads](https://img.shields.io/npm/dt/jsnwb)
-![size](https://img.shields.io/github/size/brainsatplay/jsnwb)
+<!-- ![size](https://img.shields.io/github/size/brainsatplay/jsnwb) -->
 ![lic](https://img.shields.io/npm/l/jsnwb)
 
 ## TODO
@@ -13,7 +13,7 @@ Neurodata without Borders — directly on the browser.
 
 ## Dependencies
 **h5wasm:** https://github.com/usnistgov/h5wasm
-> Note: [h5wasm](https://github.com/usnistgov/h5wasm) cannot be bundled with Rollup, so it's required as an argument to the `jsnwb.NWBHDF5IO` class.
+> Note: [h5wasm](https://github.com/usnistgov/h5wasm) was difficult to bundle with Rollup, so it's required as an argument to the `jsnwb.NWBHDF5IO` class.
 
 **YAML Loaders:** [Rollup](https://www.npmjs.com/package/@rollup/plugin-yaml), [Webpack](https://github.com/eemeli/yaml-loader)
 ## Acknowledgments

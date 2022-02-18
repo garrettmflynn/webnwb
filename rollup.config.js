@@ -12,7 +12,6 @@ import css from "rollup-plugin-import-css";
 import node_resolve from "@rollup/plugin-node-resolve";
 import { babel } from '@rollup/plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
-// import { wasm } from '@rollup/plugin-wasm';
 import yaml from '@rollup/plugin-yaml';
 
 /**
@@ -67,11 +66,7 @@ const config = {
    typescript: require('typescript'),
   }),
   yaml(),
-
-    // // Support WASM (issues...)
-    // wasm()
   ],
-  //  preserveEntrySignatures: 'strict',
 }
 
 export default config

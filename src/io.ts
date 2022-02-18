@@ -1,8 +1,9 @@
 // import * as reader from "h5wasm";
 import NWBAPI from './api';
-import HDF5IO from './_io';
+import HDF5IO from './hdf5';
+// import HDF5IO from 'hdf5-io';
 
-export default class NWBHDF5IO extends HDF5IO{
+export default class NWBHDF5IO extends HDF5IO {
 
 
   apis: Map<string, NWBAPI> = new Map()
