@@ -10,7 +10,7 @@
     <script src="./dist/index.js"></script>
 
     <!-- Browser Import (remote) -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/jsnwb"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/jsnwb@latest"></script> -->
 </head>
 <body>
     
@@ -19,7 +19,7 @@
 import nwb from './dist/index.esm.js' // ES6 Fallback
 console.log(nwb)
 
-// import * as nwb from 'https://cdn.jsdelivr.net/npm/jsnwb@0.0.9/dist/index.esm.js'
+// import * as nwb from 'https://cdn.jsdelivr.net/npm/jsnwb@latest/dist/index.esm.js'
 import * as hdf5 from "https://cdn.jsdelivr.net/npm/h5wasm@latest/dist/esm/hdf5_hl.js";
 
 const io = new nwb.NWBHDF5IO(hdf5, true)
