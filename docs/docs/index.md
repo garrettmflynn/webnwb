@@ -25,4 +25,4 @@ To use **jsnwb** in your projects, you can import it in one of the following way
 ```
 
 ## Next Steps
-Follow along in the [next tutorial](./tutorials/getting-started) to learn how to 
+Follow along in the [next tutorial](./tutorials/basic-read.md) to learn how to read a file into the browser using **jsnwb**.

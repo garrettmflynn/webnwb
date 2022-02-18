@@ -6,9 +6,11 @@ Neurodata without Borders — directly on the browser.
 <!-- ![size](https://img.shields.io/github/size/brainsatplay/jsnwb) -->
 ![lic](https://img.shields.io/npm/l/jsnwb)
 
-## TODO
+## Development Backlog
 - Differentiate Datasets and Groups
 - Handle links, references, and tables with reference
+- Implement write using [best practices](https://www.nwb.org/best-practices/) and the [schema](https://nwb-schema.readthedocs.io/en/latest/format_description.html#nwbcontainer-nwbdata-nwbdatainterface-base-neurodata-types-for-containers-and-datasets)
+- Demonstrate in the documentation with [tutorials](https://pynwb.readthedocs.io/en/latest/tutorials/general/scratch.html#raw-data)
 
 
 ## Dependencies
