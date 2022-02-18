@@ -11,12 +11,12 @@ export default function BehaviorExample() {
 
   const __ = useRef(null);
 
-  // Path to Local NWB File
-  const examplePath = '../../data/FergusonEtAl2015.nwb'
-
   useEffect(async () => {
 
-    let nwb = (await import('../../../../../src'))?.default
+    let reader = await import('h5wasm')
+    let nwb = await import('../../../../../src')
+    if (nwb?.default) nwb = nwb.default
+    let io = new nwb.NWBHDF5IO(reader, true)
 
     // Load NWB File
     console.log('NWB', nwb)
@@ -30,7 +30,7 @@ export default function BehaviorExample() {
     function handleMouseMove(event) {
         var eventDoc, doc, body;
 
-        event = event || window.event; // IE-ism
+        event = event || globalThis.event; // IE-ism
         // Use event.pageX / event.pageY here
         x.current.innerHTML =  event.pageX
         y.current.innerHTML =  event.pageY

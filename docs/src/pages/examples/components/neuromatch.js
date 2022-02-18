@@ -12,7 +12,8 @@ export default function NeuromatchExample() {
 
   useEffect(async () => {
     let reader = await import('h5wasm')
-    let nwb = (await import('../../../../../src'))?.default
+    let nwb = await import('../../../../../src')
+    if (nwb?.default) nwb = nwb.default
 
     // Load NWB File
       const io = new nwb.NWBHDF5IO(reader)

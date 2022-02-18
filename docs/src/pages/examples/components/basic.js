@@ -10,7 +10,8 @@ export default function DemoExample() {
   useEffect(async () => {
 
     let reader = await import('h5wasm')
-    let nwb = (await import('../../../../../src'))?.default
+    let nwb = await import('../../../../../src')
+    if (nwb?.default) nwb = nwb.default
 
     const main = async () => {
 
