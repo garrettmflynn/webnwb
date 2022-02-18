@@ -3,7 +3,6 @@ Neurodata without Borders — directly on the browser.
 
 ![status](https://img.shields.io/npm/v/jsnwb) 
 ![downloads](https://img.shields.io/npm/dt/jsnwb)
-![size](https://img.shields.io/github/size/brainsatplay/jsnwb)
 ![lic](https://img.shields.io/npm/l/jsnwb)
 
 ## Dependencies
