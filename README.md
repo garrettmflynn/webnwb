@@ -5,6 +5,8 @@ Neurodata without Borders — directly on the browser.
 ![downloads](https://img.shields.io/npm/dt/webnwb)
 ![lic](https://img.shields.io/npm/l/webnwb)
 
+> Note: Pending integration into the NIH Brain Initiative’s [Distributed Archives for Neurophysiology Data Integration (DANDI)](https://gui.dandiarchive.org/#/).
+
 ## Development Progress + Backlog
 https://docs.google.com/document/d/1qGuBUHIRhal0d4DLK3urtj9YU6lTt8CddRkqCF-faQg/edit#
 
