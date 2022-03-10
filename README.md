@@ -5,7 +5,7 @@ Neurodata without Borders — directly on the browser.
 ![downloads](https://img.shields.io/npm/dt/webnwb)
 ![lic](https://img.shields.io/npm/l/webnwb)
 
-> Note: Pending integration into the NIH Brain Initiative’s [Distributed Archives for Neurophysiology Data Integration (DANDI)](https://gui.dandiarchive.org/#/).
+> Note: Further development is expected to integrate into the NIH Brain Initiative’s [Distributed Archives for Neurophysiology Data Integration (DANDI)](https://gui.dandiarchive.org/#/) and acceptance as an official Neurodata without Borders API.
 
 ## Development Progress + Backlog
 https://docs.google.com/document/d/1qGuBUHIRhal0d4DLK3urtj9YU6lTt8CddRkqCF-faQg/edit#
@@ -16,6 +16,8 @@ https://docs.google.com/document/d/1qGuBUHIRhal0d4DLK3urtj9YU6lTt8CddRkqCF-faQg/
 - Implement write using [best practices](https://www.nwb.org/best-practices/) and the [schema](https://nwb-schema.readthedocs.io/en/latest/format_description.html#nwbcontainer-nwbdata-nwbdatainterface-base-neurodata-types-for-containers-and-datasets)
 - Demonstrate in the documentation with [tutorials](https://pynwb.readthedocs.io/en/latest/tutorials/general/scratch.html#raw-data)
 
+## Related Projects
+- [easynwb](https://github.com/garrettmflynn/easynwb)
 
 ## Dependencies
 **h5wasm:** https://github.com/usnistgov/h5wasm
