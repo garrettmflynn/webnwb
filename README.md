@@ -15,6 +15,7 @@ https://docs.google.com/document/d/1qGuBUHIRhal0d4DLK3urtj9YU6lTt8CddRkqCF-faQg/
 - Handle links, references, and tables with reference
 - Implement write using [best practices](https://www.nwb.org/best-practices/) and the [schema](https://nwb-schema.readthedocs.io/en/latest/format_description.html#nwbcontainer-nwbdata-nwbdatainterface-base-neurodata-types-for-containers-and-datasets)
 - Demonstrate in the documentation with [tutorials](https://pynwb.readthedocs.io/en/latest/tutorials/general/scratch.html#raw-data)
+- Create a viewer like [Vizarr](https://github.com/hms-dbmi/vizarr)
 
 ## Related Projects
 - [easynwb](https://github.com/garrettmflynn/easynwb)
