@@ -52,7 +52,7 @@
     "typescript": "^4.5.4"
   },
   "peerDependencies": {
-    "h5wasm": "^0.2.2"
+    "h5wasm": ">= 0.2.2 < 1"
   },
   "peerDependenciesMeta": {
     "h5wasm": {
