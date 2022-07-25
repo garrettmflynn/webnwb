@@ -47,7 +47,7 @@ export default class HDF5IO {
       try {
         // Create a local mount of the IndexedDB filesystem:
         this.reader.FS.mount(this.reader.FS.filesystems.IDBFS, {}, path)
-        if (this._debug) console.log(`Mounted IndexedDB filesystem to ${path}`)
+        if (this._debug) console.log(`[webnwb]: Mounted IndexedDB filesystem to ${path}`)
         this.syncFS(true, path)
         resolve(true)
       } catch (e) {
@@ -58,7 +58,7 @@ export default class HDF5IO {
             break;
           case 10:
             console.warn(`Filesystem already mounted at ${path}`);
-            if (this._debug) console.log('Active Filesystem', await this.list(path))
+            if (this._debug) console.log('[webnwb]: Active Filesystem', await this.list(path))
             resolve(true)
             break;
           default: 
@@ -77,7 +77,7 @@ export default class HDF5IO {
     return new Promise(resolve => {
 
       this._FSReady().then(async () => {
-        if (this._debug && !read) console.log(`Pushing all current files in ${path} to IndexedDB`)
+        if (this._debug && !read) console.log(`[webnwb]: Pushing all current files in ${path} to IndexedDB`)
         this.reader.FS.syncfs(read, async (e?:Error) => {
           if (e) {
             console.error(e)
@@ -85,8 +85,8 @@ export default class HDF5IO {
           } else {
             if (this._debug)  {
               const list = await this.list(path)
-              if (read) console.log(`IndexedDB successfully read into ${path}!`, list)
-              else console.log(`All current files in ${path} pushed to IndexedDB!`, list)
+              if (read) console.log(`[webnwb]: IndexedDB successfully read into ${path}!`, list)
+              else console.log(`[webnwb]: All current files in ${path} pushed to IndexedDB!`, list)
             } 
             resolve(true)
           }
@@ -131,7 +131,7 @@ export default class HDF5IO {
 }
 
   // Allow Download of NWB-Formatted HDF5 Files fromthe  Browser
-  download = (name: string, file: any, extension: string = 'hdf5') => {
+  download = (name: string, file?: any, extension: string = 'hdf5') => {
     if (!file) file = (name) ? this.files.get(name) : [...this.files.values()][0]
     if (file) {
       if (!name) name = file.name // Get Default Name
@@ -219,7 +219,7 @@ export default class HDF5IO {
 
       const tock = performance.now()
 
-      if (this._debug) console.log(`Fetched in ${tock - tick} ms`)
+      if (this._debug) console.log(`[webnwb]: Fetched in ${tock - tick} ms`)
 
       await this._write(fileName, ab)
       o.file = this.read(fileName, ignoreLocalStorage)
@@ -234,7 +234,7 @@ export default class HDF5IO {
       await this._FSReady()
       this.reader.FS.writeFile(name, new Uint8Array(ab));
       const tock = performance.now()
-      if (this._debug) console.log(`Wrote raw file in ${tock - tick} ms`)
+      if (this._debug) console.log(`[webnwb]: Wrote raw file in ${tock - tick} ms`)
       return true
   }
 
@@ -301,7 +301,7 @@ export default class HDF5IO {
       // if (!file.write) this.close()
 
       const tock = performance.now()
-      if (this._debug) console.log(`Read file in ${tock - tick} ms`)
+      if (this._debug) console.log(`[webnwb]: Read file in ${tock - tick} ms`)
       return file.file
 
     } else return
@@ -323,7 +323,7 @@ export default class HDF5IO {
       else if (mode === 'r') o.read = hdf5
       else if (mode === 'a') o.read = o.write = hdf5
     } else if (!ignoreLocalStorage && (name && o.file === undefined)) {
-      if (this._debug) console.log(`Returning local version from ${this._path}`)
+      if (this._debug) console.log(`[webnwb]: Returning local version from ${this._path}`)
       this.read(name)
     }
 
@@ -363,7 +363,7 @@ export default class HDF5IO {
       writeObject(o)
 
       const tock = performance.now()
-      if (this._debug) console.log(`Wrote NWB File object to browser filesystem in ${tock - tick} ms`)
+      if (this._debug) console.log(`[webnwb]: Wrote NWB File object to browser filesystem in ${tock - tick} ms`)
     }
   }
 

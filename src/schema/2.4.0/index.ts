@@ -1,3 +1,5 @@
+import yaml from 'yaml'
+
 import base from './core/nwb.base.yaml'
 import behavior from './core/nwb.behavior.yaml'
 import device from './core/nwb.device.yaml'
@@ -20,27 +22,27 @@ import hdmfTable from './hdmf-common-schema/common/table.yaml'
 
 // TODO: Generate NWB-Recognized Object
 export const core = {
-    base, 
-    behavior, 
-    device, 
-    ecephys, 
-    epoch, 
-    file, 
-    icephys, 
-    image, 
-    misc, 
-    namespace, 
-    ogen, 
-    ophys, 
-    retinotopy
+    base: yaml.parse(base), 
+    behavior: yaml.parse(behavior), 
+    device: yaml.parse(device), 
+    ecephys: yaml.parse(ecephys), 
+    epoch: yaml.parse(epoch), 
+    file: yaml.parse(file), 
+    icephys: yaml.parse(icephys), 
+    image: yaml.parse(image), 
+    misc: yaml.parse(misc), 
+    namespace: yaml.parse(namespace), 
+    ogen: yaml.parse(ogen), 
+    ophys: yaml.parse(ophys), 
+    retinotopy: yaml.parse(retinotopy)
 }
 
 
 export const hdmf = {
-    base:hdmfBase, 
-    experimental:hdmfExperimental, 
-    namespace: hdmfNamespace, 
-    resources: hdmfResources, 
-    sparse: hdmfSparse, 
-    table: hdmfTable
+    base: yaml.parse(hdmfBase), 
+    experimental: yaml.parse(hdmfExperimental), 
+    namespace: yaml.parse(hdmfNamespace), 
+    resources: yaml.parse(hdmfResources), 
+    sparse: yaml.parse(hdmfSparse), 
+    table: yaml.parse(hdmfTable)
 }

@@ -20,10 +20,17 @@ export default class NWBAPI {
       debug=false // Show Debug Messages
     ) {
     this._debug = debug
-
     this._specification = JSON.parse(JSON.stringify(specification)) // Deep copy
-
     this._generate(specification)
+  }
+
+  _set = (name:string, key:string, value:any) => {
+    const path = this._nameToSchema[name]?.path
+    if (path){
+      let target = this
+      path.forEach((str:string) => target = target[str] ?? target)
+      target[key] = value
+    }
   }
 
 
@@ -62,7 +69,7 @@ export default class NWBAPI {
         const deep = JSON.parse(JSON.stringify(inherit))
       
         parentObject[key] = Object.assign(deep, o)
-      } else if (o.inherits) console.log(`Cannot inherit ${inheritedName}`, o, namespace, schema, key)
+      } else if (o.inherits) console.log(`[webnwb]: Cannot inherit ${inheritedName}`, o, namespace, schema, key)
 
       // Drill Into Objects
       if (typeof parentObject[key] === 'object') for (let k in parentObject[key]) {
@@ -74,41 +81,87 @@ export default class NWBAPI {
   _getClasses(schema:ArbitraryObject){
     for (let clsName in schema) {
 
+        // Construct Class (attributes in function)
+        const keys = Object.keys(schema[clsName])
 
-      // Construct Class (attributes in function)
-      const keys = Object.keys(schema[clsName])
+        // NOTES
+        // 1. Iterate through the keys (still no transition of default_name)
+      
+          const generatedClass = new Function(
+              `return function ${clsName}(o={}){
+                  ${keys.map(k => {
+                    const val = schema[clsName][k]
+                    console.log('val', k, val, schema[clsName])
+                    return `this.${k} = ${(typeof val === 'function' ? val.toString() : JSON.stringify(val))}`
+                  }).join(';')}
+                  Object.assign(this, o)
+                }`
+          )();
 
-      const generatedClass = new Function(
-          `return function ${clsName}(o={}){
-              ${keys.map(k => `this.${k} = ${JSON.stringify(schema[clsName][k])}`).join(';')}
-              for (let k in o) if (o[k]) this[k] = o[k] 
-            }`
-      )();
-
-      // Create Helper Methods
-
-
-      schema[clsName] = generatedClass
+          schema[clsName] = generatedClass
     }
 
   }
   
 
-  _setFromObject(o: any, aggregator: ArbitraryObject = {}) {
+  _setFromObject(o: any, aggregator: ArbitraryObject = {}, type?:string) {
 
     const name = (o.neurodata_type_def ?? o.data_type_def) ?? o.name ?? o.default_name
     const inherit = (o.neurodata_type_inc ?? o.data_type_inc)
 
     if (name) {
-        const value = o.value ?? o.default_value ?? {}
-        if (aggregator[name] instanceof Function) aggregator[name].prototype[name] = inherit
-        else aggregator[name] = value
+
+          const value = o.value ?? o.default_value ?? {}
+          if (aggregator[name] instanceof Function) aggregator[name].prototype[name] = inherit
+          else {
+            aggregator[name] = value
+          }
     }
 
-    // Skip Checking Links
-    if (inherit && aggregator[name]) {
-      if (aggregator[name] instanceof Function) aggregator[name].prototype.inherits = inherit
-      else aggregator[name].inherits = inherit
+
+    if (inherit) {
+
+      // Specify inherited class
+      if (aggregator[name]){
+        if (aggregator[name] instanceof Function) aggregator[name].prototype.inherits = inherit
+        else aggregator[name].inherits = inherit 
+      } 
+
+      // Assign group helper functions
+      if (type === 'group') {
+
+        let map = new Map()
+        const get = (name:string) => {
+          return map.get(name)
+        }
+        
+        const add = (obj:any) => {
+          map.set(obj.name, obj)
+        }
+
+        const create = (input:ArbitraryObject) => {
+          const obj = new this[inherit](input)
+          add(obj)
+        }
+
+        const noNWB = inherit.replace('NWB', '')
+        let transformedName = `${noNWB[0].toLowerCase()}${noNWB.slice(1)}` 
+
+        // check whether the name needs to become plural
+        const needsS = transformedName.slice(-1) !== 's' && transformedName.slice(-4) != 'Data'
+        if (needsS) transformedName += 's'
+
+        // add helpers
+        aggregator[transformedName] = map
+        aggregator[`add${noNWB}`] = add
+        aggregator[`create${noNWB}`] = create
+        aggregator[`get${noNWB}`] = get
+
+        if (o.default_name) aggregator.name = o.default_name // track default name
+
+    }
+
+
     }
 
 
@@ -121,10 +174,10 @@ export default class NWBAPI {
 
     // Groups
     if (o.groups) {
+      const aggregation = aggregator[name] ?? aggregator
       o.groups.forEach((group: GroupType) => {
-        this._setFromObject(group, aggregator[name] ?? aggregator)
+        this._setFromObject(group, aggregation, 'group')
       })
-
     }
 
     // Links
@@ -140,6 +193,8 @@ export default class NWBAPI {
         this._setFromObject(dataset, aggregator[name] ?? aggregator)
       })
     }
+
+    return aggregator
   }
 
   _generate(spec: any = this._specification, key?:string) {
@@ -164,7 +219,7 @@ export default class NWBAPI {
 
         const scopedSpec:ArbitraryObject = {}
         const tick = performance.now()
-        if (namespace.name !== 'core' && this._debug) console.log(`Loading ${namespace.name} extension.`)
+        if (namespace.name !== 'core' && this._debug) console.log(`[webnwb]: Loading ${namespace.name} extension.`)
 
       namespace.schema.forEach((schema: any) => {
 
@@ -184,16 +239,17 @@ export default class NWBAPI {
           const base = (extension) ? this.extensions[namespace.name] : this
 
           // Don't Overwrite Redundant Namespaces / Schemas
+
           if (!base[name]){
+
             base[name] = {}
             schemas.push(name)
 
             // Account for File vs Schema Specification Formats
             const schemaInfo = version[schema.source] ?? version[name]
             const info = (typeof schemaInfo === 'string') ? JSON.parse(schemaInfo) : schemaInfo
-
-            this._setFromObject(info, base[name])
-
+            
+            base[name] = this._setFromObject(info)
 
             // Track Object Namespaces and Paths
             for (let key in base[name]){
@@ -213,9 +269,10 @@ export default class NWBAPI {
 
         // Show Performance
         const tock = performance.now()
-        if (this._debug) console.log(`WebNWB API: Generated ${namespace.name} in ${tock - tick} ms`)
+        // if (this._debug) 
+        console.log(`[webnwb]: Generated ${namespace.name} in ${tock - tick} ms`)
     })
-  } else console.warn(`WebNWB API: Unable to be generate API from file specification.`)
+  } else console.warn(`[webnwb]: Unable to be generate API from file specification.`)
 
 
       // Ensure All Objects Inherit from Each Other
