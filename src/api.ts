@@ -1,5 +1,6 @@
 import { ArbitraryObject, AttributeType, GroupType, LinkType, DatasetType } from './types/general.types';
 import schemas from './schema'
+import { objToString, safeStringify } from './utils/parse';
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 
 type SpecificationType = {'core':ArbitraryObject} & ArbitraryObject
@@ -24,17 +25,9 @@ export default class NWBAPI {
     this._generate(specification)
   }
 
-  _set = (name:string, key:string, value:any) => {
-    const path = this._nameToSchema[name]?.path
-    if (path){
-      let target = this
-      path.forEach((str:string) => target = target[str] ?? target)
-      target[key] = value
-    }
-  }
-
 
   _inherit = (key:string, parentObject?:ArbitraryObject) => {
+    
     const schema = this._nameToSchema[key]
     const namespace = schema?.namespace
     
@@ -43,12 +36,13 @@ export default class NWBAPI {
             parentObject = this[str]
         })
     }
-
+    
     if (parentObject){
+      
       const o = parentObject[key]
 
-      const inheritedName = o.inherits
-
+      // const inheritedName = o.inherits
+      const inheritedName = this._setCase(o.inherits) // set case
       const inheritedPath = this._nameToSchema[inheritedName]?.path
 
       let inherit:ArbitraryObject | undefined;
@@ -78,44 +72,134 @@ export default class NWBAPI {
     }
   }
 
+  _baseName = (str: string) => {
+    return str.replace('nwb', '')
+  }
+
+  _setCase = (base:string, type?: 'pascal' | 'camel') => {
+
+    if (!base) return
+
+    const setFirst = (str:string, method: 'toUpperCase' | 'toLowerCase' ='toUpperCase') => `${(str[0] ?? '')[method]()}${str.slice(1)}`
+    switch(type){
+      case 'pascal':
+        return base.split('_').map(str => setFirst(str)).join('')
+
+      default: 
+        const split = base.split('_')
+
+        const numCapital = Array.from(split.flat().join('')).reduce((acc, str) => {
+          const condition = str.toUpperCase() === str && !parseInt(str)
+          return acc + (condition ? 1 : 0)
+        }, 0)
+        if (numCapital === 0){
+          return split.map((str, i) => {
+            if (i) return setFirst(str)
+            else return str.toLowerCase()
+          }).join('')
+        } else return base
+    }
+  }
+
+
+  _generateHelperFunctions = (base:string | string[], valueToDrill?: any) => {
+
+    let str = ''
+    if (!Array.isArray(base)) base = [base]
+    str += base.map((str, i) => {
+    let caps = this._setCase(str, 'pascal')
+
+    return `
+        this.add${caps} = function add(obj) {
+          this.${base}[obj.name] = obj
+        };
+        
+        this.get${caps} = function get(name) { 
+          this.${base}[name]
+        };
+      `
+    }).join('\n')
+
+    if (valueToDrill) {
+      for (let key in valueToDrill) {
+        if (typeof valueToDrill[key] === 'object' && valueToDrill[key]._base){ 
+          delete valueToDrill[key]._base
+          str += this._generateHelperFunctions(key, valueToDrill[key])
+        }
+      }
+    }
+
+    return str
+
+
+  }
+
   _getClasses(schema:ArbitraryObject){
+
     for (let clsName in schema) {
+      if (clsName !== '_base' && typeof schema[clsName] === 'object'){
 
         // Construct Class (attributes in function)
-        const keys = Object.keys(schema[clsName])
-
+        const keys = Object.keys(schema[clsName])     
+        
         // NOTES
         // 1. Iterate through the keys (still no transition of default_name)
-      
-          const generatedClass = new Function(
-              `return function ${clsName}(o={}){
-                  ${keys.map(k => {
-                    const val = schema[clsName][k]
-                    console.log('val', k, val, schema[clsName])
-                    return `this.${k} = ${(typeof val === 'function' ? val.toString() : JSON.stringify(val))}`
-                  }).join(';')}
-                  Object.assign(this, o)
-                }`
-          )();
 
+        let base: string[];
+        const mapped = keys.map((k:string) => {
+          
+
+          const val = schema[clsName][k]
+          let str = ''
+
+          if (k === '_base') {
+            base = val
+            delete schema[clsName][k]
+          } else {
+
+            if (typeof val === 'object' && val._base) {
+              delete val._base
+              str += `${this._generateHelperFunctions(k, val)};\n`
+            }
+
+            str += `this.${k} = ${JSON.stringify(val)}` // add base object
+          }
+          
+          return str
+        })
+
+        const fnString =  `return function ${clsName}(o={}){
+          ${mapped.join('\n')}
+          Object.assign(this, o);
+          ${base ? this._generateHelperFunctions(base) : ''}
+        }`
+
+          const generatedClass = new Function(fnString)();
           schema[clsName] = generatedClass
+        }
     }
 
   }
   
 
-  _setFromObject(o: any, aggregator: ArbitraryObject = {}, type?:string) {
+  _setFromObject = (o: any, aggregator: ArbitraryObject = {}, type?:string, path:string[] = []) => {
 
-    const name = (o.neurodata_type_def ?? o.data_type_def) ?? o.name ?? o.default_name
+    let name = (o.neurodata_type_def ?? o.data_type_def) ?? o.name ?? o.default_name
     const inherit = (o.neurodata_type_inc ?? o.data_type_inc)
+    name = this._setCase(name)
+
+    const newPath = [...path]
 
     if (name) {
-
           const value = o.value ?? o.default_value ?? {}
           if (aggregator[name] instanceof Function) aggregator[name].prototype[name] = inherit
-          else {
-            aggregator[name] = value
-          }
+          else aggregator[name] = value
+          newPath.push(name)
+    }
+
+    // Assign default name (not always working...)
+    if (o.default_name) {
+      aggregator[name].name = o.default_name
     }
 
 
@@ -129,46 +213,17 @@ export default class NWBAPI {
 
       // Assign group helper functions
       if (type === 'group') {
-
-        let map = new Map()
-        const get = (name:string) => {
-          return map.get(name)
-        }
-        
-        const add = (obj:any) => {
-          map.set(obj.name, obj)
-        }
-
-        const create = (input:ArbitraryObject) => {
-          const obj = new this[inherit](input)
-          add(obj)
-        }
-
-        const noNWB = inherit.replace('NWB', '')
-        let transformedName = `${noNWB[0].toLowerCase()}${noNWB.slice(1)}` 
-
-        // check whether the name needs to become plural
-        const needsS = transformedName.slice(-1) !== 's' && transformedName.slice(-4) != 'Data'
-        if (needsS) transformedName += 's'
-
-        // add helpers
-        aggregator[transformedName] = map
-        aggregator[`add${noNWB}`] = add
-        aggregator[`create${noNWB}`] = create
-        aggregator[`get${noNWB}`] = get
-
-        if (o.default_name) aggregator.name = o.default_name // track default name
-
+        const base = this._baseName(inherit)
+        if (!aggregator._base) aggregator._base = [base] // generate helpers on class instance
+        else aggregator._base.push(base)
     }
-
-
     }
 
 
     // Attributes
     if (o.attributes) {
       o.attributes.forEach((attr: AttributeType) => {
-        this._setFromObject(attr, aggregator[name] ?? aggregator)
+        this._setFromObject(attr, aggregator[name] ?? aggregator, undefined, newPath)
       })
     }
 
@@ -176,21 +231,21 @@ export default class NWBAPI {
     if (o.groups) {
       const aggregation = aggregator[name] ?? aggregator
       o.groups.forEach((group: GroupType) => {
-        this._setFromObject(group, aggregation, 'group')
-      })
+        this._setFromObject(group, aggregation, 'group', newPath)
+      })    
     }
 
     // Links
     if (o.links) {
       o.links.forEach((link: LinkType) => {
-        this._setFromObject(link, aggregator[name] ?? aggregator)
+        this._setFromObject(link, aggregator[name] ?? aggregator, undefined, newPath)
       })
     }
 
     // Datasets
     if (o.datasets) {
       o.datasets.forEach((dataset: DatasetType) => {
-        this._setFromObject(dataset, aggregator[name] ?? aggregator)
+        this._setFromObject(dataset, aggregator[name] ?? aggregator, undefined, newPath)
       })
     }
 
@@ -249,7 +304,7 @@ export default class NWBAPI {
             const schemaInfo = version[schema.source] ?? version[name]
             const info = (typeof schemaInfo === 'string') ? JSON.parse(schemaInfo) : schemaInfo
             
-            base[name] = this._setFromObject(info)
+            base[name] = this._setFromObject(info, undefined, undefined, [name])
 
             // Track Object Namespaces and Paths
             for (let key in base[name]){

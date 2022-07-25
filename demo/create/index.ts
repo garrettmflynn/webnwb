@@ -27,25 +27,13 @@ const sessionStartTime = Date.now()
 const fileCreateDate = Date.now()
 
 
-const fileName = 'example_file_path.nwb'
+const fileName = 'test_file_path.nwb'
 const nwbFile = new nwb.NWBFile({
     session_description: 'demonstrate NWBFile basics',
     identifier: 'NWB123',
     sessionStartTime,
     fileCreateDate
 })
-
-const timeseries = new nwb.TimeSeries()
-console.log('timeseries', timeseries)
-
-const processing = new nwb.ProcessingModule()
-console.log('processing', processing)
-
-const position = new nwb.behavior.Position()
-console.log('position', position)
-
-const spatial = new nwb.behavior.SpatialSeries()
-console.log('spatial', spatial)
 
 let io: NWBHDF5IO;
 
@@ -61,16 +49,18 @@ const step = async (i:number) => {
                 const timestamps = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
                 const data = Array.from(timestamps, e => 100 + e * 10)
 
-                const testTs = new nwb.TimeSeries('testTimeseries', data, 'm',
-                    {
+                const testTs = new nwb.TimeSeries({
+                    name: 'testTimeseries', 
+                    data: data, 
+                    units: 'm',
+                    info: {
                     // starting_time:0.0,
                     // rate:1.0,
                     timestamps
-                    })
+                    }
+                })
 
                 nwbFile.addAcquisition(testTs)
-                nwbFile.acquisition['testTimeseries']
-                nwbFile.getAcquisition('testTimeseries')
                 update(nwbFile)
 
                 break;
@@ -82,17 +72,32 @@ const step = async (i:number) => {
             const position = new nwb.behavior.Position()
             const positionData = Array.from({ length: 20 }, (e, i) => i * (1 / 20))
 
-            const spatialSeries = new nwb.behavior.SpatialSeries('position2', positionData, 'starting gate', { rate: 50 })
+            const spatialSeries = new nwb.behavior.SpatialSeries({
+                name: 'position2',
+                data: positionData,
+                label: 'starting gate',
+                info: { rate: 50 }
+            })
+
+            console.log('position', position)
 
             position.addSpatialSeries(spatialSeries)
-            position.createSpatialSeries('position1', positionData, 'starting gate', { rate: 50 })
             update(nwbFile)
             break;
 
         case 3:
              // 6. Add Processing Modules to the NWB File
-            const behaviorModule = new nwbFile.createProcessingModule('behavior', 'preprocessed behavioral data')
-            const ecephysModule = new nwb.ProcessingModule('ecephys', 'preprocessed extracellular electrophysiology')
+            const behaviorModule = new nwb.ProcessingModule({
+                name: 'behavior',
+                description: 'preprocessed behavioral data'
+            })
+            console.log('nwbFile.addProcessingModule', nwbFile)
+
+            nwbFile.addProcessingModule(behaviorModule)
+            const ecephysModule = new nwb.ProcessingModule({
+                name: 'ecephys', 
+                description: 'preprocessed extracellular electrophysiology'
+            })
             nwbFile.addProcessingModule(ecephysModule)
             console.log(nwbFile.processing)
             nwbFile.processing['behavior'].add(position) // TODO: Check since this was 'behavior'
@@ -101,6 +106,7 @@ const step = async (i:number) => {
         
         case 4: 
               // 6. Organize NWB File into Trials
+              console.log('nwbFile.addTrial', nwbFile)
             nwbFile.addTrialColumn('stim', 'the visual stimuli during the trial')
             nwbFile.addTrial(0.0, 2.0, 'person')
             nwbFile.addTrial(3.0, 5.0, 'ocean')
@@ -110,6 +116,8 @@ const step = async (i:number) => {
 
         case 5:
             // 7. Organize NWB File into Epochs
+            console.log('nwbFile.addEpoch', nwbFile)
+
             nwbFile.addEpoch(2.0, 4.0, ['first', 'example'], [testTs,])
             nwbFile.addEpoch(6.0, 8.0, ['second', 'example'], [testTs,])
             update(nwbFile)
@@ -153,7 +161,7 @@ const step = async (i:number) => {
             // io4.close()
     }
 
-    io.write(nwbFile, fileName)
+    // io.write(nwbFile, fileName) // TODO: Very broken rn...
 
     if (i === 1) {
 
@@ -161,9 +169,12 @@ const step = async (i:number) => {
         const nwbFileIn = await io.read()
         console.log('From Saved. Does it have the test acquisition?', nwbFileIn)
 
-        const timeseriesIn = nwbFileIn.acquisition['testTimeseries']
-        console.log('timeseriesIn', timeseriesIn)
-        console.log('timeseriesIn.data', timeseriesIn?.data)
+        if (nwbFileIn) {
+            const timeseriesIn = nwbFileIn.acquisition['testTimeseries']
+
+            console.log('timeseriesIn', timeseriesIn)
+            console.log('timeseriesIn.data', timeseriesIn?.data)
+        } else console.error('file reloading failed...')
 
     }
 

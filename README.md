@@ -11,7 +11,7 @@ Neurodata without Borders — directly on the browser.
 https://docs.google.com/document/d/1qGuBUHIRhal0d4DLK3urtj9YU6lTt8CddRkqCF-faQg/edit#
 
 ### Additional Tasks
-- Generate classes other than NWBFile from the .yaml...
+- Weird h5wasm write error. Not letting me do it anymore...
 - Differentiate Datasets and Groups
 - Handle links, references, and tables with reference
 - Implement write using [best practices](https://www.nwb.org/best-practices/) and the [schema](https://nwb-schema.readthedocs.io/en/latest/format_description.html#nwbcontainer-nwbdata-nwbdatainterface-base-neurodata-types-for-containers-and-datasets)
