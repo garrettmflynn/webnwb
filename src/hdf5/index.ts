@@ -1,6 +1,8 @@
 // import * as reader from "h5wasm";
 export type ArbitraryObject = {[x:string]: any}
 
+import * as arrayUtils from '../utils/array'
+
 export default class HDF5IO {
 
   reader: any;
@@ -39,7 +41,7 @@ export default class HDF5IO {
     this._path = path = this._convertPath(path) // set latest path
 
 
-    this._FSReady().then(async () => {
+    this.reader.ready.then(async () => {
 
       this.reader.FS.mkdir(path);
       this.reader.FS.chdir(path);
@@ -76,7 +78,7 @@ export default class HDF5IO {
 
     return new Promise(resolve => {
 
-      this._FSReady().then(async () => {
+      this.reader.ready.then(async () => {
         if (this._debug && !read) console.log(`[webnwb]: Pushing all current files in ${path} to IndexedDB`)
         this.reader.FS.syncfs(read, async (e?:Error) => {
           if (e) {
@@ -112,7 +114,7 @@ export default class HDF5IO {
   list = async (path:string=this._path) => {
     path = this._convertPath(path)
 
-    await this._FSReady()
+    await this.reader.ready
     let node;
 
     try {node = (this.reader.FS.lookupPath(path))?.node} 
@@ -231,18 +233,11 @@ export default class HDF5IO {
   // Iteratively Check FS to Write File
   _write = async (name: string, ab: ArrayBuffer) => {
       const tick = performance.now()
-      await this._FSReady()
+      await this.reader.ready
       this.reader.FS.writeFile(name, new Uint8Array(ab));
       const tock = performance.now()
       if (this._debug) console.log(`[webnwb]: Wrote raw file in ${tock - tick} ms`)
       return true
-  }
-
-  _FSReady = () => {
-    return new Promise(resolve => {
-      if (this.reader.FS) resolve(true)
-      else setTimeout(async () => resolve(await this._FSReady()), 10) // Wait and check again
-    })
   }
 
         // Parse File Information with API Knowledge
@@ -345,10 +340,13 @@ export default class HDF5IO {
         const group = (key) ? file.write.get(key) : file.write
         for (let k in o) {
           const newKey = `${(key) ? `${key}/` : ''}${k}`
-          if (!(o[k] instanceof Function)) {
-            if (typeof o[k] === 'object') {
-              if (o[k] instanceof Array) group.create_dataset(k, o[k]);
-              else {
+
+          // Don't save methods
+          if (!(typeof o[k] === 'function')) {
+            if (o[k] && typeof o[k] === 'object') {
+              if (arrayUtils.check(o[k])) {
+                group.create_dataset(k, o[k]);
+              } else {
                 file.write.create_group(newKey);
                 writeObject(o[k], newKey)
               }

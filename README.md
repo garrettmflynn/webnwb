@@ -7,6 +7,9 @@ Neurodata without Borders — directly on the browser.
 
 > Note: Further development is expected to integrate into the NIH Brain Initiative’s [Distributed Archives for Neurophysiology Data Integration (DANDI)](https://gui.dandiarchive.org/#/) and acceptance as an official Neurodata without Borders API.
 
+## Requirements
+- Used typed arrays when adding data
+
 ## Development Progress + Backlog
 https://docs.google.com/document/d/1qGuBUHIRhal0d4DLK3urtj9YU6lTt8CddRkqCF-faQg/edit#
 

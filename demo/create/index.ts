@@ -5,15 +5,17 @@ import nwb from '../../src/index'
 import NWBHDF5IO from 'src/io';
 
 // Get Elements
-let i = 0
+let i = 1
 const createSection = document.getElementById('create') as HTMLDivElement
 let editor = new visualscript.ObjectEditor()
 createSection.insertAdjacentElement('beforeend', editor)
 
 const increment = document.getElementById('increment') as HTMLDivElement
 increment.onclick = () => {
-    i++
-    step(i)
+    if (io){
+        i++
+        step(i)
+    }
 }
 
 
@@ -29,20 +31,19 @@ const fileCreateDate = Date.now()
 
 const fileName = 'test_file_path.nwb'
 const nwbFile = new nwb.NWBFile({
-    session_description: 'demonstrate NWBFile basics',
+    sessionDescription: 'demonstrate NWBFile basics',
     identifier: 'NWB123',
     sessionStartTime,
     fileCreateDate
 })
+
+update(nwbFile)
 
 let io: NWBHDF5IO;
 
 const step = async (i:number) => {
 
     switch(i) {
-        case 0: 
-            update(nwbFile)
-            break;
 
         case 1: 
                 // Add TimeSeries Data
@@ -53,11 +54,9 @@ const step = async (i:number) => {
                     name: 'testTimeseries', 
                     data: data, 
                     units: 'm',
-                    info: {
                     // starting_time:0.0,
                     // rate:1.0,
                     timestamps
-                    }
                 })
 
                 nwbFile.addAcquisition(testTs)
@@ -70,22 +69,21 @@ const step = async (i:number) => {
             // 5. Add a Data Interface to the NWB File (https://pynwb.readthedocs.io/en/stable/overview_nwbFile.html#modules-overview)
 
             const position = new nwb.behavior.Position()
-            const positionData = Array.from({ length: 20 }, (e, i) => i * (1 / 20))
+            const positionData = Array.from({ length: 20 }, (e, i) => i / 20)
+            const positionTimestamps = Array.from({ length: 20 }, (e, i) => i / 200)
 
             const spatialSeries = new nwb.behavior.SpatialSeries({
-                name: 'position2',
-                data: positionData,
-                label: 'starting gate',
-                info: { rate: 50 }
+                name:"SpatialSeries",
+                description:"(x,y) position in open field",
+                data: new Float32Array(positionData),
+                timestamps: new Float32Array(positionTimestamps),
+                referenceFrame:"(0,0) is bottom left corner",
             })
 
             console.log('position', position)
 
             position.addSpatialSeries(spatialSeries)
-            update(nwbFile)
-            break;
 
-        case 3:
              // 6. Add Processing Modules to the NWB File
             const behaviorModule = new nwb.ProcessingModule({
                 name: 'behavior',
@@ -93,18 +91,18 @@ const step = async (i:number) => {
             })
             console.log('nwbFile.addProcessingModule', nwbFile)
 
-            nwbFile.addProcessingModule(behaviorModule)
+            nwbFile.addProcessing(behaviorModule)
             const ecephysModule = new nwb.ProcessingModule({
                 name: 'ecephys', 
                 description: 'preprocessed extracellular electrophysiology'
             })
-            nwbFile.addProcessingModule(ecephysModule)
-            console.log(nwbFile.processing)
-            nwbFile.processing['behavior'].add(position) // TODO: Check since this was 'behavior'
+            nwbFile.addProcessing(ecephysModule)
+            console.log(nwbFile.processing, nwbFile.processing['behavior'])
+            nwbFile.processing['behavior'].addNWBDataInterface(position)
             update(nwbFile)
             break;
         
-        case 4: 
+        case 3: 
               // 6. Organize NWB File into Trials
               console.log('nwbFile.addTrial', nwbFile)
             nwbFile.addTrialColumn('stim', 'the visual stimuli during the trial')
@@ -113,8 +111,8 @@ const step = async (i:number) => {
             nwbFile.addTrial(6.0, 8.0, 'desert')
             update(nwbFile)
             break;
-
-        case 5:
+ 
+        case 4:
             // 7. Organize NWB File into Epochs
             console.log('nwbFile.addEpoch', nwbFile)
 
@@ -123,7 +121,7 @@ const step = async (i:number) => {
             update(nwbFile)
             break;
 
-        case 6:
+        case 5:
               // 9. Add and Write Units to NWB File
                 nwbFile.addUnitColumn('location', 'the anatomical location of this unit')
                 nwbFile.addUnitColumn('quality', 'the quality for the inference of this unit')
@@ -161,7 +159,7 @@ const step = async (i:number) => {
             // io4.close()
     }
 
-    // io.write(nwbFile, fileName) // TODO: Very broken rn...
+    await io.write(nwbFile, fileName)
 
     if (i === 1) {
 
@@ -184,5 +182,6 @@ const step = async (i:number) => {
 
 hdf5.ready.then(() => {
     io = new nwb.NWBHDF5IO(hdf5, true)
-    step(i) // automatically run on initialization
+    increment.classList.remove('disabled')
+    console.log('File', nwbFile)
 })

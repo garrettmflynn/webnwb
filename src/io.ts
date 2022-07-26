@@ -2,6 +2,7 @@
 import NWBAPI from './api';
 import HDF5IO from './hdf5';
 // import HDF5IO from 'hdf5-io';
+import * as caseUtils from './utils/case'
 
 export default class NWBHDF5IO extends HDF5IO {
 
@@ -32,7 +33,8 @@ export default class NWBHDF5IO extends HDF5IO {
   _postprocess = (info: any) => {
     delete info['.specloc']
     const api = this.apis.get(info.nwb_version)
-    return (api) ? new api.NWBFile(info) : info
+    const newInfo = caseUtils.setAll(info) // transform to camelCase
+    return (api) ? new api.NWBFile(newInfo) : info
   }
 
  

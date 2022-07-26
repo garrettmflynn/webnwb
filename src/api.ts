@@ -1,8 +1,8 @@
 import { ArbitraryObject, AttributeType, GroupType, LinkType, DatasetType } from './types/general.types';
 import schemas from './schema'
-import { objToString, safeStringify } from './utils/parse';
-const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
+import * as caseUtils from './utils/case'
 
+const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 type SpecificationType = {'core':ArbitraryObject} & ArbitraryObject
 
 // Generate the NWB API from included specification
@@ -31,18 +31,19 @@ export default class NWBAPI {
     const schema = this._nameToSchema[key]
     const namespace = schema?.namespace
     
+    
     if (!parentObject) {
         schema.path.forEach((str:string) => {
             parentObject = this[str]
         })
     }
-    
+
     if (parentObject){
       
-      const o = parentObject[key]
+      const o = parentObject[key] ?? {}
+      const inheritedName = o.inherits?.value
 
-      // const inheritedName = o.inherits
-      const inheritedName = this._setCase(o.inherits) // set case
+      if (inheritedName){
       const inheritedPath = this._nameToSchema[inheritedName]?.path
 
       let inherit:ArbitraryObject | undefined;
@@ -54,17 +55,21 @@ export default class NWBAPI {
         inherit = inherit?.[inheritedName]
     }
     
-      delete parentObject[key].inherits
-
       if (inherit) {
+        if (inherit.inherits) {
+          this._inherit(inheritedName) // Finish inheritance for parent first
+        }
 
-        if (inherit.inherits) this._inherit(inheritedName) // Finish inheritance for parent first
+        // Defer inheritance for groups (i.e. create handlers instead)
+        if (o.inherits?.type !== 'group') {
+          const deep = JSON.parse(JSON.stringify(inherit))
+          parentObject[key] = Object.assign(deep, o)
+          delete parentObject[key].inherits // delete at the end
+        }
 
-        const deep = JSON.parse(JSON.stringify(inherit))
-      
-        parentObject[key] = Object.assign(deep, o)
       } else if (o.inherits) console.log(`[webnwb]: Cannot inherit ${inheritedName}`, o, namespace, schema, key)
 
+    }
       // Drill Into Objects
       if (typeof parentObject[key] === 'object') for (let k in parentObject[key]) {
           this._inherit(k, parentObject[key])
@@ -76,55 +81,57 @@ export default class NWBAPI {
     return str.replace('nwb', '')
   }
 
-  _setCase = (base:string, type?: 'pascal' | 'camel') => {
-
-    if (!base) return
-
-    const setFirst = (str:string, method: 'toUpperCase' | 'toLowerCase' ='toUpperCase') => `${(str[0] ?? '')[method]()}${str.slice(1)}`
-    switch(type){
-      case 'pascal':
-        return base.split('_').map(str => setFirst(str)).join('')
-
-      default: 
-        const split = base.split('_')
-
-        const numCapital = Array.from(split.flat().join('')).reduce((acc, str) => {
-          const condition = str.toUpperCase() === str && !parseInt(str)
-          return acc + (condition ? 1 : 0)
-        }, 0)
-        if (numCapital === 0){
-          return split.map((str, i) => {
-            if (i) return setFirst(str)
-            else return str.toLowerCase()
-          }).join('')
-        } else return base
-    }
-  }
-
 
   _generateHelperFunctions = (base:string | string[], valueToDrill?: any) => {
 
     let str = ''
-    if (!Array.isArray(base)) base = [base]
-    str += base.map((str, i) => {
-    let caps = this._setCase(str, 'pascal')
 
-    return `
-        this.add${caps} = function add(obj) {
-          this.${base}[obj.name] = obj
-        };
-        
-        this.get${caps} = function get(name) { 
-          this.${base}[name]
-        };
-      `
-    }).join('\n')
+    if (base){
+      if (!Array.isArray(base)) base = [base]
+      str += base.map((str, i) => {
+      let caps = caseUtils.set(str, 'pascal')
+      let camel = caseUtils.set((str.slice(0,3) === 'NWB' ? 'nwb' + str.slice(3) : str)) // ensure NWB is fully lowercase
+
+      return `
+
+          Object.defineProperties(this, {
+            add${caps}: {
+              value: function add${caps}(obj) {
+                this.${camel}[obj.name] = obj
+              }, 
+              enumerable: false,
+              writable: false
+            },
+            get${caps}: {
+              value: function get${caps}(name) {
+                return this.${camel}[name]
+              }, 
+              enumerable: false,
+              writable: false
+            }
+          });
+
+          if (!this.${camel}) this.${camel} = {};
+        `
+      }).join('\n')
+    }
 
     if (valueToDrill) {
       for (let key in valueToDrill) {
-        if (typeof valueToDrill[key] === 'object' && valueToDrill[key]._base){ 
-          delete valueToDrill[key]._base
-          str += this._generateHelperFunctions(key, valueToDrill[key])
+        const newVal = valueToDrill[key]
+        if (newVal && typeof newVal === 'object'){ 
+
+          // Create helpers for the base objects
+          if (newVal._base){
+            delete valueToDrill[key]._base
+            str += this._generateHelperFunctions(key, newVal)
+          } 
+          
+          // Create helpers for nested groups
+          else if (newVal.inherits && newVal.inherits.value && newVal.inherits.type === 'group') {
+            str += this._generateHelperFunctions(key)
+            delete valueToDrill[key].inherits
+          }
         }
       }
     }
@@ -145,22 +152,27 @@ export default class NWBAPI {
         // NOTES
         // 1. Iterate through the keys (still no transition of default_name)
 
-        let base: string[];
+        let helperFunctions: string = ''
         const mapped = keys.map((k:string) => {
           
 
           const val = schema[clsName][k]
           let str = ''
 
+          // Is base directly
           if (k === '_base') {
-            base = val
+            helperFunctions = this._generateHelperFunctions(val)
             delete schema[clsName][k]
-          } else {
+          } 
+          
+          // Drill Deeper
+          else {
 
-            if (typeof val === 'object' && val._base) {
+
+            if (val && typeof val === 'object' && val._base) {
               delete val._base
               str += `${this._generateHelperFunctions(k, val)};\n`
-            }
+            } else str += `${this._generateHelperFunctions(undefined, val)};\n`
 
             str += `this.${k} = ${JSON.stringify(val)}` // add base object
           }
@@ -171,7 +183,7 @@ export default class NWBAPI {
         const fnString =  `return function ${clsName}(o={}){
           ${mapped.join('\n')}
           Object.assign(this, o);
-          ${base ? this._generateHelperFunctions(base) : ''}
+          ${helperFunctions}
         }`
 
           const generatedClass = new Function(fnString)();
@@ -184,14 +196,23 @@ export default class NWBAPI {
 
   _setFromObject = (o: any, aggregator: ArbitraryObject = {}, type?:string, path:string[] = []) => {
 
+
+    const camelCaseDepth = 2
+    const isDeep = (path.length >= camelCaseDepth)
+    const isGroup = type === 'group'
     let name = (o.neurodata_type_def ?? o.data_type_def) ?? o.name ?? o.default_name
-    const inherit = (o.neurodata_type_inc ?? o.data_type_inc)
-    name = this._setCase(name)
+    let inherit = {
+      type,
+      value: (o.neurodata_type_inc ?? o.data_type_inc)
+    } 
+
+    const nameType = (isDeep) ? 'camel' : 'pascal'
+    name = caseUtils.set(name, nameType)
 
     const newPath = [...path]
 
     if (name) {
-          const value = o.value ?? o.default_value ?? {}
+          const value = o.value ?? o.default_value ?? (isDeep && !isGroup) ? null : {}
           if (aggregator[name] instanceof Function) aggregator[name].prototype[name] = inherit
           else aggregator[name] = value
           newPath.push(name)
@@ -203,49 +224,50 @@ export default class NWBAPI {
     }
 
 
-    if (inherit) {
+    if (inherit.value) {
 
       // Specify inherited class
       if (aggregator[name]){
         if (aggregator[name] instanceof Function) aggregator[name].prototype.inherits = inherit
-        else aggregator[name].inherits = inherit 
+        else aggregator[name].inherits = inherit
       } 
 
       // Assign group helper functions
       if (type === 'group') {
-        const base = this._baseName(inherit)
+        const base = this._baseName(inherit.value)
         if (!aggregator._base) aggregator._base = [base] // generate helpers on class instance
         else aggregator._base.push(base)
-    }
+      }
     }
 
 
     // Attributes
     if (o.attributes) {
+      const thisAggregator = aggregator[name] ?? aggregator
       o.attributes.forEach((attr: AttributeType) => {
-        this._setFromObject(attr, aggregator[name] ?? aggregator, undefined, newPath)
+        this._setFromObject(attr, thisAggregator, 'attribute', newPath)
       })
     }
 
     // Groups
     if (o.groups) {
-      const aggregation = aggregator[name] ?? aggregator
+      const thisAggregator = aggregator[name] ?? aggregator
       o.groups.forEach((group: GroupType) => {
-        this._setFromObject(group, aggregation, 'group', newPath)
+        this._setFromObject(group, thisAggregator, 'group', newPath)
       })    
     }
 
     // Links
     if (o.links) {
       o.links.forEach((link: LinkType) => {
-        this._setFromObject(link, aggregator[name] ?? aggregator, undefined, newPath)
+        this._setFromObject(link, aggregator[name] ?? aggregator, 'link', newPath)
       })
     }
 
     // Datasets
     if (o.datasets) {
       o.datasets.forEach((dataset: DatasetType) => {
-        this._setFromObject(dataset, aggregator[name] ?? aggregator, undefined, newPath)
+        this._setFromObject(dataset, aggregator[name] ?? aggregator, 'dataset', newPath)
       })
     }
 

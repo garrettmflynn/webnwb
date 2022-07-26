@@ -29,6 +29,12 @@ section {
     padding: 25px;
 }
 
+.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    transition: 0.5s;
+}
+
 #gallery {
     display: flex;
     flex-wrap: wrap;

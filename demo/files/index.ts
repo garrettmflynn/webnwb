@@ -102,7 +102,7 @@ const lines = []
 
 
 // Show Images
-if (file.acquisition[key].external_file) {
+if (file.acquisition[key].externalFile) {
 
   let waiter = new visualscript.Loader({ showPercent: false })
   waiter.id = 'waiter'
@@ -130,7 +130,7 @@ if (file.acquisition[key].external_file) {
 
   }
 
-  const arr = await Promise.all(file.acquisition[key].external_file.map((src) => createImg(src)))
+  const arr = await Promise.all(file.acquisition[key].externalFile.map((src) => createImg(src)))
 
 
   arr.forEach(o => {
@@ -145,6 +145,7 @@ if (file.acquisition[key].external_file) {
 else {
 
   const dataValue = file.acquisition[key].data
+  console.log(key, dataValue)
 
   if (key) lines.push({
     name: 'Acquisition',
