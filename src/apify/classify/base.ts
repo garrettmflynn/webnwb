@@ -2,8 +2,17 @@ class ApifyBaseClass {
 
     [x:string]: any; // arbitrary
 
-    constructor(info: any) {
+    constructor(info: any = {}) {
 
+        let target = this
+        const prototypes = []
+        do {
+            target = Object.getPrototypeOf(target)
+            prototypes.push(target)
+        } while(Object.getPrototypeOf(target))
+
+        prototypes.reverse().forEach(p => Object.assign(this, p)) // inherit
+        
         
                 // Trigger correct response from the constructor
                 const arr = Object.keys(info)
@@ -23,8 +32,6 @@ class ApifyBaseClass {
                     } else this[key] = val // assign raw attribute
                   } else console.warn('[${this.info.name}]: ' + key + ' (argument) is out of schema for ${name}')
                 })
-
-                console.log('this')
             }
  }
 

@@ -14,7 +14,10 @@ Neurodata without Borders — directly on the browser.
 https://docs.google.com/document/d/1qGuBUHIRhal0d4DLK3urtj9YU6lTt8CddRkqCF-faQg/edit#
 
 ### Additional Tasks
-- Fix getMatchingClass to find the closest set...
+- Keep important metadata in file (e.g. neurodata_type). Don’t search!
+    - Fix getMatchingClass to find the closest set. Actually use the spec info
+- Remove undefined values from actual file. Null is fine.
+- Support in freerange
 - Track whether required: false... (attributes)
 - Quantities: 1 = required, ? = optional, * = zero to many, + = 1 or more ( groups )
 - _inc is inheritance when combined to _def. Otherwise it is just about composition.
@@ -24,8 +27,12 @@ https://docs.google.com/document/d/1qGuBUHIRhal0d4DLK3urtj9YU6lTt8CddRkqCF-faQg/
 - Demonstrate in the documentation with [tutorials](https://pynwb.readthedocs.io/en/latest/tutorials/general/scratch.html#raw-data)
 - Create a viewer like [Vizarr](https://github.com/hms-dbmi/vizarr)
 
-## Related Projects
-- [easynwb](https://github.com/garrettmflynn/easynwb)
+
+
+## Derivatives
+**hdf5-io:** A simple way to load HDF5 files as JavaScript objects
+**apify:** A way to generate APIs from simple specification languages (e.g. the NWB Schema)
+
 
 ## Dependencies
 **h5wasm:** https://github.com/usnistgov/h5wasm

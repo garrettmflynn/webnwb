@@ -1,5 +1,5 @@
 import { ArbitraryObject } from "src/types/general.types";
-import extend from "./utils/extend";
+import extend from "../utils/extend";
 
 class InheritanceTree {
 
@@ -16,34 +16,35 @@ class InheritanceTree {
             this.tree[type][parent].inherited.push(child)
             this.tree[type][child].inherits = parent
 
-        } else console.error('[InheritanceTree]: Cannot add parent as child')
+        } else console.error('[classify]: Cannot add parent as child')
     }
 
-    _inherit = (base:any, info:any, group=Object.keys(this.tree)[0]) => {
-
-        // if (typeof base === 'string') 
+    _inherit = (base:string, info:any, classes:any, group=Object.keys(this.tree)[0]) => {
+        const baseClass = classes[base]
+        if (!baseClass) {
+            console.warn(`[classify]: ${base} was missing in the spec`)
+            return undefined
+        }
 
         // Get Inheritance
         if (info.inherits){
             const inheritanceInfo = this.tree[group][info.inherits]
-            // console.log('check', group, info.inherits, inheritanceInfo.class, this.tree[group])
             if (!inheritanceInfo.class) {
-                const output = this._inherit(base, inheritanceInfo, group) // inherit for parent
-                // console.log('output', output)
+                const output = this._inherit(info.inherits, inheritanceInfo, classes, group) // inherit for parent
                 inheritanceInfo.class = output
-            }
+            } 
 
-            console.log(`extending ${base.name} with ${inheritanceInfo.class.name}`, inheritanceInfo)
-            return extend(inheritanceInfo.class, base) // extend base with inheritance
-        } else return base
+            info.class = extend(inheritanceInfo.class, baseClass.constructor) // extend base with inheritanc
+  
+            return info.class
+        } else return baseClass
     }
 
     inherit = (classes:any, group=Object.keys(this.tree)[0]) => {
-        console.log('[InheritanceTree]: Inheriting classes', classes, group, this.tree[group])
         for (let key in this.tree[group]) {
             const info = this.tree[group][key]
-            const baseClass = classes[key]
-            classes[key] = this._inherit(baseClass, info, group) // update reference
+            const res = this._inherit(key, info, classes, group) 
+            if (res) classes[key] = res // update reference
         }
     }
 }

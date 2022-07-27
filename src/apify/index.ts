@@ -4,7 +4,7 @@ import { OptionsType } from './types';
 import * as test from "./utils/test"
 import * as rename from "./utils/rename"
 import Classify from './classify';
-import InheritanceTree from './InheritanceTree';
+import InheritanceTree from './classify/InheritanceTree';
 
 type SpecificationType = { [x: OptionsType['coreName']]: ArbitraryObject } & ArbitraryObject
 
@@ -50,69 +50,69 @@ export default class API {
   }
 
 
-  _inherit = (key: string, parentObject?: ArbitraryObject) => {
+  // _inherit = (key: string, parentObject?: ArbitraryObject) => {
 
-    const schema = this._nameToSchema[key]
-    const namespace = schema?.namespace
+  //   const schema = this._nameToSchema[key]
+  //   const namespace = schema?.namespace
 
 
-    if (!parentObject) {
-      schema.path.forEach((str: string) => {
-        parentObject = this[str]
-      })
-    }
+  //   if (!parentObject) {
+  //     schema.path.forEach((str: string) => {
+  //       parentObject = this[str]
+  //     })
+  //   }
 
-    if (parentObject) {
+  //   if (parentObject) {
 
-      const o = parentObject[key] ?? {}
-      let name = o.inherits?.value
-      if (Array.isArray(name)) {
-        name.forEach(str => this._inherit(str))
-      } else {
+  //     const o = parentObject[key] ?? {}
+  //     let name = o.inherits?.value
+  //     if (Array.isArray(name)) {
+  //       name.forEach(str => this._inherit(str))
+  //     } else {
 
-        if (name) {
-          const inheritedPath = this._nameToSchema[name]?.path
+  //       if (name) {
+  //         const inheritedPath = this._nameToSchema[name]?.path
 
-          let inherit: ArbitraryObject | undefined;
-          if (inheritedPath) {
-            inherit = this._registry // from registry === specification (for now not class)
-            inheritedPath.forEach((str: string) => {
-              inherit = inherit?.[str]
-            })
-            inherit = inherit?.[name]
-          }
+  //         let inherit: ArbitraryObject | undefined;
+  //         if (inheritedPath) {
+  //           inherit = this._registry // from registry === specification (for now not class)
+  //           inheritedPath.forEach((str: string) => {
+  //             inherit = inherit?.[str]
+  //           })
+  //           inherit = inherit?.[name]
+  //         }
 
-          if (inherit) {
-            if (inherit.inherits || inherit.inherits?.done) this._inherit(name) // Finish inheritance for parent first
+  //         if (inherit) {
+  //           if (inherit.inherits || inherit.inherits?.done) this._inherit(name) // Finish inheritance for parent first
 
-            // // Object Inheritance for Non-Groups
-              const deep = JSON.parse(JSON.stringify(inherit))
+  //           // // Object Inheritance for Non-Groups
+  //             const deep = JSON.parse(JSON.stringify(inherit))
 
-              Object.assign(parentObject[key], Object.assign(deep, o)) // reassign to reference
-              o.inherits.done = true // has inherited
+  //             Object.assign(parentObject[key], Object.assign(deep, o)) // reassign to reference
+  //             o.inherits.done = true // has inherited
 
             
-            // Defered inheritance for groups. Create handlers instead
-            if (o.inherits?.type === 'group') {
-              // if (o.class === false) delete o[key]
+  //           // Defered inheritance for groups. Create handlers instead
+  //           if (o.inherits?.type === 'group') {
+  //             // if (o.class === false) delete o[key]
 
-              // keep inherit value
-              Object.defineProperty(parentObject[key], 'inherits', {
-                value: o.inherits,
-                enumerable: false,
-                writable: false,
-              })
+  //             // keep inherit value
+  //             Object.defineProperty(parentObject[key], 'inherits', {
+  //               value: o.inherits,
+  //               enumerable: false,
+  //               writable: false,
+  //             })
 
-            }
+  //           }
 
-          } else if (o.inherits) console.log(`[${this._options.name}]: Cannot inherit ${name}`, o, namespace, schema, key)
+  //         } else if (o.inherits) console.log(`[${this._options.name}]: Cannot inherit ${name}`, o, namespace, schema, key)
 
-        }
-        // Drill Into Objects
-        if (typeof parentObject[key] === 'object') for (let k in parentObject[key]) this._inherit(k, parentObject[key])
-      }
-    }
-  }
+  //       }
+  //       // Drill Into Objects
+  //       if (typeof parentObject[key] === 'object') for (let k in parentObject[key]) this._inherit(k, parentObject[key])
+  //     }
+  //   }
+  // }
 
   _define = (name:string, target:any, format:any) => {
     Object.defineProperty(target, name, format)
@@ -234,19 +234,11 @@ export default class API {
     if (o.default_name) aggregator[name].name = o.default_name
 
 
+
     if (inherit.value) {
 
       if (name && inherit.type){
         this._inheritanceTree.add(inherit.value, name, isClass ? 'classes' : 'groups')
-      }
-
-      // REMOVE: Specify inherited class
-      if (aggregator[name]) {
-          Object.defineProperty(aggregator[name], 'inherits', {
-            value: inherit,
-            enumerable: false,
-            writable: false
-          })
       }
     }
 
@@ -382,7 +374,7 @@ export default class API {
 
 
     // Ensure All Objects Inherit from Each Other
-    for (let key in this._nameToSchema) this._inherit(key)
+    // for (let key in this._nameToSchema) this._inherit(key)
 
     // Decouple specification (while maintaining non-enumerable properties)
     this._specification = JSON.parse(JSON.stringify(this._registry))
