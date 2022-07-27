@@ -21,6 +21,9 @@ https://docs.google.com/document/d/1qGuBUHIRhal0d4DLK3urtj9YU6lTt8CddRkqCF-faQg/
 - Track whether required: false... (attributes)
 - Quantities: 1 = required, ? = optional, * = zero to many, + = 1 or more ( groups )
 - _inc is inheritance when combined to _def. Otherwise it is just about composition.
+- **Just edit metadata** (is this the best demonstration use-case?)
+    - Only allow add beneath groups
+
 - Differentiate Datasets and Groups
 - Handle links, references, and tables with reference
 - Implement write using [best practices](https://www.nwb.org/best-practices/) and the [schema](https://nwb-schema.readthedocs.io/en/latest/format_description.html#nwbcontainer-nwbdata-nwbdatainterface-base-neurodata-types-for-containers-and-datasets)
