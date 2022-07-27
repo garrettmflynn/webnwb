@@ -4,6 +4,7 @@ import { OptionsType } from './types';
 import * as test from "./utils/test"
 import * as rename from "./utils/rename"
 import Classify from './classify';
+import InheritanceTree from './InheritanceTree';
 
 type SpecificationType = { [x: OptionsType['coreName']]: ArbitraryObject } & ArbitraryObject
 
@@ -17,7 +18,8 @@ export default class API {
   _nameToSchema: ArbitraryObject = {};
   extensions: ArbitraryObject = {};
   _version?: string;
-  _classify: Classify
+  _classify: Classify;
+  _inheritanceTree = new InheritanceTree();
 
   [x: string]: any;
 
@@ -40,7 +42,7 @@ export default class API {
 
     // copy user-specified specification
     this._registry = JSON.parse(JSON.stringify(specification)) // Deep copy
-
+    
     const globalTarget = (globalThis as any)
     // assign latest API to global (for create calls...)
     if (!globalTarget.apify) globalTarget.apify = {}
@@ -73,7 +75,7 @@ export default class API {
 
           let inherit: ArbitraryObject | undefined;
           if (inheritedPath) {
-            inherit = this
+            inherit = this._registry // from registry === specification (for now not class)
             inheritedPath.forEach((str: string) => {
               inherit = inherit?.[str]
             })
@@ -112,13 +114,59 @@ export default class API {
     }
   }
 
+  _define = (name:string, target:any, format:any) => {
+    Object.defineProperty(target, name, format)
+  }
+
+
+  // Mostly for the type—but also for scrubbing non-matching keys
+  _transfer = (target:any, ref:any) => {
+    const copy = Object.assign({}, target)
+    if (target.type) this._define('type', copy, {
+      value: target.type,
+      enumerable: false,
+      writable: false
+    }) // keep type
+    
+    if (copy && ref){
+        for (let k in copy) {
+
+
+          if (typeof copy[k] === 'object' && !Array.isArray(copy[k])){
+            const o = Object.assign({}, copy[k])
+
+            const s = ref[k]
+
+            if (s) {
+
+                if (s.type) this._define('type', o, {
+                  value: s.type,
+                  enumerable: false,
+                  writable: false
+                })
+                
+                const newVal = this._transfer(o, s)
+                if (newVal) copy[k] = newVal
+              
+          }
+
+        } 
+      }
+    }
+
+    return copy
+  }
+
   _conformToSpec = (name:string, info:any) => {
-    const spec = this._get(name, this._specification[this._options.coreName])
-    console.log('got spec', spec)
-    const newInfo = caseUtils.setAll(info) // transform to camelCase
-    console.log('newInfo', newInfo)
+    const spec = this._get(name, this._specification)
+
+    const infoWithTypes = this._transfer(info, spec)
+
+    const newInfo = caseUtils.setAll(infoWithTypes) // transform to camelCase
     return newInfo
   }
+
+
 
   // Set schema item
   _set = (name:string, value:any, key?:string) => {
@@ -132,13 +180,18 @@ export default class API {
   }
 
     // Get schema item
-  _get = (name:string, target=this) => {
+  _get = (name:string, target=this._registry) => {
     const path = this._nameToSchema[name]?.path
 
     if (path){
       path.forEach((str:string) => target = target[str] ?? target)
       return target[name]
     } else return null
+  }
+
+  getMatchingClass = (input: any) => {
+    const className = this._classify.match(input)
+    if (className) return this._get(className)
   }
 
 
@@ -183,21 +236,17 @@ export default class API {
 
     if (inherit.value) {
 
-      // Specify inherited class
+      if (name && inherit.type){
+        this._inheritanceTree.add(inherit.value, name, isClass ? 'classes' : 'groups')
+      }
+
+      // REMOVE: Specify inherited class
       if (aggregator[name]) {
-        if (aggregator[name] instanceof Function) {
-          Object.defineProperty(aggregator[name].prototype.inherits, 'inherits', {
-            value: inherit,
-            enumerable: false,
-            writable: false
-          })
-        } else {
           Object.defineProperty(aggregator[name], 'inherits', {
             value: inherit,
             enumerable: false,
             writable: false
           })
-        }
       }
     }
 
@@ -265,7 +314,7 @@ export default class API {
       const o = JSON.parse(JSON.stringify(spec[key])) // Deep Copy Spec
 
       const isFormatted = !!o.namespace
-      const version = (!o.namespace) ? Object.values(o)[0] : o // File OR Specification Format
+      const version = (!o.namespace) ? o[Object.keys(o)[0]] : o // File OR Specification Format
 
       // Account for File vs Schema Specification Formats
       const namespaceInfo = version?.namespace // File OR Specification Format
@@ -303,8 +352,10 @@ export default class API {
 
                 base[name] = this._setFromObject(info, undefined, undefined, [name])
 
+                const path = [namespace.name, namespace.version, name]
+
                 // Track Object Namespaces and Paths
-                for (let key in base[name]) this._nameToSchema[key] = (extension) ? { namespace: namespace.name, path: ['extensions', namespace.name, name] } : { namespace: namespace.name, path: [name] }
+                for (let key in base[name]) this._nameToSchema[key] = { namespace: namespace.name, path }
                 scopedSpec[name] = base[name]
               }
             }
@@ -327,28 +378,28 @@ export default class API {
 
     // ------------------ AFTER GENERATING ALL SCHEMAS ------------------
     // Set classify information
-    this._classify.set(Object.assign({
-      version: this._version as string,
-    }, this._options))
+    this._classify.set(Object.assign({ version: this._version as string }, this._options))
+
 
     // Ensure All Objects Inherit from Each Other
     for (let key in this._nameToSchema) this._inherit(key)
 
-    // Separate specification from the class registry
-    this._specification = this._registry
-
+    // Decouple specification (while maintaining non-enumerable properties)
+    this._specification = JSON.parse(JSON.stringify(this._registry))
+      for (let spec in this._registry) {
+        for (let version in this._registry[spec]){
+        const schema = this._registry[spec][version]
+        for (let namespace in schema) {
+          this._specification[spec][version][namespace] = Object.assign({}, schema[namespace]) // Shallow copy of the current specification information
+        }
+        }
+      }
+    
     // Populate the class registry
-    for (let spec in this._registry) {
-      for (let version in this._registry[spec]){
-      const schema = this._registry[spec][version]
-      for (let namespace in schema) {
-
-        const namespaceRef = schema[namespace]
-        this._specification[spec][version][namespace] = Object.assign({}, namespaceRef) // Shallow copy of the current specification information
-        this._classify.replace(namespaceRef) // get classes for namespace (apply to reference)
-      }
-      }
-    }
+    this._classify.load(this._registry, {
+      tree: this._inheritanceTree,
+      type: 'classes'
+    }, false) // get classes for namespace (apply to reference)
     
 
     // Flatten Certain Schema Classes

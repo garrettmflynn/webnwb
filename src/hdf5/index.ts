@@ -1,4 +1,4 @@
-// import * as reader from "h5wasm";
+import * as h5wasm from "h5wasm";
 export type ArbitraryObject = {[x:string]: any}
 
 import * as arrayUtils from '../utils/array'
@@ -20,8 +20,8 @@ export default class HDF5IO {
   _postprocess: Function = (o:any) => o // Returns processed file object
   case: caseUtils.CaseType = 'snake' // 'camel', 'snake', or 'pascal'
 
-  constructor(reader: any, options:ArbitraryObject={}, debug = false) {
-    this.reader = reader;
+  constructor(options:ArbitraryObject={}, debug = false) {
+    this.reader = h5wasm;
     this._debug = debug;
     if (options?.preprocess) this._preprocess = options.preprocess
     if (options?.postprocess) this._postprocess = options.postprocess

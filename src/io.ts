@@ -1,4 +1,3 @@
-// import * as reader from "h5wasm";
 import NWBAPI from './api';
 import HDF5IO from './hdf5';
 
@@ -8,8 +7,8 @@ export default class NWBHDF5IO extends HDF5IO {
   apis: Map<string, NWBAPI> = new Map()
   _path: string = "/nwb"
 
-  constructor(h5wasm: any, debug = false) {
-    super(h5wasm, {}, debug )
+  constructor(debug = false) {
+    super({}, debug )
     this.initFS()
   }
 
@@ -30,10 +29,10 @@ export default class NWBHDF5IO extends HDF5IO {
 
   _postprocess = (info: any) => {
     delete info['.specloc']
-    const api = this.apis.get(info.nwbVersion) as NWBAPI // get correct version
-    const specInfo = api._conformToSpec('NWBFile', info)
 
-    console.log('specInfo', specInfo)
+    const version = info.nwbVersion ?? info.nwb_version
+    const api = this.apis.get(version) as NWBAPI // get correct version
+    const specInfo = api._conformToSpec('NWBFile', info)
     return new api.NWBFile(specInfo) // create correct version
   }
 

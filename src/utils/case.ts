@@ -52,9 +52,7 @@ export const set = (base:string, type?: CaseType) => {
         if (newKey != key) delete newInfo[key]
 
         if (newInfo[newKey] && typeof newInfo[newKey] === 'object' && !array.check(newInfo[newKey])) {
-                console.log('Drilling', newKey, info[newKey], info[key].type)
                 const drilled = setAll(info[key], type) // drill original object
-                console.log('Drilled', newKey, drilled)
                 newInfo[newKey] = drilled
             }
         }

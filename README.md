@@ -14,6 +14,7 @@ Neurodata without Borders — directly on the browser.
 https://docs.google.com/document/d/1qGuBUHIRhal0d4DLK3urtj9YU6lTt8CddRkqCF-faQg/edit#
 
 ### Additional Tasks
+- Fix getMatchingClass to find the closest set...
 - Track whether required: false... (attributes)
 - Quantities: 1 = required, ? = optional, * = zero to many, + = 1 or more ( groups )
 - _inc is inheritance when combined to _def. Otherwise it is just about composition.
