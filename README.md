@@ -14,7 +14,9 @@ Neurodata without Borders — directly on the browser.
 https://docs.google.com/document/d/1qGuBUHIRhal0d4DLK3urtj9YU6lTt8CddRkqCF-faQg/edit#
 
 ### Additional Tasks
-- Weird h5wasm write error. Not letting me do it anymore...
+- Track whether required: false... (attributes)
+- Quantities: 1 = required, ? = optional, * = zero to many, + = 1 or more ( groups )
+- _inc is inheritance when combined to _def. Otherwise it is just about composition.
 - Differentiate Datasets and Groups
 - Handle links, references, and tables with reference
 - Implement write using [best practices](https://www.nwb.org/best-practices/) and the [schema](https://nwb-schema.readthedocs.io/en/latest/format_description.html#nwbcontainer-nwbdata-nwbdatainterface-base-neurodata-types-for-containers-and-datasets)

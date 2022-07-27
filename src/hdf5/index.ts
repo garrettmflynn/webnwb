@@ -260,11 +260,8 @@ arrayBuffer = (name: string, file?: any) => {
 
           if (o){
 
-            let type: string = '';
-
           // Datasets
           if (o instanceof this.reader.Dataset) {
-            type = 'dataset'
             if (Object.keys(aggregator[key])) {
               // ToDO: Expose HDF5 Dataset objects
               // if (keepDatasets) aggregator[key] = o // Expose HDF5 Dataset
@@ -278,7 +275,6 @@ arrayBuffer = (name: string, file?: any) => {
           
           // Attributes
           else if (!o.attrs.value) {
-            type = 'attribute'
             for (let a in o.attrs) {
               aggregator[key][a] = o.attrs[a].value // Exclude shape and dType
             }
@@ -286,20 +282,14 @@ arrayBuffer = (name: string, file?: any) => {
   
           // Drill Group
           if (o.keys instanceof Function) {
-            type = 'group'
             let keys = o.keys()
+
             keys.forEach((k: string) => {
               const group = o.get(k)
               aggregator[key][k] = {}
               aggregator[key][k] = this._parse(group, aggregator[key], k, modifier, keepDatasets)
             })
           }
-
-          Object.defineProperty(aggregator[key], 'type', { 
-            value: type,
-            enumerable: false,
-            writable: false
-          })
 
           }
   

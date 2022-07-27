@@ -1,33 +1,23 @@
 import { ArbitraryObject, AttributeType, GroupType, LinkType, DatasetType } from '../types/general.types';
 import * as caseUtils from '../utils/case'
-import drill from '../utils/drill';
-
-type OptionsType = {
-    debug?: boolean,
-    name: string,
-    coreName: string,
-    methodName: string[],
-    allCaps: string[],
-    namespacesToFlatten: string[],
-    patternsToRemove: string[],
-    overrides: {
-      [x: string]: {
-        [x: string]: (self: any) => any
-      }
-    },
-    getValue: (o: any) => any
-}
+import { OptionsType } from './types';
+import * as test from "./utils/test"
+import * as rename from "./utils/rename"
+import Classify from './classify';
 
 type SpecificationType = { [x: OptionsType['coreName']]: ArbitraryObject } & ArbitraryObject
 
 // Generate an API from included specification
 export default class API {
 
-  _specification: SpecificationType
-  _options: OptionsType;
+  _registry: SpecificationType
+  _specification: SpecificationType = {}
+
+  _options: OptionsType; 
   _nameToSchema: ArbitraryObject = {};
   extensions: ArbitraryObject = {};
   _version?: string;
+  _classify: Classify
 
   [x: string]: any;
 
@@ -45,8 +35,11 @@ export default class API {
     if (!this._options.overrides) this._options.overrides = {}
     if (typeof this._options.getValue !== 'function') this._options.getValue = () => undefined // triggert default
 
+
+    this._classify = new Classify()
+
     // copy user-specified specification
-    this._specification = JSON.parse(JSON.stringify(specification)) // Deep copy
+    this._registry = JSON.parse(JSON.stringify(specification)) // Deep copy
 
     const globalTarget = (globalThis as any)
     // assign latest API to global (for create calls...)
@@ -119,136 +112,12 @@ export default class API {
     }
   }
 
-  _baseName = (str: string) => {
-    this._options.allCaps.forEach(s => {
-        str = str.replaceAll(s, s.toLowerCase())
-    })
-    return str
-  }
-
-
-  _generateHelperFunctions = (base?: string, valueToDrill?: any, path:string[]=[], aliases:string | string[] = []) => {
-
-    let str = ``
-
-    if (base) {
-        let pascal = caseUtils.set(base, 'pascal')
-        let camel = caseUtils.set(this._baseName(base)) // ensure special all-caps strings are fully lowercase
-        const thisString = `this.${path.slice(1).join('.')}`
-
-        if (aliases && !Array.isArray(aliases)) aliases = [aliases]
-        const names = new Set(aliases)
-        names.add(pascal)
-
-        const randId = Math.floor(100000*Math.random())
-
-        // Add helper on base. Add empty object at path
-        return `
-
-        const methods${randId} = ${JSON.stringify(Array.from(names))}
-        methods${randId}.forEach(method => {
-        if (!this._deleted) {
-          Object.defineProperty(this, '_deleted', {
-            value: [],
-            enumerable: false,
-            writable: false,
-          })
-        }
-
-        if (!${thisString}) ${thisString} = {};
-
-        const addName = 'add' + method
-        const getName = 'get' + method
-        const createName = 'create' + method
-
-        if (!this._deleted.includes(method)){
-          try {
-            Object.defineProperties(this, {
-              [addName]: {
-                value: function add${pascal}(obj) {
-                  this.${camel}[obj.name] = obj
-                }, 
-                enumerable: false,
-                writable: false
-              },
-              [getName]: {
-                value: function get${pascal}(name) {
-                  return this.${camel}[name]
-                }, 
-                enumerable: false,
-                writable: false
-              },
-              [createName]: {
-                value: function create${pascal}(o) {
-                  let cls;
-                  methods${randId}.forEach(method => {
-                    if (!cls) cls = globalThis.apify.${this._options.name}._get(method)
-                  })
-                  if (cls) {
-                    const created = new cls(o)
-                    return this.add${pascal}(created)
-                  } else {
-                    console.error('[${this._options.name}]: Could not find class for ${pascal}');
-                    return null
-                  }
-                }, 
-                enumerable: false,
-                writable: false
-              }
-            });
-          } catch (e) {
-            const aliases = ${JSON.stringify(aliases)}
-            console.warn('[${this._options.name}]: Trying to redeclare a helper function for ${pascal}', 'removing aliases: ' + aliases)
-            aliases.forEach(alias => {
-              delete this[alias]
-              this._deleted.push(alias)
-            })
-          };
-        }
-        })
-
-        `    
-      }
-
-    if (valueToDrill) {
-      for (let key in valueToDrill) {
-        let newVal = valueToDrill[key]
-
-        if (newVal && typeof newVal === 'object') {
-
-          const nestedGroup = newVal.inherits && newVal.inherits.value
-
-          // Create helpers for nested groups (those which kept their non-enumerable values) and their children (except for deep classes)
-          if (nestedGroup) {
-
-            this._options.allCaps.forEach(str => key = key.replace(str, ''))
-
-            // update / remove class key
-            if (path.length === 1) {
-              let newKey = caseUtils.set(key)
-              if (newKey != key) {
-                valueToDrill[newKey] = valueToDrill[key] // transfer
-                delete valueToDrill[key] // delete
-
-                // reassign
-                key = newKey
-                newVal = valueToDrill[key]
-              }
-            }
-
-            if (!this._isClass(key)) str += this._generateHelperFunctions(key, newVal, [...path, key], newVal?.inherits?.value)
-          }
-        }
-      }
-    }
-
-    return str
-
-
-  }
-
-  _isClass = (str: string) => {
-    return caseUtils.get(str) === 'pascal' // Assume pascal case
+  _conformToSpec = (name:string, info:any) => {
+    const spec = this._get(name, this._specification[this._options.coreName])
+    console.log('got spec', spec)
+    const newInfo = caseUtils.setAll(info) // transform to camelCase
+    console.log('newInfo', newInfo)
+    return newInfo
   }
 
   // Set schema item
@@ -263,119 +132,13 @@ export default class API {
   }
 
     // Get schema item
-  _get = (name:string) => {
+  _get = (name:string, target=this) => {
     const path = this._nameToSchema[name]?.path
 
     if (path){
-      let target = this
       path.forEach((str:string) => target = target[str] ?? target)
       return target[name]
     } else return null
-  }
-
-  _getClasses(schema: ArbitraryObject) {
-
-    // internal check functions
-    const typeCheck = (o:any) => o && !!o.type // check if has type
-    const objectCheck = (o:any) => o && typeof o === 'object' // check if object
-
-    // scrub objects with a class type on them...
-    const scrub = (o:any) => {
-
-      if (o && typeof o === 'object') {
-
-        const scrubbed = Object.assign({}, o)
-        for (let key in scrubbed) {
-          const val = scrubbed[key]
-          if (val){
-            if (val.type === 'class') delete scrubbed[key]
-            else scrub(scrubbed[key])
-          }
-        }
-
-
-        return scrubbed
-      } else return o
-    }
-
-    for (let clsName in schema) {
-
-      if (typeof schema[clsName] === 'object') {
-
-        // Get all helper functions
-        let helperFunctions = this._generateHelperFunctions(undefined, schema[clsName], [clsName])
-
-        // Map keys to attributes
-        const keys = Object.keys(schema[clsName])
-        const mapped = keys.map((k: string) => {
-          let val = schema[clsName][k]
-          val = scrub(val) // will remove internal groups
-          return `this.${k} = ${JSON.stringify(val)}` // setting base object
-        })
-
-
-        // declare a type on the object if specified
-        const declareType = drill(schema[clsName], {
-          run: typeCheck,
-          drill: objectCheck
-        }, (o: any, path: string[], acc: string) => {
-          const joined = path.join('.')
-
-          if (o.type !== 'class'){
-            acc += `Object.defineProperty(this${joined ? `.${joined}` : ''}, "type", {
-              value: "${o.type}",
-              enumerable: false,
-              writable: false
-            });\n`
-          }
-
-          return acc
-        }, '')
-
-        let overrides = ``
-        for (let key in this._options.overrides[clsName]) {
-          if (keys.includes(key)) overrides += `this.${key} = ${JSON.stringify(this._options.overrides[clsName][key](this))}\n` // keep overrides in schema
-          else console.warn(`[${this._options.name}]: ${key} (override) is out of schema for ${clsName}`)
-        }
-        
-        const inputArg = `o`
-
-        // force input to schema (but always allow name)
-        const handleInputString = `
-          const arr = Object.keys(${inputArg})
-          console.log('arr', arr)
-          arr.forEach(key => {
-            const val = ${inputArg}[key]
-            if (key === 'name') this[key] = val
-            else if (key in this){
-              console.log(key, this[key])
-              if (this[key] && typeof this[key] === 'object' && this[key].type === 'group') {
-
-                const camelKey = key[0].toUpperCase() + key.slice(1);
-
-                for (let name in val){
-                  const instance = val[name]
-                  console.log(key, name, instance)
-                  this['create' + camelKey](instance); // create class from raw object
-                }
-              } else this[key] = val // assign raw attribute
-            } else console.warn('[${this._options.name}]: ' + key + ' (argument) is out of schema for ${clsName}')
-          })
-        `
-
-        const fnString = `return function ${clsName}(${inputArg}={}){
-          ${mapped.join('\n')}
-          ${declareType}
-          ${helperFunctions}
-          ${handleInputString}
-          ${overrides}
-        }`
-
-        const generatedClass = new Function(fnString)();
-        schema[clsName] = generatedClass
-      }
-    }
-
   }
 
 
@@ -388,7 +151,7 @@ export default class API {
 
     let name = this._options.methodName.reduce((acc:any, str:string) => acc = (!acc) ? o[str] : acc, null)    
     if (!name) name = this._getType(o) // NAME FOR GROUP (???): name can be specified as a single string for the inheritance value (allows inheritance on top-level classes with groups)
-    let isClass = (name) ? this._isClass(name) : true
+    let isClass = (name) ? test.isClass(name) : true
 
     // check groups one level down
     let inherit = {
@@ -398,7 +161,7 @@ export default class API {
 
     // Use camelcase for non-classes
     if (!isClass) {
-      const camelCase = caseUtils.set(this._baseName(name))
+      const camelCase = caseUtils.set(rename.base(name, this._options.allCaps))
       name = camelCase
     }
 
@@ -487,7 +250,7 @@ export default class API {
     return aggregator
   }
 
-  _generate(spec: any = this._specification, key?: string) {
+  _generate(spec: any = this._registry, key?: string) {
 
 
     if (!this._options.coreName) {
@@ -548,9 +311,9 @@ export default class API {
           })
 
           // Generate Specification Registry
-          if (isFormatted) delete this._specification[key] // Delete Pre-Formatted Specs
-          this._specification[namespace.name] = {}
-          this._specification[namespace.name][namespace.version] = scopedSpec
+          if (isFormatted) delete this._registry[key] // Delete Pre-Formatted Specs
+          this._registry[namespace.name] = {}
+          this._registry[namespace.name][namespace.version] = scopedSpec
 
           const tock = performance.now() // show Performance
           if (this._options.debug) console.log(`[${this._options.name}]: Generated ${namespace.name} in ${tock - tick} ms`)
@@ -562,15 +325,31 @@ export default class API {
       } else console.warn(`[${this._options.name}]: Unable to be generate API from file specification.`)
     })
 
-    // AFTER GENERATING ALL SCHEMAS
+    // ------------------ AFTER GENERATING ALL SCHEMAS ------------------
+    // Set classify information
+    this._classify.set(Object.assign({
+      version: this._version as string,
+    }, this._options))
+
     // Ensure All Objects Inherit from Each Other
     for (let key in this._nameToSchema) this._inherit(key)
 
-    const core = this._specification.core
-    for (let key in core) {
-      const subschema = core[key]
-      for (let clsName in subschema) this._getClasses(subschema[clsName]) // get classes for core
+    // Separate specification from the class registry
+    this._specification = this._registry
+
+    // Populate the class registry
+    for (let spec in this._registry) {
+      for (let version in this._registry[spec]){
+      const schema = this._registry[spec][version]
+      for (let namespace in schema) {
+
+        const namespaceRef = schema[namespace]
+        this._specification[spec][version][namespace] = Object.assign({}, namespaceRef) // Shallow copy of the current specification information
+        this._classify.replace(namespaceRef) // get classes for namespace (apply to reference)
+      }
+      }
     }
+    
 
     // Flatten Certain Schema Classes
     const arr = this._options.namespacesToFlatten

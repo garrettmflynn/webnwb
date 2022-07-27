@@ -45,16 +45,15 @@ export const set = (base:string, type?: CaseType) => {
 
         for (let key in newInfo) {
 
-        // TODO: This is ignoring too many keys because 'group' is being set way too much
-        const newKey = (info[key].type === 'group') ? key : set(key, type) // skip directly beneath groups
+        const newKey = (info.type === 'group') ? key : set(key, type) // skip for children of groups
 
         newInfo[newKey] = newInfo[key]
 
         if (newKey != key) delete newInfo[key]
 
         if (newInfo[newKey] && typeof newInfo[newKey] === 'object' && !array.check(newInfo[newKey])) {
-                console.log('Drilling', newKey, newInfo)
-                const drilled = setAll(newInfo[newKey], type)
+                console.log('Drilling', newKey, info[newKey], info[key].type)
+                const drilled = setAll(info[key], type) // drill original object
                 console.log('Drilled', newKey, drilled)
                 newInfo[newKey] = drilled
             }

@@ -30,7 +30,9 @@ export default class NWBAPI extends API {
       getValue: (o) => o.value ?? o.default_value,
       overrides: {
         NWBFile: {
-          nwbVersion: (api) => api._version
+          nwbVersion: (info) => {
+            return info.version
+          }
         }
       }
     })
