@@ -5,7 +5,9 @@ _bundles
 docs/docs/reference
 
 # Library Builds
-**/dist
+docs/dist
+/dist
+
 **.lock
 **.log
 
