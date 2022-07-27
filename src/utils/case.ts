@@ -1,6 +1,16 @@
 import * as array from "./array"
 
-type CaseType = 'pascal' | 'camel'
+export type CaseType = 'pascal' | 'camel' | 'snake' | 'other'
+
+export const get = (str: string) => {
+    const transformed = str.replace(/([A-Z])/g, (g) => `_${g}`).toLowerCase()
+    if (str === transformed) {
+        if (str.includes('_')) return 'snake'
+        else return 'camel'
+    }
+    else if (transformed[0] === '_') return 'pascal'
+    else return 'other'
+}
 
 export const set = (base:string, type?: CaseType) => {
 
@@ -9,35 +19,47 @@ export const set = (base:string, type?: CaseType) => {
     const setFirst = (str:string, method: 'toUpperCase' | 'toLowerCase' ='toUpperCase') => `${(str[0] ?? '')[method]()}${str.slice(1)}`
     switch(type){
       case 'pascal':
-        return base.split('_').map(str => setFirst(str)).join('')
+        return base.split('_').map(str => setFirst(str)).join('');
 
-      default: 
+    case 'snake':
+        let splitUpper = base.split(/(?=[A-Z])/) as any[]
+        return splitUpper.map(str => str.toLowerCase()).join('_');
+
+    default: 
         let split = base.split(/(?=[A-Z])/) as any[]
         split = split.map((str) => str.split('_'))
         split = split.flat()
 
-          return split.map((str, i) => {
+        return split.map((str, i) => {
             if (i) return setFirst(str.toLowerCase())
             else return str.toLowerCase()
-          }).join('')
+        }).join('')
     }
   }
 
 
   // Deep clone and convert all keys to a certain case
   export const setAll = (info: any, type?: CaseType) => {
-    const newInfo = Object.assign({}, info)
-    for (let key in newInfo) {
-      const newKey = set(key, type)
-      newInfo[newKey] = newInfo[key]
-      if (newKey != key) delete newInfo[key]
 
-      if (newInfo[newKey] && typeof newInfo[newKey] === 'object' && !array.check(newInfo[newKey])) {
-        console.log(Array.isArray(newInfo[newKey]), newInfo[newKey])
-        const drilled = setAll(newInfo[newKey])
-        newInfo[newKey] = drilled
-      }
-    }
+        const newInfo = Object.assign({}, info)
 
-    return newInfo
+        for (let key in newInfo) {
+
+        // TODO: This is ignoring too many keys because 'group' is being set way too much
+        const newKey = (info[key].type === 'group') ? key : set(key, type) // skip directly beneath groups
+
+        newInfo[newKey] = newInfo[key]
+
+        if (newKey != key) delete newInfo[key]
+
+        if (newInfo[newKey] && typeof newInfo[newKey] === 'object' && !array.check(newInfo[newKey])) {
+                console.log('Drilling', newKey, newInfo)
+                const drilled = setAll(newInfo[newKey], type)
+                console.log('Drilled', newKey, drilled)
+                newInfo[newKey] = drilled
+            }
+        }
+
+
+        return newInfo
   }

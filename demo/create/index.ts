@@ -5,7 +5,7 @@ import nwb from '../../src/index'
 import NWBHDF5IO from 'src/io';
 
 // Get Elements
-let i = 1
+let i = 0
 const createSection = document.getElementById('create') as HTMLDivElement
 let editor = new visualscript.ObjectEditor()
 createSection.insertAdjacentElement('beforeend', editor)
@@ -73,7 +73,7 @@ const step = async (i:number) => {
             const positionTimestamps = Array.from({ length: 20 }, (e, i) => i / 200)
 
             const spatialSeries = new nwb.behavior.SpatialSeries({
-                name:"SpatialSeries",
+                name: "SpatialSeries",
                 description:"(x,y) position in open field",
                 data: new Float32Array(positionData),
                 timestamps: new Float32Array(positionTimestamps),
@@ -81,24 +81,32 @@ const step = async (i:number) => {
             })
 
             console.log('position', position)
-
             position.addSpatialSeries(spatialSeries)
 
+            position.createSpatialSeries({
+                name: "SpatialSeries2",
+                description:"(x,y) position in open field",
+                data: new Float32Array(positionData),
+                timestamps: new Float32Array(positionTimestamps),
+                referenceFrame:"(0,0) is bottom left corner",
+            })
+
+
              // 6. Add Processing Modules to the NWB File
-            const behaviorModule = new nwb.ProcessingModule({
+            nwbFile.createProcessingModule({
                 name: 'behavior',
                 description: 'preprocessed behavioral data'
             })
-            console.log('nwbFile.addProcessingModule', nwbFile)
 
-            nwbFile.addProcessing(behaviorModule)
+            console.log('nwbFile.addProcessingModule', nwbFile.processing.behavior)
+
             const ecephysModule = new nwb.ProcessingModule({
                 name: 'ecephys', 
                 description: 'preprocessed extracellular electrophysiology'
             })
             nwbFile.addProcessing(ecephysModule)
             console.log(nwbFile.processing, nwbFile.processing['behavior'])
-            nwbFile.processing['behavior'].addNWBDataInterface(position)
+            nwbFile.processing['behavior'].addDataInterface(position)
             update(nwbFile)
             break;
         
@@ -161,17 +169,30 @@ const step = async (i:number) => {
 
     await io.write(nwbFile, fileName)
 
-    if (i === 1) {
+    if (i === 2) {
 
         // Check Saved NWB File
         const nwbFileIn = await io.read()
         console.log('From Saved. Does it have the test acquisition?', nwbFileIn)
 
         if (nwbFileIn) {
-            const timeseriesIn = nwbFileIn.acquisition['testTimeseries']
+            const timeseries = nwbFileIn.acquisition['testTimeseries']
+            const ogTimeseries = nwbFile.acquisition['testTimeseries']
 
-            console.log('timeseriesIn', timeseriesIn)
-            console.log('timeseriesIn.data', timeseriesIn?.data)
+            console.log(`file.acquisition['testTimeseries']`, timeseries == ogTimeseries, timeseries, ogTimeseries)
+
+            console.log('timeseriesIn', timeseries)
+            console.log('timeseriesIn.data', timeseries?.data)
+
+            const behavior = nwbFileIn.processing.behavior
+            const ogBehavior = nwbFile.processing.behavior
+            const ecephys = nwbFileIn.processing.ecephys
+            const ogEcephys = nwbFile.processing.ecephys
+
+            console.log(`file.processing.behavior`, behavior == ogBehavior, behavior, ogBehavior)
+            console.log(`file.processing.ecephys`, ecephys == ogEcephys, ecephys, ogEcephys)
+
+
         } else console.error('file reloading failed...')
 
     }

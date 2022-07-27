@@ -2,6 +2,7 @@
 export type ArbitraryObject = {[x:string]: any}
 
 import * as arrayUtils from '../utils/array'
+import * as caseUtils from '../utils/case'
 
 export default class HDF5IO {
 
@@ -17,13 +18,15 @@ export default class HDF5IO {
   _debug: boolean;
   _preprocess: Function = (_:any) => {} // Returns modifier for _parse
   _postprocess: Function = (o:any) => o // Returns processed file object
-
+  case: caseUtils.CaseType = 'snake' // 'camel', 'snake', or 'pascal'
 
   constructor(reader: any, options:ArbitraryObject={}, debug = false) {
     this.reader = reader;
     this._debug = debug;
     if (options?.preprocess) this._preprocess = options.preprocess
     if (options?.postprocess) this._postprocess = options.postprocess
+    if (options?.case) this.case = options.case
+
   }
 
   // ---------------------- Local Filestorage Utilities ----------------------
@@ -49,7 +52,7 @@ export default class HDF5IO {
       try {
         // Create a local mount of the IndexedDB filesystem:
         this.reader.FS.mount(this.reader.FS.filesystems.IDBFS, {}, path)
-        if (this._debug) console.log(`[webnwb]: Mounted IndexedDB filesystem to ${path}`)
+        if (this._debug) console.log(`[hdf5-io]: Mounted IndexedDB filesystem to ${path}`)
         this.syncFS(true, path)
         resolve(true)
       } catch (e) {
@@ -60,7 +63,7 @@ export default class HDF5IO {
             break;
           case 10:
             console.warn(`Filesystem already mounted at ${path}`);
-            if (this._debug) console.log('[webnwb]: Active Filesystem', await this.list(path))
+            if (this._debug) console.log('[hdf5-io]: Active Filesystem', await this.list(path))
             resolve(true)
             break;
           default: 
@@ -79,7 +82,7 @@ export default class HDF5IO {
     return new Promise(resolve => {
 
       this.reader.ready.then(async () => {
-        if (this._debug && !read) console.log(`[webnwb]: Pushing all current files in ${path} to IndexedDB`)
+        if (this._debug && !read) console.log(`[hdf5-io]: Pushing all current files in ${path} to IndexedDB`)
         this.reader.FS.syncfs(read, async (e?:Error) => {
           if (e) {
             console.error(e)
@@ -87,8 +90,8 @@ export default class HDF5IO {
           } else {
             if (this._debug)  {
               const list = await this.list(path)
-              if (read) console.log(`[webnwb]: IndexedDB successfully read into ${path}!`, list)
-              else console.log(`[webnwb]: All current files in ${path} pushed to IndexedDB!`, list)
+              if (read) console.log(`[hdf5-io]: IndexedDB successfully read into ${path}!`, list)
+              else console.log(`[hdf5-io]: All current files in ${path} pushed to IndexedDB!`, list)
             } 
             resolve(true)
           }
@@ -132,15 +135,27 @@ export default class HDF5IO {
     else return []
 }
 
+blob = (name: string, file?: any) => {
+  const ab = this.arrayBuffer(name, file)
+  if (ab) {
+    return new Blob([ab], { type: 'application/x-hdf5' });
+  }
+}
+
+arrayBuffer = (name: string, file?: any) => {
+  if (!file) file = (name) ? this.files.get(name) : [...this.files.values()][0]
+  if (file) {
+    if (!name) name = file.name // Get Default Name
+    if (file.write) file.write.flush();
+    if (file.read) file.read.flush();
+    return this.reader.FS.readFile(file.name)
+  } else return
+}
+
   // Allow Download of NWB-Formatted HDF5 Files fromthe  Browser
   download = (name: string, file?: any, extension: string = 'hdf5') => {
-    if (!file) file = (name) ? this.files.get(name) : [...this.files.values()][0]
-    if (file) {
-      if (!name) name = file.name // Get Default Name
-      if (file.write) file.write.flush();
-      if (file.read) file.read.flush();
-
-      const blob = new Blob([this.reader.FS.readFile(file.name)], { type: 'application/x-hdf5' });
+    let blob = this.blob(name, file)
+    if (blob) {
       var a = document.createElement("a");
       document.body.appendChild(a);
       a.style.display = "none";
@@ -159,7 +174,7 @@ export default class HDF5IO {
         a.click();
         setTimeout(function () { globalThis.URL.revokeObjectURL(url) }, 1000);
       }
-    }
+    } else return
   }
 
   // Fetch NWB Files from a URL
@@ -221,7 +236,7 @@ export default class HDF5IO {
 
       const tock = performance.now()
 
-      if (this._debug) console.log(`[webnwb]: Fetched in ${tock - tick} ms`)
+      if (this._debug) console.log(`[hdf5-io]: Fetched in ${tock - tick} ms`)
 
       await this._write(fileName, ab)
       o.file = this.read(fileName, ignoreLocalStorage)
@@ -236,7 +251,7 @@ export default class HDF5IO {
       await this.reader.ready
       this.reader.FS.writeFile(name, new Uint8Array(ab));
       const tock = performance.now()
-      if (this._debug) console.log(`[webnwb]: Wrote raw file in ${tock - tick} ms`)
+      if (this._debug) console.log(`[hdf5-io]: Wrote raw file in ${tock - tick} ms`)
       return true
   }
 
@@ -244,8 +259,12 @@ export default class HDF5IO {
   _parse = (o: any, aggregator: { [x: string]: any } = {}, key: string, modifier: ArbitraryObject = {}, keepDatasets:boolean = true) => {
 
           if (o){
-          // Set Attributes
+
+            let type: string = '';
+
+          // Datasets
           if (o instanceof this.reader.Dataset) {
+            type = 'dataset'
             if (Object.keys(aggregator[key])) {
               // ToDO: Expose HDF5 Dataset objects
               // if (keepDatasets) aggregator[key] = o // Expose HDF5 Dataset
@@ -255,7 +274,11 @@ export default class HDF5IO {
             else aggregator[key] = o.value
   
             
-          } else if (!o.attrs.value) {
+          } 
+          
+          // Attributes
+          else if (!o.attrs.value) {
+            type = 'attribute'
             for (let a in o.attrs) {
               aggregator[key][a] = o.attrs[a].value // Exclude shape and dType
             }
@@ -263,6 +286,7 @@ export default class HDF5IO {
   
           // Drill Group
           if (o.keys instanceof Function) {
+            type = 'group'
             let keys = o.keys()
             keys.forEach((k: string) => {
               const group = o.get(k)
@@ -270,6 +294,13 @@ export default class HDF5IO {
               aggregator[key][k] = this._parse(group, aggregator[key], k, modifier, keepDatasets)
             })
           }
+
+          Object.defineProperty(aggregator[key], 'type', { 
+            value: type,
+            enumerable: false,
+            writable: false
+          })
+
           }
   
           return aggregator[key]
@@ -296,7 +327,7 @@ export default class HDF5IO {
       // if (!file.write) this.close()
 
       const tock = performance.now()
-      if (this._debug) console.log(`[webnwb]: Read file in ${tock - tick} ms`)
+      if (this._debug) console.log(`[hdf5-io]: Read file in ${tock - tick} ms`)
       return file.file
 
     } else return
@@ -318,14 +349,17 @@ export default class HDF5IO {
       else if (mode === 'r') o.read = hdf5
       else if (mode === 'a') o.read = o.write = hdf5
     } else if (!ignoreLocalStorage && (name && o.file === undefined)) {
-      if (this._debug) console.log(`[webnwb]: Returning local version from ${this._path}`)
+      if (this._debug) console.log(`[hdf5-io]: Returning local version from ${this._path}`)
       this.read(name)
     }
 
     return o
   }
 
-  save = (path:string) => this.syncFS(false, path)
+  save = (path:string) => {
+    console.warn('[hdf5-io]: Saving file', path)
+    this.syncFS(false, path)
+  }
 
   write = (o: ArbitraryObject, name = [...this.files.keys()][0]) => {
 
@@ -339,14 +373,23 @@ export default class HDF5IO {
       let writeObject = (o: any, key?: String) => {
         const group = (key) ? file.write.get(key) : file.write
         for (let k in o) {
-          const newKey = `${(key) ? `${key}/` : ''}${k}`
+
+          const snakeKey = caseUtils.set(k, this.case)
+          // ASSUMPTION: HDF5 uses snake case for keys
+          const newKey = `${(key) ? `${key}/` : ''}${snakeKey}`
 
           // Don't save methods
           if (!(typeof o[k] === 'function')) {
+
             if (o[k] && typeof o[k] === 'object') {
+
+              // Dataset
               if (arrayUtils.check(o[k])) {
                 group.create_dataset(k, o[k]);
-              } else {
+              } 
+              
+              // Group
+              else {
                 file.write.create_group(newKey);
                 writeObject(o[k], newKey)
               }
@@ -361,7 +404,7 @@ export default class HDF5IO {
       writeObject(o)
 
       const tock = performance.now()
-      if (this._debug) console.log(`[webnwb]: Wrote NWB File object to browser filesystem in ${tock - tick} ms`)
+      if (this._debug) console.log(`[hdf5-io]: Wrote NWB File object to browser filesystem in ${tock - tick} ms`)
     }
   }
 
