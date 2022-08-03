@@ -16,7 +16,7 @@ export default function BehaviorExample() {
     let reader = await import('h5wasm')
     let nwb = await import('../../../../../src')
     if (nwb?.default) nwb = nwb.default
-    let io = new nwb.NWBHDF5IO(reader, true)
+    let io = new nwb.NWBHDF5IO(true)
 
     // Load NWB File
     console.log('NWB', nwb)

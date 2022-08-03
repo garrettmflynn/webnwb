@@ -16,7 +16,7 @@ export default function NeuromatchExample() {
     if (nwb?.default) nwb = nwb.default
 
     // Load NWB File
-      const io = new nwb.NWBHDF5IO(reader)
+      const io = new nwb.NWBHDF5IO()
       let file = await io.fetch(examplePath)
       console.log('File', file)
 

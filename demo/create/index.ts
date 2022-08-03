@@ -202,7 +202,7 @@ const step = async (i:number) => {
 }
 
 hdf5.ready.then(() => {
-    io = new nwb.NWBHDF5IO(hdf5, true)
+    io = new nwb.NWBHDF5IO(true)
     increment.classList.remove('disabled')
     console.log('File', nwbFile)
 })

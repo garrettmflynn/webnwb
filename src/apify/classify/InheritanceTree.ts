@@ -20,6 +20,7 @@ class InheritanceTree {
     }
 
     _inherit = (base:string, info:any, classes:any, group=Object.keys(this.tree)[0]) => {
+
         const baseClass = classes[base]
         if (!baseClass) {
             console.warn(`[classify]: ${base} was missing in the spec`)
@@ -28,6 +29,7 @@ class InheritanceTree {
 
         // Get Inheritance
         if (info.inherits){
+
             const inheritanceInfo = this.tree[group][info.inherits]
             if (!inheritanceInfo.class) {
                 const output = this._inherit(info.inherits, inheritanceInfo, classes, group) // inherit for parent
@@ -35,7 +37,17 @@ class InheritanceTree {
             } 
 
             info.class = extend(inheritanceInfo.class, baseClass.constructor) // extend base with inheritanc
-  
+            // try {
+            //     console.log(`${base} inheriting from ${info.inherits}`, new info.class({
+            //         sessionDescription: 'demonstrate NWBFile basics',
+            //         identifier: 'NWB123',
+            //         sessionStartTime: Date.now(),
+            //         fileCreateDate: Date.now(),
+            //     }))
+            // } catch (e) {
+            //     console.error('failed for ', base, e)
+            // }
+
             return info.class
         } else return baseClass
     }

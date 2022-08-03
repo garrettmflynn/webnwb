@@ -107,7 +107,7 @@ export default function FileExample() {
     if (nwb?.default) nwb = nwb.default
     console.log('API', nwb)
 
-    let io = new nwb.NWBHDF5IO(reader, true)
+    let io = new nwb.NWBHDF5IO(true)
 
 
     globalThis.onbeforeunload = () => {
@@ -283,7 +283,7 @@ export default function FileExample() {
 
     // 2. Allow User to Load their own NWB File
     input.current.onchange = async (ev) => {
-      io = new nwb.NWBHDF5IO(reader, true)
+      io = new nwb.NWBHDF5IO(true)
 
       // io.element = terminal.current
       name = ev.target.files[0].name

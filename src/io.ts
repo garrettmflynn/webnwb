@@ -5,7 +5,9 @@ export default class NWBHDF5IO extends HDF5IO {
 
 
   apis: Map<string, NWBAPI> = new Map()
-  _path: string = "/nwb"
+  _path = "/nwb"
+  _extension = "nwb"
+  _mimeType = "application/x-nwb"
 
   constructor(debug = false) {
     super({}, debug )

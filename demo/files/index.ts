@@ -1,13 +1,13 @@
 import * as visualscript from '../../external/visualscript/index.esm'
+import * as NWBCodec from '../../external/freerange/nwb/index'
+import * as freerange from '../../external/freerange/index.esm'
+
 import '../../external/plotly/plotly-2.9.0.min' // Importing plotly as a global variable
 import nwb from '../../src/index'
 import * as utils from '../utils'
 import links from '../links'
 
-console.log(nwb)
-
 // import * as nwb from 'https://cdn.jsdelivr.net/npm/webnwb@latest/dist/index.esm.js'
-import * as hdf5 from "https://cdn.jsdelivr.net/npm/h5wasm@latest/dist/esm/hdf5_hl.js";
 import NWBHDF5IO from 'src/io'
 
 let file:string, name:string, io: NWBHDF5IO;
@@ -16,8 +16,9 @@ let file:string, name:string, io: NWBHDF5IO;
 const buttons = document.getElementById('buttons') as HTMLButtonElement
 const normal = document.getElementById('normal') as HTMLButtonElement
 const huge = document.getElementById('huge') as HTMLButtonElement
-const input = document.getElementById('input') as HTMLButtonElement
+const input = document.getElementById('file') as HTMLButtonElement
 const get = document.getElementById('get') as HTMLButtonElement
+const save = document.getElementById('save') as HTMLButtonElement
 
 // Divs
 const display = document.getElementById('display') as HTMLDivElement
@@ -37,7 +38,7 @@ display.insertAdjacentElement('afterbegin', editor)
 
 console.log('API', nwb)
 
-io = new nwb.NWBHDF5IO(hdf5, true)
+io = new nwb.NWBHDF5IO(true)
 
 globalThis.onbeforeunload = () => {
     io.syncFS(false) // Sync IndexedDB
@@ -210,20 +211,52 @@ name = 'huge.nwb'
 runFetch()
 }
 
-// 2. Allow User to Load their own NWB File
-input.onchange = async (ev) => {
-  io = new nwb.NWBHDF5IO(hdf5, true)
 
-  name = ev.target.files[0].name
-  await io.upload(ev)
-  let file = io.read(name)
-  console.log('File', file)
-  parseFile(file)
-// output.innerHTML = 'Loaded ' + name + '. Check the console for output.'
+let filesystem: any = null
+let nwbFile: any = null
+
+// 2. Allow User to Load their own NWB File
+input.onclick = async (ev) => {
+
+  filesystem = new freerange.System(undefined, {
+    debug: true,
+    ignore: ['DS_Store'],
+    codecs: { nwb: NWBCodec }
+  })
+
+  // system.progress = globalProgressCallback
+  await filesystem.init()
+  // const f = await filesystem.open()
+
+  nwbFile = filesystem.files.types.nwb[0]
+  if (nwbFile){
+    name = nwbFile.name
+    const body = await nwbFile.body
+    console.log('File', body)
+    name = nwbFile.name
+
+    // io = new nwb.NWBHDF5IO(true)
+
+    // name = ev.target.files[0].name
+    // await io.upload(ev)
+    // let file = io.read(name)
+    // console.log('File', file)
+    parseFile(body)
+  } else console.error('No NWB files in this directory.')
+}
+
+save.onclick = () => {
+  if (nwbFile) {
+    io.save(name)
+    nwbFile.save() // restrict experimentation to one file
+  }
 }
 
 
 // 3. Allow User to Download an NWB File off the Browser
-get.onclick = () => {
-  if (io) io.download(name)
+get.onclick = async () => {
+  if (io) {
+    io.save(name) // save current object edits
+    io.download(name)
+  }
 }

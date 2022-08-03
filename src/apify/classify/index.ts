@@ -17,6 +17,7 @@ export default class Classify {
     info: any // can be set later
     classes: any = {}
     flatClasses: any = {}
+    baseClass?: ApifyBaseClass
 
     attributeMap: {
         [x: string]: string[]
@@ -25,12 +26,13 @@ export default class Classify {
     }
 
     constructor(info?:InfoType) {
-        if (info) this.set(info)
+        if (info) this.set(info);
     }
 
 
     set = (info: InfoType) => {
-        if (info) this.info = info
+        console.log('Info', info)
+        if (info) this.info = info;
     }
 
     match = (input: any) => {
@@ -84,27 +86,29 @@ export default class Classify {
         const createName = 'create' + method
 
 
+        const classifyInfoName = this.info.name
         if (!_deleted.includes(method)){
           try {
+
             Object.defineProperties(prototype, {
               [addName]: {
                 value: function add(obj:any) {
-                  this[camel][obj.name] = obj
+                  this[camel].set(obj.name, obj)
                 }, 
               },
               [getName]: {
                 value: function get(name:string) {
-                  return this[camel][name]
+                  return this[camel].get(name)
                 }, 
               },
               [createName]: {
                 value: function create(o:any) {
-                  const cls = (globalThis as any).apify[this.info.name].getMatchingClass(o) // NOTE: This is a tightly-coupled dependency—but magically creates the right class (if properly constrainted)
+                  const cls = (globalThis as any).apify[classifyInfoName].getMatchingClass(o) // NOTE: This is a tightly-coupled dependency—but magically creates the right class (if properly constrainted)
                   if (cls) {
                     const created = new cls(o)
-                    return this.add[pascal](created)
+                    return this[`add${pascal}`](created)
                   } else {
-                    console.error('[${this.info.name}]: Could not find class for ${pascal}');
+                    console.error(`[${classifyInfoName}]: Could not find class for ${pascal}`);
                     return null
                   }
                 }, 
@@ -157,8 +161,8 @@ export default class Classify {
     }
 
     get = (name:string, info: any) => {
-        const generatedClassV2 = createClass(name, ApifyBaseClass);
-        generatedClassV2.prototype.name = name
+        const generatedClassV2 = createClass(name, this.baseClass ?? ApifyBaseClass);
+        // generatedClassV2.prototype.name = name // always have the name specified
 
         // Map keys to attributes
         const keys = Object.keys(info)

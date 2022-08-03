@@ -47,7 +47,7 @@ export default function DemoExample() {
 
       // 3. Save NWB File
       console.log('Write This', nwbFile)
-      const io = new nwb.NWBHDF5IO(reader)
+      const io = new nwb.NWBHDF5IO()
       io.write(nwbFile, fileName)
 
 

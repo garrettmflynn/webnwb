@@ -35,10 +35,12 @@ export default class API {
     if (!this._options.namespacesToFlatten) this._options.namespacesToFlatten = []
     if (!this._options.patternsToRemove) this._options.patternsToRemove = []
     if (!this._options.overrides) this._options.overrides = {}
+
     if (typeof this._options.getValue !== 'function') this._options.getValue = () => undefined // triggert default
 
 
     this._classify = new Classify()
+    this._classify.baseClass = this._options.baseClass
 
     // copy user-specified specification
     this._registry = JSON.parse(JSON.stringify(specification)) // Deep copy
@@ -224,7 +226,7 @@ export default class API {
     if (name) {
 
       // TODO: Arbitrary define default value marker
-      const value = this._options.getValue(o) ?? ((!isDataset && (!isClass && !isGroup)) ? undefined : {})
+      const value = this._options.getValue(o) ?? ((!isDataset && (!isClass && !isGroup)) ? undefined : (isGroup) ? new Map() : {})
       if (aggregator[name] instanceof Function) aggregator[name].prototype[name] = inherit
       else aggregator[name] = value
 

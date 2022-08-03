@@ -18,6 +18,10 @@ export default class HDF5IO {
   _debug: boolean;
   _preprocess: Function = (_:any) => {} // Returns modifier for _parse
   _postprocess: Function = (o:any) => o // Returns processed file object
+
+  _extension: string = 'hdf5'
+  _mimeType: string = 'application/x-hdf5'
+
   case: caseUtils.CaseType = 'snake' // 'camel', 'snake', or 'pascal'
 
   constructor(options:ArbitraryObject={}, debug = false) {
@@ -135,26 +139,26 @@ export default class HDF5IO {
     else return []
 }
 
-blob = (name: string, file?: any) => {
-  const ab = this.arrayBuffer(name, file)
+blob = (file?: any) => {
+  const ab = this.arrayBuffer(file)
   if (ab) {
-    return new Blob([ab], { type: 'application/x-hdf5' });
+    return new Blob([ab], { type: this._mimeType });
   }
 }
 
-arrayBuffer = (name: string, file?: any) => {
-  if (!file) file = (name) ? this.files.get(name) : [...this.files.values()][0]
-  if (file) {
-    if (!name) name = file.name // Get Default Name
-    if (file.write) file.write.flush();
-    if (file.read) file.read.flush();
+arrayBuffer = (file?: any) => {
     return this.reader.FS.readFile(file.name)
-  } else return
 }
 
-  // Allow Download of NWB-Formatted HDF5 Files fromthe  Browser
-  download = (name: string, file?: any, extension: string = 'hdf5') => {
-    let blob = this.blob(name, file)
+  // Allow Download of NWB-Formatted HDF5 Files from the Browser
+  download = (name: string, file?: any, extension: string = this._extension) => {
+    if (!file) file = (name) ? this.files.get(name) : [...this.files.values()][0]
+    if (file) {
+      if (!name) name = file.name // Get Default Name
+      if (file.write) file.write.flush();
+      if (file.read) file.read.flush();
+
+    let blob = this.blob(file)
     if (blob) {
       var a = document.createElement("a");
       document.body.appendChild(a);
@@ -175,6 +179,7 @@ arrayBuffer = (name: string, file?: any) => {
         setTimeout(function () { globalThis.URL.revokeObjectURL(url) }, 1000);
       }
     } else return
+  } else return
   }
 
   // Fetch NWB Files from a URL

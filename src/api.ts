@@ -1,6 +1,7 @@
 import { ArbitraryObject } from './types/general.types';
 import schemas from './schema'
 import API from './apify';
+import NWBBaseClass from './base';
 
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 type SpecificationType = { 'core': ArbitraryObject } & ArbitraryObject
@@ -27,6 +28,7 @@ export default class NWBAPI extends API {
       coreName: 'core',
       namespacesToFlatten: ['base', 'file'],
       patternsToRemove: ['nwb.', '.extensions', '.yaml'],
+      baseClass: NWBBaseClass,
       getValue: (o) => o.value ?? o.default_value,
       overrides: {
         NWBFile: {
