@@ -5,6 +5,7 @@ import * as test from "./utils/test"
 import * as rename from "./utils/rename"
 import Classify from './classify';
 import InheritanceTree from './classify/InheritanceTree';
+import { isNativeClass } from './utils/classes';
 
 type SpecificationType = { [x: OptionsType['coreName']]: ArbitraryObject } & ArbitraryObject
 
@@ -227,7 +228,11 @@ export default class API {
 
       // TODO: Arbitrary define default value marker
       const value = this._options.getValue(o) ?? ((!isDataset && (!isClass && !isGroup)) ? undefined : (isGroup) ? new Map() : {})
-      if (aggregator[name] instanceof Function) aggregator[name].prototype[name] = inherit
+      if (typeof aggregator[name] === 'function') {
+        const isClass = isNativeClass(aggregator[name])
+        if (isClass) aggregator[name].prototype[name] = inherit // NOTE: Avoids finding the key property on Maps
+        // else console.error('Cannot inherit on non-class', name, aggregator[name], aggregator)
+      }
       else aggregator[name] = value
 
     }

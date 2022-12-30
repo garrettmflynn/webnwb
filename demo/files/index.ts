@@ -2,7 +2,6 @@ import * as visualscript from '../../external/visualscript/index.esm'
 import * as NWBCodec from '../../external/freerange/nwb/index'
 import * as freerange from '../../external/freerange/index.esm'
 
-import '../../external/plotly/plotly-2.9.0.min' // Importing plotly as a global variable
 import nwb from '../../src/index'
 import * as utils from '../utils'
 import links from '../links'

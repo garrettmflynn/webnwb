@@ -2,20 +2,25 @@ import ApifyBaseClass from "./apify/classify/base";
 
 
 const additionalGroupKey = {
-    name: (self) => self.name,
-    namespace: (self) => self.namespace,
-    neurodataType: (self) => self.neurodata_type,
-    objectId: (self) => self.object_id,
+    name: (self: any) => self.name,
+    namespace: (self: any) => self.namespace,
+    neurodataType: (self: any) => self.neurodata_type,
+    objectId: (self: any) => self.object_id,
 }
+
+let thrownError = false 
 
 export default class NWBBaseClass extends ApifyBaseClass {
 
     constructor (info:any) {
-
-        console.log('Getting info', info)
         super(info, {
-            onRejectKey: (key:string, value:any, info: any) => {
-                if (key in additionalGroupKey) return value
+            onRejectKey: function (key:string, value:any) {
+                if (!thrownError) {
+                    thrownError = true
+                    console.warn(`[classify]: Currently not checking for whether keys are out of schema...`);
+                }
+                return value
+                // if (key in additionalGroupKey) return value // TODO: Ensure that this checks the specification more robustly
             }
         })
     }

@@ -93,12 +93,14 @@ export default class Classify {
             Object.defineProperties(prototype, {
               [addName]: {
                 value: function add(obj:any) {
-                  this[camel].set(obj.name, obj)
+                  this[camel][obj.name] = obj
+                  // this[camel].set(obj.name, obj)
                 }, 
               },
               [getName]: {
                 value: function get(name:string) {
-                  return this[camel].get(name)
+                  return this[camel][name]
+                  // return this[camel].get(name)
                 }, 
               },
               [createName]: {
@@ -106,7 +108,7 @@ export default class Classify {
                   const cls = (globalThis as any).apify[classifyInfoName].getMatchingClass(o) // NOTE: This is a tightly-coupled dependency—but magically creates the right class (if properly constrainted)
                   if (cls) {
                     const created = new cls(o)
-                    return this[`add${pascal}`](created)
+                    return this[addName](created)
                   } else {
                     console.error(`[${classifyInfoName}]: Could not find class for ${pascal}`);
                     return null

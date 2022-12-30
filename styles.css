@@ -35,6 +35,10 @@ section {
     transition: 0.5s;
 }
 
+#plot {
+    padding: 25px;
+}
+
 #gallery {
     display: flex;
     flex-wrap: wrap;

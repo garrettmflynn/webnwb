@@ -3,7 +3,6 @@ import HDF5IO from './hdf5';
 
 export default class NWBHDF5IO extends HDF5IO {
 
-
   apis: Map<string, NWBAPI> = new Map()
   _path = "/nwb"
   _extension = "nwb"
@@ -14,12 +13,13 @@ export default class NWBHDF5IO extends HDF5IO {
     this.initFS()
   }
 
+  // Overwrite preprocessing method
   _preprocess = (file: any) => {
     
       // Immediately Grab Version + Specification
       const version = file.read.attrs['nwb_version'] ?? {value: 'latest'} // Fallback to Latest
       const keys = file.read.keys()
-      const specifications = (keys.includes('specifications')) ? this._parse(file.read.get('specifications'), {res:{}}, 'res', {}, false) : undefined
+      const specifications = (keys.includes('specifications')) ? this.parse(file.read.get('specifications'), {res:{}}, 'res', {}, false) : undefined
       let api = this.apis.get(version.value) ?? new NWBAPI(specifications, this._debug)
       this.apis.set(api._version ?? api._latest, api)   
 
@@ -29,6 +29,7 @@ export default class NWBHDF5IO extends HDF5IO {
       return api // Return API as a modifier for _parse
   }
 
+  // Overwrite postprocessing method
   _postprocess = (info: any) => {
     delete info['.specloc']
 

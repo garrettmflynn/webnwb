@@ -113,7 +113,7 @@ export default class HDF5IO {
     if (input.files && input.files?.length) {
       await Promise.all(Array.from(input.files).map(async f => {
         let ab = await f.arrayBuffer();
-        await this._write(f.name, ab)
+        await this.#write(f.name, ab)
       }))
     }
   }
@@ -243,7 +243,7 @@ arrayBuffer = (file?: any) => {
 
       if (this._debug) console.log(`[hdf5-io]: Fetched in ${tock - tick} ms`)
 
-      await this._write(fileName, ab)
+      await this.#write(fileName, ab)
       o.file = this.read(fileName, ignoreLocalStorage)
 
     } else successCallback(false)
@@ -251,7 +251,7 @@ arrayBuffer = (file?: any) => {
   }
 
   // Iteratively Check FS to Write File
-  _write = async (name: string, ab: ArrayBuffer) => {
+  #write = async (name: string, ab: ArrayBuffer) => {
       const tick = performance.now()
       await this.reader.ready
       this.reader.FS.writeFile(name, new Uint8Array(ab));
@@ -260,8 +260,8 @@ arrayBuffer = (file?: any) => {
       return true
   }
 
-        // Parse File Information with API Knowledge
-  _parse = (o: any, aggregator: { [x: string]: any } = {}, key: string, modifier: ArbitraryObject = {}, keepDatasets:boolean = true) => {
+  // Parse File Information with API Knowledge
+  parse = (o: any, aggregator: { [x: string]: any } = {}, key: string, modifier: ArbitraryObject = {}, keepDatasets:boolean = true) => {
 
           if (o){
 
@@ -292,7 +292,7 @@ arrayBuffer = (file?: any) => {
             keys.forEach((k: string) => {
               const group = o.get(k)
               aggregator[key][k] = {}
-              aggregator[key][k] = this._parse(group, aggregator[key], k, modifier, keepDatasets)
+              aggregator[key][k] = this.parse(group, aggregator[key], k, modifier, keepDatasets)
             })
           }
 
@@ -313,7 +313,7 @@ arrayBuffer = (file?: any) => {
       const modifier = this._preprocess(file)
       let innerKey = 'res'
       let aggregator:ArbitraryObject = {[innerKey]: {}}
-      this._parse(file.read, aggregator, innerKey, modifier)
+      this.parse(file.read, aggregator, innerKey, modifier)
 
 
       // Postprocess File

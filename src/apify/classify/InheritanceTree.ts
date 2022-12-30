@@ -1,6 +1,8 @@
 import { ArbitraryObject } from "src/types/general.types";
 import extend from "../utils/extend";
 
+
+let thrownError = false
 class InheritanceTree {
 
     tree: ArbitraryObject = {}
@@ -16,7 +18,12 @@ class InheritanceTree {
             this.tree[type][parent].inherited.push(child)
             this.tree[type][child].inherits = parent
 
-        } else console.error('[classify]: Cannot add parent as child')
+        } else {
+            if (!thrownError) {
+                thrownError = true
+                console.error('[classify]: Not adding parents as children')
+            }
+        }
     }
 
     _inherit = (base:string, info:any, classes:any, group=Object.keys(this.tree)[0]) => {

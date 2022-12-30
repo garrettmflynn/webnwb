@@ -17,8 +17,6 @@ class ApifyBaseClass {
             prototypes.push(target)
         } while (Object.getPrototypeOf(target))
 
-        console.log('Prototype', prototypes)
-
         // Properly Inherit from All Superclasses
         prototypes.reverse().forEach(p => Object.assign(this, p))
 
@@ -46,6 +44,7 @@ class ApifyBaseClass {
                         instance.name = name // automatically set name
                         this['create' + camelKey](instance); // create class from raw object
                     }
+
                 } else this[key] = val // assign raw attribute
             }
         })
