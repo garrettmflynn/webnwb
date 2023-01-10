@@ -11,6 +11,8 @@ import NWBHDF5IO from 'src/io'
 
 let file:string, name:string, io: NWBHDF5IO;
 
+const fileStreamingCheckbox = document.getElementById('streaming') as HTMLInputElement
+
 // Buttons
 const buttons = document.getElementById('buttons') as HTMLButtonElement
 const normal = document.getElementById('normal') as HTMLButtonElement
@@ -96,7 +98,7 @@ console.log('File', file)
 
 // file.acquisition
 let key = Object.keys(file.acquisition)[0]
-let stimKey = Object.keys(file.stimulus.presentation)[0]
+let stimKey = file.stimulus.presentation.keys()[0]
 
 const lines = []
 
@@ -178,19 +180,21 @@ if (lines.length > 0) Plotly.newPlot(plot, lines, {
 });
 }
 
-function runFetch() {
+function runFetch(useStreaming = fileStreamingCheckbox?.checked) {
 
 io.fetch(
   file, 
   name, 
-  (ratio, length) => {
+  {
+    progressCallback: (ratio, length) => {
 
-  loader.progress = ratio
-  loader.text = `${utils.formatBytes(ratio * length, 2)} of ${utils.formatBytes(length, 2)} downloaded.`
-
-}, 
-(fromRemote) => { if (!fromRemote) loader.text = 'File loaded from local storage.'},
-// true
+      loader.progress = ratio
+      loader.text = `${utils.formatBytes(ratio * length, 2)} of ${utils.formatBytes(length, 2)} downloaded.`
+    
+    }, 
+    successCallback: (fromRemote) => { if (!fromRemote) loader.text = 'File loaded from local storage.'},
+    useStreaming
+  }
 )
 .then(async (file) => {
   parseFile(file)

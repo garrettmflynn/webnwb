@@ -1,7 +1,11 @@
-type ClassOptionsType = {
+import { OptionsType } from "../types";
+import { deep } from "../utils/escode/clone";
+import { getPropertyName } from "./utils";
+
+export type ClassOptionsType = {
     // Use to skip autorejection and otherwise generate values
     onRejectKey?: (key: string, value:any, info:any) => any // return to include the value
-}
+} & Partial<OptionsType>
 
 class ApifyBaseClass {
 
@@ -9,12 +13,14 @@ class ApifyBaseClass {
 
     constructor(info: any = {}, options: ClassOptionsType = {}) {
 
+
         // Apply Inheritance to this Instance (from the schema)
         let target = this
         const prototypes = []
         do {
             target = Object.getPrototypeOf(target)
-            prototypes.push(target)
+            const copy = deep(target, { nonenumerable: false }) // Make sure prototypes remain independent across instances
+            prototypes.push(copy)
         } while (Object.getPrototypeOf(target))
 
         // Properly Inherit from All Superclasses
@@ -35,14 +41,19 @@ class ApifyBaseClass {
                     }
                 }
 
-                if (this[key] && typeof this[key] === 'object' && this[key].type === 'group') {
+                // if (this[key] && typeof this[key] === 'object' && this[key].type === 'group') {
+                if (this[key] && typeof this[key] === 'object'){
 
-                    const camelKey = key[0].toUpperCase() + key.slice(1);
+                    const pascalKey = key[0].toUpperCase() + key.slice(1);
+                    let finalKey = getPropertyName.call(this, pascalKey, options)
 
-                    for (let name in val) {
-                        const instance = val[name]
-                        instance.name = name // automatically set name
-                        this['create' + camelKey](instance); // create class from raw object
+                    // Reinstantiate objects as classes
+                    if (this[`create${finalKey}`]) {
+                        for (let name in val) {
+                            const instance = val[name]
+                            instance.name = name // automatically set name
+                            this[`create${finalKey}`](instance); // create class from raw object
+                        }
                     }
 
                 } else this[key] = val // assign raw attribute

@@ -14,7 +14,8 @@ const increment = document.getElementById('increment') as HTMLDivElement
 increment.onclick = () => {
     if (io){
         i++
-        step(i)
+        if (i <= 5) step(i)
+        else console.warn('Done stepping through the demo!')
     }
 }
 
@@ -41,6 +42,8 @@ update(nwbFile)
 
 let io: NWBHDF5IO;
 
+let testTs: any
+
 const step = async (i:number) => {
 
     switch(i) {
@@ -50,7 +53,7 @@ const step = async (i:number) => {
                 const timestamps = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
                 const data = Array.from(timestamps, e => 100 + e * 10)
 
-                const testTs = new nwb.TimeSeries({
+                testTs = new nwb.TimeSeries({
                     name: 'testTimeseries', 
                     data: data, 
                     units: 'm',
@@ -80,7 +83,6 @@ const step = async (i:number) => {
                 referenceFrame:"(0,0) is bottom left corner",
             })
 
-            console.log('position', position)
             position.addSpatialSeries(spatialSeries)
 
             position.createSpatialSeries({
@@ -98,45 +100,122 @@ const step = async (i:number) => {
                 description: 'preprocessed behavioral data'
             })
 
-            console.log('nwbFile.addProcessingModule', nwbFile.processing.behavior)
-
             const ecephysModule = new nwb.ProcessingModule({
                 name: 'ecephys', 
                 description: 'preprocessed extracellular electrophysiology'
             })
-            nwbFile.addProcessing(ecephysModule)
-            console.log(nwbFile.processing, nwbFile.processing['behavior'])
+
+            nwbFile.addProcessingModule(ecephysModule)
+            
+
+            // Add data interface
             nwbFile.processing['behavior'].addDataInterface(position)
+
             update(nwbFile)
             break;
         
         case 3: 
-              // 6. Organize NWB File into Trials
-              console.log('nwbFile.addTrial', nwbFile)
-            nwbFile.addTrialColumn('stim', 'the visual stimuli during the trial')
-            nwbFile.addTrial(0.0, 2.0, 'person')
-            nwbFile.addTrial(3.0, 5.0, 'ocean')
-            nwbFile.addTrial(6.0, 8.0, 'desert')
+            // 6. Organize NWB File into Trials
+            // nwbFile.addTrialColumn('stim', 'the visual stimuli during the trial')
+            nwbFile.addTrial({
+                startTime: 0.0, 
+                stopTime: 2.0,
+                stim: 'person'
+            })
+
+            nwbFile.addTrial({
+                startTime: 3.0, 
+                stopTime: 5.0,
+                stim: 'ocean'
+            })
+
+            nwbFile.addTrial({
+                startTime: 6.0, 
+                stopTime: 8.0,
+                stim: 'desert'
+            })
+
             update(nwbFile)
             break;
  
         case 4:
             // 7. Organize NWB File into Epochs
-            console.log('nwbFile.addEpoch', nwbFile)
+            nwbFile.addEpoch({
+                startTime: 2.0, 
+                stopTime: 4.0,
+                tags: ['first', 'example'],
+                timeseries: [testTs,]
+            })
 
-            nwbFile.addEpoch(2.0, 4.0, ['first', 'example'], [testTs,])
-            nwbFile.addEpoch(6.0, 8.0, ['second', 'example'], [testTs,])
+            nwbFile.addEpoch({
+                startTime: 6.0, 
+                stopTime: 8.0,
+                tags: ['second', 'example'],
+                timeseries: [testTs,]
+            })
+            
             update(nwbFile)
             break;
 
         case 5:
-              // 9. Add and Write Units to NWB File
-                nwbFile.addUnitColumn('location', 'the anatomical location of this unit')
-                nwbFile.addUnitColumn('quality', 'the quality for the inference of this unit')
 
-                nwbFile.addUnit(1, [2.2, 3.0, 4.5], [[1, 10]], 'CA1', .95)
-                nwbFile.addUnit(2, [2.2, 3.0, 25.0, 26.0], [[1, 10], [20, 30]], 'CA3', 0.85)
-                nwbFile.addUnit(3, [1.2, 2.3, 3.3, 4.5], [[1, 10], [20, 30]], 'CA1', 0.90)
+                // From: https://youtu.be/W8t4_quIl1k?t=1485
+                // 9. Add and Write Units to NWB File
+                // nwbFile.addUnitColumn('location', 'the anatomical location of this unit')
+                // nwbFile.addUnitColumn('quality', 'the quality for the inference of this unit')
+
+                const nShanks = 4
+                const nChannelsPerShank = 3
+                const variables = ['x', 'y', 'z', 'imp', 'location', 'filtering', 'group', 'label']
+                const values = [5.3, 1.5, 8.5, NaN, 'unknown', 'unknown']
+                const electrodeTable: any = new Map() // FOR NOW, WE ARE IMPLEMENTING CUSTOM TABLES
+                
+                const device = new nwb.device.Device({
+                    description: 'the best array',
+                    manufacturer: 'Probe Company 9000'
+                })
+
+                const deviceName = 'array'
+                device.name = deviceName
+                nwbFile.addDevice(device)
+                // OR: nwb.general.devices.set(deviceName, device)
+
+                const deviceLink = device // TODO: Actually create HDF5 links
+                for (let iShank = 0; iShank < nShanks; iShank++) {
+                    const groupName = `shank${iShank}`
+                    const electrodeGroup = new nwb.ecephys.ElectrodeGroup({
+                        description: `electrode group for shank ${iShank}`,
+                        location: 'brain area',
+                        device: deviceLink,
+                    })
+
+                    nwbFile.general.extracellularEphys.set(groupName, electrodeGroup)
+                    const groupObjectView = electrodeGroup
+                    for (let iElec = 0; iElec < nChannelsPerShank; iElec++) {
+                        const theseValues = [...values, groupObjectView, `${groupName}elec${iElec}`]
+                        variables.forEach((key,i) => {
+                            let store = electrodeTable.get(key)
+                            if (!store) {
+                                electrodeTable.set(key, [])
+                                store = electrodeTable.get(key)
+                            }
+
+                            store.push(theseValues[i])
+                        })
+                    }
+                }
+
+                nwbFile.general.extracellularEphys.electrodes = electrodeTable
+
+                // nwbFile.addUnit(
+                //     {
+                //         1, [2.2, 3.0, 4.5], [[1, 10]], 
+                //         location: 'CA1', 
+                //         quality:.95
+                //     }
+                // )
+                // nwbFile.addUnit(2, [2.2, 3.0, 25.0, 26.0], [[1, 10], [20, 30]], 'CA3', 0.85)
+                // nwbFile.addUnit(3, [1.2, 2.3, 3.3, 4.5], [[1, 10], [20, 30]], 'CA1', 0.90)
                 update(nwbFile)
                 break;
              // 8. Specify Other Time Interval in NWB File
@@ -164,45 +243,84 @@ const step = async (i:number) => {
             // const testSpatialSeries = new nwb.behavior.SpatialSeries('test_spatialseries2', data2, 'starting_gate', {timestamps})
             // position2.addSpatialSeries(testSpatialSeries)
             // io4.write(nwbFile2)
-            // io4.close()
     }
 
+
+    // NOTE: Unable to store after second iteration...
     await io.write(nwbFile, fileName)
 
-    if (i === 2) {
 
-        // Check Saved NWB File
-        const nwbFileIn = await io.read()
-        console.log('From Saved. Does it have the test acquisition?', nwbFileIn)
+    // ----------------- Check Saved NWB File -----------------
+    const nwbFileIn = await io.read()
+    console.log('Latest NWB File from Local Storage', nwbFileIn)
 
-        if (nwbFileIn) {
-            const timeseries = nwbFileIn.acquisition['testTimeseries']
-            const ogTimeseries = nwbFile.acquisition['testTimeseries']
+    // if (nwbFileIn) {
 
-            console.log(`file.acquisition['testTimeseries']`, timeseries == ogTimeseries, timeseries, ogTimeseries)
+    //     const isSame = (o1:any, o2:any) => {
+    //         const str1 = JSON.stringify(o1)
+    //         const str2 = JSON.stringify(o2)
+    //         return str1 === str2 && o1 && o2 && (Object.keys(o1).length && Object.keys(o2).length)
+    //     }
 
-            console.log('timeseriesIn', timeseries)
-            console.log('timeseriesIn.data', timeseries?.data)
+    //     console.log(`----------------- Checking saved file for data integrity -----------------`)
+    //     const timeseries = nwbFileIn.acquisition['testTimeseries']
+    //     const ogTimeseries = nwbFile.acquisition['testTimeseries']
+    //     const behavior = nwbFileIn.processing.behavior
+    //     const ogBehavior = nwbFile.processing.behavior
+    //     const ecephys = nwbFileIn.processing.ecephys
+    //     const ogEcephys = nwbFile.processing.ecephys
 
-            const behavior = nwbFileIn.processing.behavior
-            const ogBehavior = nwbFile.processing.behavior
-            const ecephys = nwbFileIn.processing.ecephys
-            const ogEcephys = nwbFile.processing.ecephys
+    //     const trials = nwbFileIn.intervals.trials
+    //     const ogTrials = nwbFile.intervals.trials
 
-            console.log(`file.processing.behavior`, behavior == ogBehavior, behavior, ogBehavior)
-            console.log(`file.processing.ecephys`, ecephys == ogEcephys, ecephys, ogEcephys)
+    //     const epochs = nwbFileIn.intervals.epochs
+    //     const ogEpochs = nwbFile.intervals.epochs
+
+    //     const units = nwbFileIn.units
+    //     const ogUnits = nwbFile.units
+
+    //     const sameTimeseries = isSame(timeseries, ogTimeseries)
+    //     const sameBehavior = isSame(behavior, ogBehavior)
+    //     const sameEphys = isSame(ecephys, ogEcephys)
+    //     const sameTrials = isSame(trials, ogTrials)
+    //     const sameEpochs = isSame(epochs, ogEpochs)
+    //     const sameUnits = isSame(units, ogUnits)
+
+    //     if (sameTimeseries) console.log(`file.acquisition.testTimeseries is the same!`)
+    //     else console.warn(`file.acquisition.testTimeseries might not be the same!`, timeseries, ogTimeseries)
+
+    //     if (ogBehavior) {
+    //         if (sameBehavior) console.log(`file.processing.behavior is the same!`)
+    //         else console.warn(`file.processing.behavior might not be the same!`, behavior, ogBehavior)
+    //     } 
+
+    //     if (ogEcephys) {
+    //         if (sameEphys) console.log(`file.processing.ecephys is the same!`, ecephys, ogEcephys)
+    //         else console.warn(`file.acquisition.ecephys might not be the same!`, ecephys, ogEcephys)
+    //     }
+
+    //     if (ogTrials) {
+    //         if (sameTrials) console.log(`file.intervals.trials is the same!`)
+    //         else console.warn(`file.intervals.trials might not be the same!`, trials, ogTrials)
+    //     }
+
+    //     if (ogEpochs) {
+    //         if (sameEpochs) console.log(`file.intervals.epochs is the same!`)
+    //         else console.warn(`file.intervals.epochs might not be the same!`, epochs, ogEpochs)
+    //     }
+
+    //     // if (ogUnits) {
+    //     //     if (sameUnits) console.log(`file.units is the same!`)
+    //     //     else console.warn(`file.units might not be the same!`, units, ogUnits)
+    //     // }
 
 
-        } else console.error('file reloading failed...')
-
-    }
-
-    console.log('File', nwbFile)
+    // } else console.error('file reloading failed...')
 
 }
 
 hdf5.ready.then(() => {
     io = new nwb.NWBHDF5IO(true)
     increment.classList.remove('disabled')
-    console.log('File', nwbFile)
+    console.log('File', nwbFile, nwbFile.nwbVersion)
 })

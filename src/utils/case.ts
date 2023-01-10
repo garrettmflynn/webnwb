@@ -3,13 +3,20 @@ import * as array from "./array"
 export type CaseType = 'pascal' | 'camel' | 'snake' | 'other'
 
 export const get = (str: string) => {
+    const lowercased = str.toLowerCase()
+    const hasUpperCase = lowercased !== str
     const transformed = str.replace(/([A-Z])/g, (g) => `_${g}`).toLowerCase()
-    if (str === transformed) {
-        if (str.includes('_')) return 'snake'
-        else return 'camel'
+    if (hasUpperCase) {
+        if (transformed[0] === '_') return 'pascal'
     }
-    else if (transformed[0] === '_') return 'pascal'
-    else return 'other'
+
+    else if (str === transformed) {
+        if (str.includes('_')) return 'snake'
+        else return 'unknown'
+    }
+
+    
+    return 'camel'
 }
 
 export const set = (base:string, type?: CaseType) => {
@@ -39,20 +46,28 @@ export const set = (base:string, type?: CaseType) => {
 
 
   // Deep clone and convert all keys to a certain case
-  export const setAll = (info: any, type?: CaseType) => {
+  export const setAll = (info: any, type?: CaseType, condition: CaseType | Function = () => info.type !== 'group') => {
 
         const newInfo = Object.assign({}, info)
 
         for (let key in newInfo) {
 
-        const newKey = (info.type === 'group') ? key : set(key, type) // skip for children of groups
+        // let toTransform
+        // if (typeof condition === 'function') toTransform = condition(key)
+        // else {
+        //     const got = get(key)
+        //     toTransform = got === condition
+        // }
+
+        const toTransform = (typeof condition === 'function') ? condition(key) : get(key) === condition
+        const newKey = (toTransform) ? set(key, type) : key // skip for children of groups
 
         newInfo[newKey] = newInfo[key]
 
         if (newKey != key) delete newInfo[key]
 
         if (newInfo[newKey] && typeof newInfo[newKey] === 'object' && !array.check(newInfo[newKey])) {
-                const drilled = setAll(info[key], type) // drill original object
+                const drilled = setAll(info[key], type, condition) // drill original object
                 newInfo[newKey] = drilled
             }
         }

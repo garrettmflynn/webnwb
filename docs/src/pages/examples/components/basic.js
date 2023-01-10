@@ -70,9 +70,9 @@ export default function DemoExample() {
       position.createSpatialSeries('position1', positionData, 'starting gate', { rate: 50 })
 
       // 6. Add Processing Modules to the NWB File
-      const behaviorModule = new nwbFile.createProcessingModule('behavior', 'preprocessed behavioral data')
+      const behaviorModule = new nwbFile.createProcessing('behavior', 'preprocessed behavioral data')
       const ecephysModule = new nwb.ProcessingModule('ecephys', 'preprocessed extracellular electrophysiology')
-      nwbFile.addProcessingModule(ecephysModule)
+      nwbFile.addProcessing(ecephysModule)
       console.log(nwbFile.processing)
       nwbFile.processing['behavior'].add(position) // TODO: Check since this was 'behavior'
 

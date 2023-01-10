@@ -161,42 +161,38 @@ export default class API {
   }
 
   _conformToSpec = (name:string, info:any) => {
-    const spec = this._get(name, this._specification)
+    const spec = this.get(name, this._specification)
 
     const infoWithTypes = this._transfer(info, spec)
 
-    const newInfo = caseUtils.setAll(infoWithTypes) // transform to camelCase
+    const newInfo = caseUtils.setAll(infoWithTypes, 'camel', 'snake') // transform to camelCase
     return newInfo
   }
 
 
 
   // Set schema item
-  _set = (name:string, value:any, key?:string) => {
+  set = (name:string, value:any, key?:string) => {
     const path = this._nameToSchema[name]?.path
     if (path){
       let target = this
       if (!key) key = path.pop() // define last key
       path.forEach((str:string) => target = target[str] ?? target)
       target[key as string] = value
+      return true
     } else return null
   }
 
-    // Get schema item
-  _get = (name:string, target=this._registry) => {
+  // Get schema item (constructor function)
+  get = (name:string, objectShape?: any, target=this._registry): null | Function => {
     const path = this._nameToSchema[name]?.path
-
     if (path){
       path.forEach((str:string) => target = target[str] ?? target)
       return target[name]
-    } else return null
+    } else return (objectShape) ? this.getMatchingClass(objectShape) : null
   }
 
-  getMatchingClass = (input: any) => {
-    const className = this._classify.match(input)
-    if (className) return this._get(className)
-  }
-
+  getMatchingClass = (input: any) => this.get(this._classify.match(input)) 
 
   _getType = (o: any) => o.neurodata_type_inc ?? o.data_type_inc 
 
@@ -224,10 +220,16 @@ export default class API {
 
     const newPath = [...path]
 
+    // console.log('newPath', name, newPath)
     if (name) {
+
+      const isAMap = !((!isDataset && (!isClass && !isGroup)) && isGroup)
 
       // TODO: Arbitrary define default value marker
       const value = this._options.getValue(o) ?? ((!isDataset && (!isClass && !isGroup)) ? undefined : (isGroup) ? new Map() : {})
+
+      // if (isAMap) console.error('is a map!', name, value, aggregator)
+
       if (typeof aggregator[name] === 'function') {
         const isClass = isNativeClass(aggregator[name])
         if (isClass) aggregator[name].prototype[name] = inherit // NOTE: Avoids finding the key property on Maps
@@ -253,7 +255,6 @@ export default class API {
     // Carry group type to the final classes
     if (isGroup) {
       if (aggregator[name]) {
-
           Object.defineProperty(aggregator[name], 'type', {
             value: isClass ? 'class' : 'group',
             enumerable: false,
@@ -299,6 +300,10 @@ export default class API {
   }
 
   _generate(spec: any = this._registry, key?: string) {
+
+    const ogSpec = JSON.parse(JSON.stringify(spec))
+
+    console.log('Original Specification', ogSpec)
 
 
     if (!this._options.coreName) {

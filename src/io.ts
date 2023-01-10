@@ -17,10 +17,14 @@ export default class NWBHDF5IO extends HDF5IO {
   _preprocess = (file: any) => {
     
       // Immediately Grab Version + Specification
-      const version = file.read.attrs['nwb_version'] ?? {value: 'latest'} // Fallback to Latest
-      const keys = file.read.keys()
-      const specifications = (keys.includes('specifications')) ? this.parse(file.read.get('specifications'), {res:{}}, 'res', {}, false) : undefined
+      const version = file.reader.attrs['nwb_version'] ?? {value: 'latest'} // Fallback to Latest
+      const keys = file.reader.keys()
+      const specifications = (keys.includes('specifications')) ? this.parse(file.reader.get('specifications'), {res:{}}, 'res', {}, false) : undefined
+      
+      // Create NWB API
       let api = this.apis.get(version.value) ?? new NWBAPI(specifications, this._debug)
+
+      // Store API Version
       this.apis.set(api._version ?? api._latest, api)   
 
       // Parse All Information (fallback to object aggregation if no api)
@@ -33,7 +37,7 @@ export default class NWBHDF5IO extends HDF5IO {
   _postprocess = (info: any) => {
     delete info['.specloc']
 
-    const version = info.nwbVersion ?? info.nwb_version
+    const version = info.nwb_version // Before transformation
     const api = this.apis.get(version) as NWBAPI // get correct version
     const specInfo = api._conformToSpec('NWBFile', info)
     return new api.NWBFile(specInfo) // create correct version

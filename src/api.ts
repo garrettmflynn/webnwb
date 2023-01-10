@@ -21,21 +21,38 @@ export default class NWBAPI extends API {
   ) {
 
     super(specification, {
-      debug,
-      name: 'webnwb',
+      debug, // Show Debug Messages
+      name: 'webnwb', // Name of the API
       methodName: ['neurodata_type_def',  'data_type_def', 'name', 'default_name' ],
-      allCaps: ['NWB'],
-      coreName: 'core',
-      namespacesToFlatten: ['base', 'file'],
-      patternsToRemove: ['nwb.', '.extensions', '.yaml'],
-      baseClass: NWBBaseClass,
-      getValue: (o) => o.value ?? o.default_value,
+      allCaps: ['NWB'], // Ensure these strings are always capitalized
+      coreName: 'core', // Name of the core schema
+      namespacesToFlatten: ['base', 'file'], // Namespaces to flatten into the base of the API
+      patternsToRemove: ['nwb.', '.extensions', '.yaml'], // Patterns to remove from the name
+      baseClass: NWBBaseClass, // Base Class to use for all classes
+      getValue: (o) => o.value ?? o.default_value, // Get the value from the schema
+
+      // Override properties of a generated class instance
       overrides: {
+
+        nwbDataInterface: 'dataInterface',
+
         NWBFile: {
-          nwbVersion: (info) => {
-            return info.version
-          }
-        }
+          Processing: 'ProcessingModule'
+          // addProcessing: 'addProcessingModule',
+          // createProcessing: 'createProcessingModule',
+          // getProcessing: 'getProcessingModule',
+        },
+      },
+
+      // In pascal case
+      singularName: {
+        Devices: 'Device',
+        Electrodes: 'Electrode',
+        Epochs: 'Epoch',
+        ExperimentalConditions: 'ExperimentalCondition',
+        Templates: 'Template',
+        Trials: 'Trial',
+        Units: 'Unit',
       }
     })
 
