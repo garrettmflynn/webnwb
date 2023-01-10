@@ -83,10 +83,12 @@ export default class Classify {
 
             setProperty.call(prototype, addName, {
               value: function add(obj: any) {
-                const isMap = this[camel] instanceof Map
-                const name = obj.name ?? (isMap ? this[camel].size : Object.keys(this[camel]).length)
-                if (isMap) this[camel].set(name, obj)
-                else this[camel][obj.name] = obj
+                // const isMap = this[camel] instanceof Map
+                // const name = obj.name ?? (isMap ? this[camel].size : Object.keys(this[camel]).length)
+                // if (isMap) this[camel].set(name, obj)
+                // else 
+                const name = obj.name ?? Object.keys(this[camel]).length
+                this[camel][name] = obj
                 return obj
                 // this[camel].set(obj.name, obj)
               },
@@ -94,8 +96,9 @@ export default class Classify {
 
             setProperty.call(prototype, getName, {
               value: function get(name: string) {
-                if (this[camel] instanceof Map) return this[camel].get(name)
-                else return this[camel][name]
+                // if (this[camel] instanceof Map) return this[camel].get(name)
+                // else 
+                return this[camel][name]
                 // return this[camel].get(name)
               },
             })
@@ -188,8 +191,7 @@ export default class Classify {
           delete info[k]
         }
       }
-
-      val = this.scrub(val) // will remove internal groups
+      
       generatedClassV2.prototype[finalKey] = val
     })
 
@@ -253,25 +255,6 @@ export default class Classify {
     return choices[0]
 
 }
-
-
-  scrub = (o: any) => {
-
-    if (o && typeof o === 'object') {
-
-      const scrubbed = Object.assign({}, o)
-      for (let key in scrubbed) {
-        const val = scrubbed[key]
-        if (val) {
-          if (val.type === 'class') delete scrubbed[key]
-          else this.scrub(scrubbed[key])
-        }
-      }
-
-
-      return scrubbed
-    } else return o
-  }
 
 
   inherit = (info: any, type?: string) => {

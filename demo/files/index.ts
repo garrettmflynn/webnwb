@@ -98,7 +98,7 @@ console.log('File', file)
 
 // file.acquisition
 let key = Object.keys(file.acquisition)[0]
-let stimKey = file.stimulus.presentation.keys()[0]
+let stimKey = Object.keys(file.stimulus.presentation)[0]
 
 const lines = []
 

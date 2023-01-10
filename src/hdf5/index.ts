@@ -384,7 +384,6 @@ arrayBuffer = (file?: any) => {
         for (let k in o) {
 
           const snakeKey = caseUtils.set(k, this.case)
-          console.warn('Transorming to snake', snakeKey, k)
 
           const newKey = `${(key) ? `${key}/` : ''}${snakeKey}` // ASSUMPTION: Spec uses snake case
 

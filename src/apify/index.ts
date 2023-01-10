@@ -220,15 +220,11 @@ export default class API {
 
     const newPath = [...path]
 
-    // console.log('newPath', name, newPath)
     if (name) {
 
-      const isAMap = !((!isDataset && (!isClass && !isGroup)) && isGroup)
-
       // TODO: Arbitrary define default value marker
-      const value = this._options.getValue(o) ?? ((!isDataset && (!isClass && !isGroup)) ? undefined : (isGroup) ? new Map() : {})
-
-      // if (isAMap) console.error('is a map!', name, value, aggregator)
+      // const value = this._options.getValue(o) ?? (!hasObject ? undefined : {})
+      const value = this._options.getValue(o) ?? ((!isDataset && (!isClass && !isGroup)) ? undefined : (isGroup) ? {} : {})
 
       if (typeof aggregator[name] === 'function') {
         const isClass = isNativeClass(aggregator[name])
@@ -253,16 +249,19 @@ export default class API {
 
 
     // Carry group type to the final classes
-    if (isGroup) {
-      if (aggregator[name]) {
-          Object.defineProperty(aggregator[name], 'type', {
-            value: isClass ? 'class' : 'group',
-            enumerable: false,
-            writable: true
-          })
+    // if (value && typeof value === 'object' && hasObject) {
+      if (isGroup) {
+        Object.defineProperty(aggregator[name], 'type', {
+          value: isClass ? 'class' : 'group',
+          enumerable: false,
+          writable: true
+        })
 
-          if (!isClass && aggregator.type === 'group') aggregator.type = '' // remove type for outer group
-      }
+        // Handle nested groups
+        if (aggregator.type === 'group') {
+          if (isClass) delete aggregator[name] // Delete classes on group level
+          else aggregator.type = '' // remove type for outer group
+        }
     }
 
 
