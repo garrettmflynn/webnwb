@@ -52,71 +52,6 @@ export default class API {
     globalTarget.apify[this._options.name] = this
   }
 
-
-  // _inherit = (key: string, parentObject?: ArbitraryObject) => {
-
-  //   const schema = this._nameToSchema[key]
-  //   const namespace = schema?.namespace
-
-
-  //   if (!parentObject) {
-  //     schema.path.forEach((str: string) => {
-  //       parentObject = this[str]
-  //     })
-  //   }
-
-  //   if (parentObject) {
-
-  //     const o = parentObject[key] ?? {}
-  //     let name = o.inherits?.value
-  //     if (Array.isArray(name)) {
-  //       name.forEach(str => this._inherit(str))
-  //     } else {
-
-  //       if (name) {
-  //         const inheritedPath = this._nameToSchema[name]?.path
-
-  //         let inherit: ArbitraryObject | undefined;
-  //         if (inheritedPath) {
-  //           inherit = this._registry // from registry === specification (for now not class)
-  //           inheritedPath.forEach((str: string) => {
-  //             inherit = inherit?.[str]
-  //           })
-  //           inherit = inherit?.[name]
-  //         }
-
-  //         if (inherit) {
-  //           if (inherit.inherits || inherit.inherits?.done) this._inherit(name) // Finish inheritance for parent first
-
-  //           // // Object Inheritance for Non-Groups
-  //             const deep = JSON.parse(JSON.stringify(inherit))
-
-  //             Object.assign(parentObject[key], Object.assign(deep, o)) // reassign to reference
-  //             o.inherits.done = true // has inherited
-
-            
-  //           // Defered inheritance for groups. Create handlers instead
-  //           if (o.inherits?.type === 'group') {
-  //             // if (o.class === false) delete o[key]
-
-  //             // keep inherit value
-  //             Object.defineProperty(parentObject[key], 'inherits', {
-  //               value: o.inherits,
-  //               enumerable: false,
-  //               writable: false,
-  //             })
-
-  //           }
-
-  //         } else if (o.inherits) console.log(`[${this._options.name}]: Cannot inherit ${name}`, o, namespace, schema, key)
-
-  //       }
-  //       // Drill Into Objects
-  //       if (typeof parentObject[key] === 'object') for (let k in parentObject[key]) this._inherit(k, parentObject[key])
-  //     }
-  //   }
-  // }
-
   _define = (name:string, target:any, format:any) => {
     Object.defineProperty(target, name, format)
   }
@@ -162,9 +97,7 @@ export default class API {
 
   _conformToSpec = (name:string, info:any) => {
     const spec = this.get(name, this._specification)
-
     const infoWithTypes = this._transfer(info, spec)
-
     const newInfo = caseUtils.setAll(infoWithTypes, 'camel', 'snake') // transform to camelCase
     return newInfo
   }
@@ -238,8 +171,6 @@ export default class API {
     // Assign default name
     if (o.default_name) aggregator[name].name = o.default_name
 
-
-
     if (inherit.value) {
 
       if (name && inherit.type){
@@ -249,12 +180,17 @@ export default class API {
 
 
     // Carry group type to the final classes
-    // if (value && typeof value === 'object' && hasObject) {
-      if (isGroup) {
-        Object.defineProperty(aggregator[name], 'type', {
-          value: isClass ? 'class' : 'group',
-          enumerable: false,
-          writable: true
+    // if (value && typeof value === 'object' && hasObject) {    
+
+      // Setting type
+      const entry = aggregator[name]
+      if (entry && typeof entry === 'object'){
+        const resolvedType = isClass ? 'class' : type
+        Object.defineProperty(entry, 'type', {
+          value: resolvedType,
+          enumerable: false, // NOTE: This would be better hidden—but then it doesn't carry over...
+          writable: true,
+          configurable: true
         })
 
         // Handle nested groups
@@ -303,7 +239,6 @@ export default class API {
     const ogSpec = JSON.parse(JSON.stringify(spec))
 
     console.log('Original Specification', ogSpec)
-
 
     if (!this._options.coreName) {
       this._options.coreName = 'core'

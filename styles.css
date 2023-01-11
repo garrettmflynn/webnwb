@@ -37,7 +37,9 @@ section {
 
 #plot {
     padding: 25px;
+    height: 300px;
 }
+
 
 #gallery {
     display: flex;

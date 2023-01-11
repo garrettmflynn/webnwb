@@ -147,7 +147,6 @@ if (file.acquisition[key].externalFile) {
 else {
 
   const dataValue = file.acquisition[key].data
-  console.log(key, dataValue)
 
   if (key) lines.push({
     name: 'Acquisition',

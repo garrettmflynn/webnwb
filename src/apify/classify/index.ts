@@ -109,6 +109,7 @@ export default class Classify {
                 if (cls) {
                   const created = new cls(o, options)
                   return this[addName](created)
+                  // return this[addName](o)
                 } else {
                   console.error(`[${classifyInfoName}]: Could not find class for ${pascal}`);
                   return null
@@ -169,8 +170,14 @@ export default class Classify {
     // Map keys to attributes
     const keys = Object.keys(info)
     keys.map((k: string) => {
+      let val = info[k]
 
       const camel = caseUtils.set(rename.base(k, this.info.allCaps)) // ensure all keys (even classes) are camel case
+      
+      const isSame = camel !== k
+      const isClass = val?.type === 'class'
+      if (isSame !== isClass)console.error('PROBABLY BAD', k, val.type)
+
       // Add to argMap
       if (!this.attributeMap[camel]) this.attributeMap[camel] = []
       this.attributeMap[camel].push(name)
@@ -179,7 +186,6 @@ export default class Classify {
       let finalKey = camel
 
       // Map to declaration
-      let val = info[k]
       let override = this.info.overrides[name]?.[camel] ?? this.info.overrides[camel] // Global override
 
       if (override) {
@@ -191,7 +197,7 @@ export default class Classify {
           delete info[k]
         }
       }
-      
+
       generatedClassV2.prototype[finalKey] = val
     })
 
@@ -202,15 +208,19 @@ export default class Classify {
     }, (o: any, path: string[]) => {
 
       let target = generatedClassV2.prototype
-      path.forEach(key => target = target[key])
+      const pathCopy = [...path]
+      const key =  pathCopy.pop()
+      pathCopy.forEach(key => target = target?.[key])
 
-      // proxy internal properties
-      if (o.type === 'group' && path.length > 1) {
-        const key =  path.slice(-1)[0]
+      const parent = target
+      if (key) target = parent?.[key]
+
+      // proxy internal properties (if target found)
+      if (key && target && o.type === 'group' && path.length > 1) {
         if (!(key in generatedClassV2.prototype)) {
           Object.defineProperty(generatedClassV2.prototype, key, {
-            get: () => target,
-            set: (val: any) => target = val,
+            get: () => parent[key],
+            set: (val: any) => parent[key] = val,
             enumerable: true,
             configurable: false
           })

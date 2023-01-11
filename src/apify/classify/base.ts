@@ -54,7 +54,7 @@ class ApifyBaseClass {
                             instance.name = name // automatically set name
                             this[`create${finalKey}`](instance); // create class from raw object
                         }
-                    }
+                    } else this[key] = val // just set
 
                 } else this[key] = val // assign raw attribute
             }
