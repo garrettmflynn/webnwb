@@ -21,14 +21,21 @@
         <visualscript-tab name="Files">
             <section>
                 <div id="options">
-                    <h2>NWB Showcase</h2>
-                    <label>File Streaming</label>
+                    <label>Toggle File Streaming</label>
                     <input id="streaming" type="checkbox" checked>
-                    <div id="buttons"></div>
 
                     <h2>DANDI</h2>
-                    <button id="normal">Normal File</button>
-                    <button id="huge">Huge File</button>
+                    <select id="dandi">
+                        <option selected disabled value="">Select a dandiset</option>
+                    </select>
+                    <select id="assets">
+                        <option selected disabled value="">Select a file</option>
+                    </select>
+                    <button id="dandiButton">Load</button>
+
+                    <h2>NWB Showcase</h2>
+                    <div id="buttons"></div>
+
 
                     <h2>Local Actions</h2>
                     <!-- <input type='file' id="input"></input> -->

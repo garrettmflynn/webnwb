@@ -8,15 +8,95 @@ import links from '../links'
 
 // import * as nwb from 'https://cdn.jsdelivr.net/npm/webnwb@latest/dist/index.esm.js'
 import NWBHDF5IO from 'src/io'
+import { getAssets, getDandisets, getInfo, getInfoURL, getJSON } from 'src/dandi'
 
 let file:string, name:string, io: NWBHDF5IO;
+
+
+function formatBytes(bytes: number, decimals: number) {
+  if(bytes == 0) return '0 Bytes';
+  var k = 1024,
+      dm = decimals || 2,
+      sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+      i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+
+const getSummary = (o: any) => {
+  return {
+    name: o.name,
+    id: o.identifier.split('DANDI:').pop() as string,
+    size: formatBytes(o.assetsSummary?.numberOfBytes, 2),
+    version: o.version,
+    description: o.description
+  }
+}
+
+const dandi = document.getElementById('dandi') as HTMLSelectElement
+const assetSelect = document.getElementById('assets') as HTMLSelectElement
+const fromDANDI = document.getElementById('dandiButton') as HTMLSelectElement
+
+
+let collection: {[x:string]: any} = {}
+
+
+const loadAsset = () => {
+  file = assetSelect.value // URL
+  name = assetSelect.innerText.split('/').pop() ?? 'streaming.nwb' // File Name
+  if (file && name) runFetch(true)
+  else console.error('No dandiset selected')
+}
+
+const setAssetOptions = async () => {
+  const assets = await getAssets(dandi.value)
+  console.log(`Got all assets for ${dandi.value}`, assets)
+  const url = `${getInfoURL(dandi.value)}/assets`
+  if (assets) {
+   const urls = await Promise.all(assets.map(async (o: any) => {
+      const assetInfo = await getJSON(`${url}/${o.asset_id}/info`)
+      const option = document.createElement('option')
+      option.value = assetInfo.metadata.contentUrl[0]
+      option.innerHTML = `${assetInfo.path}`
+      assetSelect.insertAdjacentElement('beforeend', option)
+    }))
+
+    return urls
+  } else return null
+}
+
+fromDANDI.onclick = loadAsset
+
+dandi.onchange = async () =>{
+  setAssetOptions()
+  loadAsset()
+}
+
+// assetSelect.onchange = async () => loadAsset
+
+getDandisets().then(async dandisets => {
+
+  // Filter drafts
+  dandisets = dandisets.filter(o => o.draft_version.status === 'Valid')
+
+  // Display dandisets
+  console.log('Got all dandisets', dandisets)
+  await Promise.all(dandisets.map(async (o) => {
+    const res = getSummary(await getInfo(o.identifier))
+    const option = document.createElement('option')
+    option.value = res.id
+    collection[res.id] = o
+    option.innerHTML = `${o.identifier} - ${res.name} (${res.size})`
+    dandi.insertAdjacentElement('beforeend', option)
+  }))
+
+  setAssetOptions()
+})
 
 const fileStreamingCheckbox = document.getElementById('streaming') as HTMLInputElement
 
 // Buttons
 const buttons = document.getElementById('buttons') as HTMLButtonElement
-const normal = document.getElementById('normal') as HTMLButtonElement
-const huge = document.getElementById('huge') as HTMLButtonElement
 const input = document.getElementById('file') as HTMLButtonElement
 const get = document.getElementById('get') as HTMLButtonElement
 const save = document.getElementById('save') as HTMLButtonElement
@@ -96,21 +176,37 @@ console.log('File', file)
 // progressDiv.innerHTML = 'Loaded ' + name + '. Check the console for output.'
 
 
+const acquisition = await file.acquisition
+
+const stimulus = await file.stimulus
+const presentation = await stimulus.presentation
 // file.acquisition
-let key = Object.keys(file.acquisition)[0]
-let stimKey = Object.keys(file.stimulus.presentation)[0]
+let key = Object.keys(acquisition)[0]
+let stimKey = (presentation) ? Object.keys(presentation)[0] : undefined
+const presentationObj = (stimKey) ? await presentation[stimKey] : undefined
+const acquisitionObj = await file.acquisition[key]
 
 const lines = []
 
 
+console.log('Acquisition', acquisition)
+console.log('Stimulus', stimulus)
+console.log('Presentation', presentation)
+console.log('Acquisition Object', acquisitionObj)
+console.log('Presentation Object', presentationObj)
+
 // Show Images
-if (file.acquisition[key].externalFile) {
+
+const externalFile = await acquisitionObj?.externalFile
+
+
+if (acquisitionObj && externalFile) {
 
   let waiter = new visualscript.Loader({ showPercent: false })
   waiter.id = 'waiter'
   plot.insertAdjacentElement('beforeend', waiter)
 
-  function createImg(src) {
+  function createImg(src: string) {
     return new Promise(resolve => {
       // Create an Image object
       var img = new Image();
@@ -132,7 +228,7 @@ if (file.acquisition[key].externalFile) {
 
   }
 
-  const arr = await Promise.all(file.acquisition[key].externalFile.map((src) => createImg(src)))
+  const arr = await Promise.all(externalFile.map(createImg))
 
 
   arr.forEach(o => {
@@ -146,24 +242,29 @@ if (file.acquisition[key].externalFile) {
 // Show TimeSeries
 else {
 
-  const dataValue = file.acquisition[key].data
+  const dataValue = await acquisitionObj.data
 
-  if (key) lines.push({
+  if (dataValue) lines.push({
     name: 'Acquisition',
-    x: file.acquisition[key]?.timestamps ?? Array.from({ length: dataValue.length }, (_, i) => i),
+    x: (await acquisitionObj?.timestamps) ?? Array.from({ length: dataValue.length }, (_, i) => i),
     y: dataValue
   })
+
+  else console.error('No data value...')
 }
 
 
 // Show Stimulus
-if (stimKey) lines.push({
-  name: 'Stimulus',
-  x: file.stimulus.presentation[stimKey]?.timestamps ?? Array.from({ length: file.stimulus.presentation[stimKey].data.length }, (_, i) => i),
-  y: file.stimulus.presentation[stimKey].data,
-  yaxis: 'y2',
-  opacity: 0.5,
-})
+if (presentationObj) {
+  const data = await presentationObj.data
+  lines.push({
+    name: 'Stimulus',
+    x: await presentationObj.timestamps ?? Array.from({ length: data.length }, (_, i) => i),
+    y: data,
+    yaxis: 'y2',
+    opacity: 0.5,
+  })
+}
 
 if (lines.length > 0) Plotly.newPlot(plot, lines, {
   title: key ?? stimKey,
@@ -185,32 +286,19 @@ io.fetch(
   file, 
   name, 
   {
-    progressCallback: (ratio, length) => {
-
+    progressCallback: (ratio, length, id) => {
       loader.progress = ratio
       loader.text = `${utils.formatBytes(ratio * length, 2)} of ${utils.formatBytes(length, 2)} downloaded.`
-    
     }, 
-    successCallback: (fromRemote) => { if (!fromRemote) loader.text = 'File loaded from local storage.'},
+    successCallback: (fromRemote, id) => { 
+      if (!fromRemote) loader.text = 'File loaded from local storage.'
+    },
     useStreaming
   }
 )
 .then(async (file) => {
   parseFile(file)
 })
-}
-
-normal.onclick = () => {
-file = 'https://api.dandiarchive.org/api/assets/1d82605e-be09-4519-8ae1-6977b91a4526/download/'
-name = 'normal.nwb'
-runFetch()
-}
-
-
-huge.onclick = () => {
-file = 'https://api.dandiarchive.org/api/assets/3bd3a651-f6cc-47a8-adbe-b4d82dbbe4d8/download/'
-name = 'huge.nwb'
-runFetch()
 }
 
 

@@ -15,6 +15,11 @@ section {
     height: 100%;
 }
 
+select {
+    width: 100%;
+ }
+ 
+
 #options {
     height: calc(100% - 75px);
     width: 300px;
