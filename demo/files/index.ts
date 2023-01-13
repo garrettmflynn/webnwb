@@ -283,25 +283,25 @@ if (lines.length > 0) Plotly.newPlot(plot, lines, {
 });
 }
 
-function runFetch(useStreaming = fileStreamingCheckbox?.checked) {
+async function runFetch(useStreaming = fileStreamingCheckbox?.checked) {
 
-io.fetch(
-  file, 
-  name, 
-  {
-    progressCallback: (ratio, length, id) => {
-      loader.progress = ratio
-      loader.text = `${utils.formatBytes(ratio * length, 2)} of ${utils.formatBytes(length, 2)} downloaded.`
-    }, 
-    successCallback: (fromRemote, id) => { 
-      if (!fromRemote) loader.text = 'File loaded from local storage.'
-    },
-    useStreaming
-  }
-)
-.then(async (file) => {
-  parseFile(file)
-})
+  console.log('Is Streaming', useStreaming)
+  const result = await io.fetch(
+    file, 
+    name, 
+    {
+      progressCallback: (ratio, length, id) => {
+        loader.progress = ratio
+        loader.text = `${utils.formatBytes(ratio * length, 2)} of ${utils.formatBytes(length, 2)} downloaded.`
+      }, 
+      successCallback: (fromRemote, id) => { 
+        if (!fromRemote) loader.text = 'File loaded from local storage.'
+      },
+      useStreaming
+    }
+  )
+
+  parseFile(result)
 }
 
 
