@@ -13,13 +13,12 @@ import { getAssets, getDandisets, getInfo, getInfoURL, getJSON } from 'src/dandi
 let file:string, name:string, io: NWBHDF5IO;
 
 
-function formatBytes(bytes: number, decimals: number) {
+function formatBytes(bytes: number, decimals: number = 2) {
   if(bytes == 0) return '0 Bytes';
   var k = 1024,
-      dm = decimals || 2,
       sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
       i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
 }
 
 
@@ -53,15 +52,16 @@ const setAssetOptions = async () => {
   console.log(`Got all assets for ${dandi.value}`, assets)
   const url = `${getInfoURL(dandi.value)}/assets`
   if (assets) {
-   const urls = await Promise.all(assets.map(async (o: any) => {
+   const options = await Promise.all(assets.map(async (o: any) => {
       const assetInfo = await getJSON(`${url}/${o.asset_id}/info`)
       const option = document.createElement('option')
       option.value = assetInfo.metadata.contentUrl[0]
-      option.innerHTML = `${assetInfo.path}`
-      assetSelect.insertAdjacentElement('beforeend', option)
+      option.innerHTML = `${assetInfo.path} (${formatBytes(assetInfo.size, 2)})`
+      return option
     }))
 
-    return urls
+    options.forEach(o => assetSelect.insertAdjacentElement('beforeend', o))
+    return options.map(o => o.value)
   } else return null
 }
 
@@ -81,14 +81,17 @@ getDandisets().then(async dandisets => {
 
   // Display dandisets
   console.log('Got all dandisets', dandisets)
-  await Promise.all(dandisets.map(async (o) => {
+  const options = await Promise.all(dandisets.map(async (o) => {
     const res = getSummary(await getInfo(o.identifier))
     const option = document.createElement('option')
     option.value = res.id
     collection[res.id] = o
     option.innerHTML = `${o.identifier} - ${res.name} (${res.size})`
-    dandi.insertAdjacentElement('beforeend', option)
+    return option
   }))
+
+  options.forEach(el => dandi.insertAdjacentElement('beforeend', el))
+
 
   setAssetOptions()
 })
