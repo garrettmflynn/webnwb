@@ -1,10 +1,12 @@
+import { setAll } from "src/utils/case";
 import { OptionsType } from "../types";
 import { deep } from "../utils/escode/clone";
 import { getPropertyName } from "./utils";
 
 export type ClassOptionsType = {
     // Use to skip autorejection and otherwise generate values
-    onRejectKey?: (key: string, value:any, info:any) => any // return to include the value
+    onRejectKey?: (key: string, value:any, info:any) => any, // return to include the value
+    transformToSnakeCase?: boolean,
 } & Partial<OptionsType>
 
 class ApifyBaseClass {
@@ -13,6 +15,7 @@ class ApifyBaseClass {
 
     constructor(info: any = {}, options: ClassOptionsType = {}) {
 
+        if (options.transformToSnakeCase) info = setAll(info, 'camel', 'snake') // Convert all keys to snake case
 
         // Apply Inheritance to this Instance (from the schema)
         let target = this
@@ -28,19 +31,11 @@ class ApifyBaseClass {
 
         // Load Information from the User
         const arr = Object.keys(info)
+
         arr.forEach((key: string) => {
             const val = info[key]
-            if (key === 'name') this[key] = val
-            else {
-
-                if (!(key in this)) {
-                    const res = (options.onRejectKey) ? options.onRejectKey(key, val, info) : undefined
-                    if (res === undefined) {
-                        console.warn(`[classify]: ${key} (argument) is out of schema for ${this.name}`, info, this);
-                        return;
-                    }
-                }
-
+            if (key in this) {
+            
                 // if (this[key] && typeof this[key] === 'object' && this[key].type === 'group') {
                 if (this[key] && typeof this[key] === 'object'){
 
@@ -52,11 +47,15 @@ class ApifyBaseClass {
                         for (let name in val) {
                             const instance = val[name]
                             instance.name = name // automatically set name
-                            this[`create${finalKey}`](instance); // create class from raw object
+                            this[`create${finalKey}`](instance, options); // create class from raw object
                         }
                     } else this[key] = val // just set
 
                 } else this[key] = val // assign raw attribute
+
+            } else {
+                Object.defineProperty(this, key, { value: val }) // Set property as write-only
+                if (options.onRejectKey) options.onRejectKey(key, val, info) // Handle rejection
             }
         })
     }

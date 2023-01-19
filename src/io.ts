@@ -13,34 +13,17 @@ export default class NWBHDF5IO extends HDF5IO {
     this.initFS()
   }
 
-  // Overwrite preprocessing method
-  _preprocess = (file: any) => {
-    
-      // Immediately Grab Version + Specification
-      const version = file.reader.attrs['nwb_version'] ?? {value: 'latest'} // Fallback to Latest
-      const keys = file.reader.keys()
-      const specifications = (keys.includes('specifications')) ? this.parse(file.reader.get('specifications'), {res:{}}, 'res', {}, false) : undefined
-      
-      // Create NWB API
-      let api = this.apis.get(version.value) ?? new NWBAPI(specifications, this._debug)
-
-      // Store API Version
-      this.apis.set(api._version ?? api._latest, api)   
-
-      // Parse All Information (fallback to object aggregation if no api)
-      if (!api?.NWBFile) console.warn('API generation failed. Will parse the raw file structure instead.')
-
-      return api // Return API as a modifier for _parse
-  }
-
-  // Overwrite postprocessing method
   _postprocess = (info: any) => {
-    delete info['.specloc']
+     const version = info.nwb_version ?? 'latest'
+     let api = this.apis.get(version) ?? new NWBAPI(info.specifications, this._debug) // Get / Create the API
+     this.apis.set(api._version ?? api._latest, api) // Store the API
 
-    const version = info.nwb_version // Before transformation
-    const api = this.apis.get(version) as NWBAPI // get correct version
-    const specInfo = api._conformToSpec('NWBFile', info)
-    return new api.NWBFile(specInfo) // create correct version
+     // Output a file object
+     if (api.NWBFile) return new api.NWBFile(info, { transformToSnakeCase: true })
+     else {
+        console.warn('Failed to create an NWBFile class on the API. Outputting the raw file structure instead.')
+        return info
+     } 
   }
 
  

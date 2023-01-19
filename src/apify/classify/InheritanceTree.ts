@@ -1,5 +1,4 @@
 import { ArbitraryObject } from "src/types/general.types";
-import extend from "../utils/extend";
 
 
 let thrownError = false
@@ -23,47 +22,6 @@ class InheritanceTree {
                 thrownError = true
                 console.error('[classify]: Not adding parents as children')
             }
-        }
-    }
-
-    _inherit = (base:string, info:any, classes:any, group=Object.keys(this.tree)[0]) => {
-
-        const baseClass = classes[base]
-        if (!baseClass) {
-            console.warn(`[classify]: ${base} was missing in the spec`)
-            return undefined
-        }
-
-        // Get Inheritance
-        if (info.inherits){
-
-            const inheritanceInfo = this.tree[group][info.inherits]
-            if (!inheritanceInfo.class) {
-                const output = this._inherit(info.inherits, inheritanceInfo, classes, group) // inherit for parent
-                inheritanceInfo.class = output
-            } 
-
-            info.class = extend(inheritanceInfo.class, baseClass.constructor) // extend base with inheritanc
-            // try {
-            //     console.log(`${base} inheriting from ${info.inherits}`, new info.class({
-            //         sessionDescription: 'demonstrate NWBFile basics',
-            //         identifier: 'NWB123',
-            //         sessionStartTime: Date.now(),
-            //         fileCreateDate: Date.now(),
-            //     }))
-            // } catch (e) {
-            //     console.error('failed for ', base, e)
-            // }
-
-            return info.class
-        } else return baseClass
-    }
-
-    inherit = (classes:any, group=Object.keys(this.tree)[0]) => {
-        for (let key in this.tree[group]) {
-            const info = this.tree[group][key]
-            const res = this._inherit(key, info, classes, group) 
-            if (res) classes[key] = res // update reference
         }
     }
 }

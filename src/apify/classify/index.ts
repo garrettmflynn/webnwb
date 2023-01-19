@@ -3,26 +3,38 @@ import * as caseUtils from '../../utils/case'
 import { InfoType, OptionsType } from "../types"
 import * as test from "../utils/test"
 import * as rename from "../utils/rename"
-import ApifyBaseClass from "./base"
+import ApifyBaseClass, { ClassOptionsType } from "./base"
 import InheritanceTree from "./InheritanceTree"
 import { getPropertyName, setProperty } from "./utils"
 
 
 const createClass = (name: string, cls: any, options: Partial<OptionsType>) => {
-  return ({ [name]: class extends cls { 
-    constructor(info: InfoType, classOptions: any) {
-      const copy = Object.assign({}, options)      
-      super(info, Object.assign(copy, classOptions))
+  return ({
+    [name]: class extends cls {
+      constructor(info: InfoType, classOptions: any) {
+        const copy = Object.assign({}, options)
+        super(info, Object.assign(copy, classOptions))
+      }
     }
-  } })[name];
+  })[name];
 }
 
+type InheritanceType = {
+  tree: InheritanceTree,
+  type: string
+}
 
 export default class Classify {
 
   info: any // can be set later
   classes: any = {}
-  flatClasses: any = {}
+  flat: any = {
+    classes: {},
+    info: {}
+  }
+
+  inheritance?: InheritanceType
+
   baseClass?: ApifyBaseClass
 
   attributeMap: {
@@ -104,10 +116,10 @@ export default class Classify {
             })
 
             setProperty.call(prototype, createName, {
-              value: function create(o: any) {
-                const cls = (globalThis as any).apify[classifyInfoName].get(pascal, o) // NOTE: This is a tightly-coupled dependency—but magically creates the right class (if properly constrainted)
+              value: function create(o: any, classOptions: ClassOptionsType = options) {
+                const cls = (globalThis as any).apify[classifyInfoName].get(pascal, o) // NOTE: This is a tightly-coupled dependency—but magically creates the right class (if properly constrained)
                 if (cls) {
-                  const created = new cls(o, options)
+                  const created = new cls(o, classOptions)
                   return this[addName](created)
                   // return this[addName](o)
                 } else {
@@ -163,82 +175,103 @@ export default class Classify {
     return str
   }
 
-  get = (name: string, info: any) => {
-    const generatedClassV2 = createClass(name, this.baseClass ?? ApifyBaseClass, this.info);
-    generatedClassV2.prototype.name = name // always have the name specified
+  get = (name: string, info: any = this.flat.info[name], inheritance = this.inheritance) => {
 
-    // Map keys to attributes
-    const keys = Object.keys(info)
-    keys.map((k: string) => {
-      let val = info[k]
+    // Create class if required
+    if (!this.flat.classes[name]) {
+      let cls = this.baseClass ?? ApifyBaseClass
 
-      const camel = caseUtils.set(rename.base(k, this.info.allCaps)) // ensure all keys (even classes) are camel case
-      
-      const isSame = camel !== k
-      const isClass = val?.type === 'class'
-      if (isSame !== isClass)console.error('PROBABLY BAD', k, val.type)
-
-      // Add to argMap
-      if (!this.attributeMap[camel]) this.attributeMap[camel] = []
-      this.attributeMap[camel].push(name)
-      this.attributeMap['name'].push(name) // all may have names
-
-      let finalKey = camel
-
-      // Map to declaration
-      let override = this.info.overrides[name]?.[camel] ?? this.info.overrides[camel] // Global override
-
-      if (override) {
-        const typeOf = typeof override
-        if (typeOf === 'function') val = () => override(info)
-        else if (typeOf === 'string') {
-          finalKey = override
-          info[finalKey] = info[k]
-          delete info[k]
-        }
+      // Ensure you inherit from the correct class
+      if (inheritance) {
+        const group = inheritance.type
+        const info = inheritance.tree.tree[group][name]
+        const inheritName = info.inherits
+        if (inheritName) cls = this.get(inheritName, undefined, inheritance)
       }
 
-      generatedClassV2.prototype[finalKey] = val
-    })
+      const generatedClassV2 = createClass(name, cls, this.info);
+      // generatedClassV2.prototype.name = name // always have the name specified
 
-    // TO REMOVE: declare a type on the object if specified
-    drill(info, {
-      run: (o: any) => o && !!o.type, // check if has type,
-      drill: (o: any) => o && typeof o === 'object' // check if object
-    }, (o: any, path: string[]) => {
+      // Map keys to attributes
+      if (info) {
+        const keys = Object.keys(info)
+        keys.map((k: string) => {
+          let val = info[k]
 
-      let target = generatedClassV2.prototype
-      const pathCopy = [...path]
-      const key =  pathCopy.pop()
-      pathCopy.forEach(key => target = target?.[key])
+          const camel = caseUtils.set(rename.base(k, this.info.allCaps)) // ensure all keys (even classes) are camel case
 
-      const parent = target
-      if (key) target = parent?.[key]
+          const isSame = camel !== k
+          const isClass = val?.type === 'class'
+          if (isSame !== isClass) console.error('PROBABLY BAD', k, val.type)
 
-      // proxy internal properties (if target found)
-      if (key && target && o.type === 'group' && path.length > 1) {
-        if (!(key in generatedClassV2.prototype)) {
-          Object.defineProperty(generatedClassV2.prototype, key, {
-            get: () => parent[key],
-            set: (val: any) => parent[key] = val,
-            enumerable: true,
-            configurable: false
+          // Add to argMap
+          if (!this.attributeMap[camel]) this.attributeMap[camel] = []
+          this.attributeMap[camel].push(name)
+          this.attributeMap['name'].push(name) // all may have names
+
+          let finalKey = camel
+
+          // Map to declaration
+          let override = this.info.overrides[name]?.[camel] ?? this.info.overrides[camel] // Global override
+
+          if (override) {
+            const typeOf = typeof override
+            if (typeOf === 'function') val = () => override(info)
+            else if (typeOf === 'string') {
+              finalKey = override
+              info[finalKey] = info[k]
+              delete info[k]
+            }
+          }
+
+          generatedClassV2.prototype[finalKey] = val
+        })
+
+
+        // TO REMOVE: declare a type on the object if specified
+        drill(info, {
+          run: (o: any) => o && !!o.type, // check if has type,
+          drill: (o: any) => o && typeof o === 'object' // check if object
+        }, (o: any, path: string[]) => {
+
+          let target = generatedClassV2.prototype
+          const pathCopy = [...path]
+          const key = pathCopy.pop()
+          pathCopy.forEach(key => target = target?.[key])
+
+          const parent = target
+          if (key) target = parent?.[key]
+
+          // proxy internal properties (if target found)
+          if (key && target && o.type === 'group' && path.length > 1) {
+            if (!(key in generatedClassV2.prototype)) {
+              Object.defineProperty(generatedClassV2.prototype, key, {
+                get: () => parent[key],
+                set: (val: any) => parent[key] = val,
+                enumerable: true,
+                configurable: false
+              })
+            } else console.error(`${name} already has key ${key}`)
+          }
+
+          // TODO: Figure out why this removes nonsense from the class (targets are undefined)
+          if (target) Object.defineProperty(target, "type", {
+            value: o.type,
+            enumerable: false,
+            writable: false
           })
-        } else console.error(`${name} already has key ${key}`)
-      }
+        })
 
-      // TODO: Figure out why this removes nonsense from the class (targets are undefined)
-      if (target) Object.defineProperty(target, "type", {
-        value: o.type,
-        enumerable: false,
-        writable: false
-      })
-    })
+      } else console.error(`class ${name} does not have any info`)
 
 
-    this.applyHelpers(generatedClassV2.prototype, undefined, info, [name])
+      this.applyHelpers(generatedClassV2.prototype, undefined, info, [name])
 
-    return generatedClassV2
+      // Add to flat classes
+      this.flat.classes[name] = generatedClassV2
+    }
+
+    return this.flat.classes[name]
   }
 
   // Fuzzy match for class type
@@ -249,33 +282,27 @@ export default class Classify {
     let choices: string[] = []
     keys.forEach(k => {
 
-        const selection = this.attributeMap[k]
-        const isZero = choices.length === 0
-        if (selection && (isZero || choices.length > 1)){
+      const selection = this.attributeMap[k]
+      const isZero = choices.length === 0
+      if (selection && (isZero || choices.length > 1)) {
 
-            if (isZero)  choices = selection
-            else choices = choices.reduce((a:string[], name) => {
-                const res = selection.includes(name)
-                if (res) a.push(name)
-                return a
-            }, [])
-        }
+        if (isZero) choices = selection
+        else choices = choices.reduce((a: string[], name) => {
+          const res = selection.includes(name)
+          if (res) a.push(name)
+          return a
+        }, [])
+      }
     })
 
     return choices[0]
 
-}
-
-
-  inherit = (info: any, type?: string) => {
-    info.inherit(this.flatClasses, type) // use the InheritanceTree class
   }
 
   // Load classes in self
-  load(fullSpec: any, inheritance?: {
-    tree: InheritanceTree,
-    type: string
-  }, clone = true) {
+  load(fullSpec: any, inheritance?: InheritanceType, clone = true) {
+
+    if (inheritance) this.inheritance = inheritance
 
     this.classes = (clone) ? JSON.parse(JSON.stringify(fullSpec)) : fullSpec
 
@@ -286,18 +313,21 @@ export default class Classify {
         for (let namespace in schema) {
           const namespaceRef = schema[namespace]
           for (let clsName in namespaceRef) {
-            const cls = this.get(clsName, namespaceRef[clsName])
-            if (cls) {
-              namespaceRef[clsName] = cls
-              this.flatClasses[clsName] = cls
-            }
+            if (this.flat.info[clsName]) console.error(`Duplicate class ${clsName} found`)
+            this.flat.info[clsName] = namespaceRef[clsName]
+            Object.defineProperty(namespaceRef, clsName, {
+              get: () => this.flat.classes[clsName],
+              enumerable: true,
+            })
           }
         }
       }
     }
 
-    // Inherit Classes
-    if (inheritance) this.inherit(inheritance.tree, inheritance.type)
+
+    // Populate all classes now thay ou can reference their information globally
+    for (let key in this.flat.info) this.get(key)
+
 
     return this.classes
   }

@@ -56,54 +56,6 @@ export default class API {
     Object.defineProperty(target, name, format)
   }
 
-
-  // Mostly for the type—but also for scrubbing non-matching keys
-  _transfer = (target:any, ref:any) => {
-    const copy = Object.assign({}, target)
-    if (target.type) this._define('type', copy, {
-      value: target.type,
-      enumerable: false,
-      writable: false
-    }) // keep type
-    
-    if (copy && ref){
-        for (let k in copy) {
-
-
-          if (typeof copy[k] === 'object' && !Array.isArray(copy[k])){
-            const o = Object.assign({}, copy[k])
-
-            const s = ref[k]
-
-            if (s) {
-
-                if (s.type) this._define('type', o, {
-                  value: s.type,
-                  enumerable: false,
-                  writable: false
-                })
-                
-                const newVal = this._transfer(o, s)
-                if (newVal) copy[k] = newVal
-              
-          }
-
-        } 
-      }
-    }
-
-    return copy
-  }
-
-  _conformToSpec = (name:string, info:any) => {
-    const spec = this.get(name, this._specification)
-    const infoWithTypes = this._transfer(info, spec)
-    const newInfo = caseUtils.setAll(infoWithTypes, 'camel', 'snake') // transform to camelCase
-    return newInfo
-  }
-
-
-
   // Set schema item
   set = (name:string, value:any, key?:string) => {
     const path = this._nameToSchema[name]?.path
@@ -318,9 +270,6 @@ export default class API {
     // Set classify information
     this._classify.set(Object.assign({ version: this._version as string }, this._options))
 
-
-    // Ensure All Objects Inherit from Each Other
-    // for (let key in this._nameToSchema) this._inherit(key)
 
     // Decouple specification (while maintaining non-enumerable properties)
     this._specification = JSON.parse(JSON.stringify(this._registry))

@@ -43,13 +43,14 @@ let collection: {[x:string]: any} = {}
 const loadAsset = () => {
   file = assetSelect.value // URL
   name = assetSelect.innerText.split('/').pop() ?? 'streaming.nwb' // File Name
-  if (file && name) runFetch(true)
+  if (file && name) runFetch()
   else console.error('No dandiset selected')
 }
 
 const setAssetOptions = async () => {
   const assets = await getAssets(dandi.value)
   console.log(`Got all assets for ${dandi.value}`, assets)
+  Array.from(assetSelect.children).forEach(o => o.remove()) // Remove all children
   const url = `${getInfoURL(dandi.value)}/assets`
   if (assets) {
    const options = await Promise.all(assets.map(async (o: any) => {
@@ -69,10 +70,7 @@ fromDANDI.onclick = loadAsset
 
 dandi.onchange = async () =>{
   setAssetOptions()
-  loadAsset()
 }
-
-// assetSelect.onchange = async () => loadAsset
 
 getDandisets().then(async dandisets => {
 
@@ -283,7 +281,7 @@ if (lines.length > 0) Plotly.newPlot(plot, lines, {
 });
 }
 
-async function runFetch(useStreaming = fileStreamingCheckbox?.checked) {
+async function runFetch(useStreaming = fileStreamingCheckbox?.checked, testOther = true) {
 
   console.log('Is Streaming', useStreaming)
   const result = await io.fetch(
@@ -301,7 +299,39 @@ async function runFetch(useStreaming = fileStreamingCheckbox?.checked) {
     }
   )
 
+
+  // if (testOther){
+  //   const res = await runFetch(!useStreaming, false)
+
+  //   let streamed = useStreaming ? result : res
+  //   const downloaded = useStreaming ? res : result
+
+  //   // Resolved streamed file
+  //   const resolveAllProps = async (o:any) => {
+  //     for (let key in o) {
+  //       const res = await o[key]
+  //       if (res instanceof Object) await resolveAllProps(res)
+  //     }
+  //     return o
+  //   }
+    
+  //   streamed = await resolveAllProps(streamed)
+
+  //   console.log(`------------------ Stream vs Download ------------------`)
+  //   const streamJSON = JSON.stringify(streamed)
+  //   const downloadJSON = JSON.stringify(downloaded)
+  //   console.log('Streaming', streamed, streamJSON)
+  //   console.log('Downloaded', downloaded, downloadJSON)
+    
+  //   const equal = JSON.stringify(res) === JSON.stringify(result)
+  //   console.log('Streamed file is equivalent to downloaded file', equal)
+  // }
+
+  // Visualize the requested file
   parseFile(result)
+
+  return result
+
 }
 
 
