@@ -1,4 +1,5 @@
 import * as array from "./array"
+import { isPromise } from "./promise"
 
 export type CaseType = 'pascal' | 'camel' | 'snake' | 'other'
 
@@ -45,7 +46,7 @@ export const set = (base:string, type?: CaseType) => {
   }
 
 
-  // Deep clone and convert all keys to a certain case
+  // Convert all keys to a certain case
   export const setAll = (
     info: any, 
     type?: CaseType, 
@@ -53,7 +54,7 @@ export const set = (base:string, type?: CaseType) => {
     drill: boolean = false
 ) => {
 
-        const newInfo = Object.assign({}, info)
+        const newInfo = info
 
         for (let key in newInfo) {
 
@@ -61,9 +62,11 @@ export const set = (base:string, type?: CaseType) => {
         const toTransform = (typeof condition === 'function') ? condition(key) : get(key) === condition
         const newKey = (toTransform) ? set(key, type) : key // skip for children of groups
 
-        newInfo[newKey] = newInfo[key]
+        // Copy property descriptions
+        const desc = Object.getOwnPropertyDescriptor(newInfo, key)
+        if (desc) Object.defineProperty(newInfo, newKey, desc)
 
-        if (newKey != key) delete newInfo[key]
+        if (newKey !== key)  delete newInfo[key] // Only delete if changed
 
         if (drill && newInfo[newKey] && typeof newInfo[newKey] === 'object' && !array.check(newInfo[newKey])) {
                 const drilled = setAll(info[key], type, condition) // drill original object

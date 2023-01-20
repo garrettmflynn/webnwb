@@ -6,18 +6,8 @@ import * as rename from "../utils/rename"
 import ApifyBaseClass, { ClassOptionsType } from "./base"
 import InheritanceTree from "./InheritanceTree"
 import { getPropertyName, setProperty } from "./utils"
+import { createQueueSymbol, propertyReactionRegistrySymbol } from "../utils/globals"
 
-
-const createClass = (name: string, cls: any, options: Partial<OptionsType>) => {
-  return ({
-    [name]: class extends cls {
-      constructor(info: InfoType, classOptions: any) {
-        const copy = Object.assign({}, options)
-        super(info, Object.assign(copy, classOptions))
-      }
-    }
-  })[name];
-}
 
 type InheritanceType = {
   tree: InheritanceTree,
@@ -26,7 +16,7 @@ type InheritanceType = {
 
 export default class Classify {
 
-  info: any // can be set later
+  info?: OptionsType // can be set later
   classes: any = {}
   flat: any = {
     classes: {},
@@ -52,7 +42,102 @@ export default class Classify {
     if (info) this.info = info;
   }
 
-  applyHelpers = (prototype: any, base?: string, valueToDrill?: any, path: string[] = [], aliases: string | string[] = []) => {
+  createClass = (name: string, cls: any, specInfo: any) => {
+
+    const context = this
+    return ({
+      [name]: class extends cls {
+        constructor(info: InfoType, classOptions: any, specs: any | any[]) {
+          const copy = Object.assign({}, context.info)
+          if (!specs) specs = [specInfo]
+          else specs.push(specInfo)
+
+          super(info, Object.assign(copy, classOptions), specs)
+  
+          const attrMap = context.attributeMap
+  
+        // Map keys to attributes
+        if (specInfo) {
+          const keys = Object.keys(specInfo)
+          keys.map((k: string) => {
+            let val = specInfo[k]
+
+            const camel = caseUtils.set(rename.base(k, context.info.allCaps)) // ensure all keys (even classes) are camel case
+  
+            // Add to argMap
+            if (!attrMap[camel]) attrMap[camel] = []
+            attrMap[camel].push(name)
+            attrMap['name'].push(name) // all may have names
+  
+            let finalKey = camel
+  
+            // Map to declaration
+            let override = context.info.overrides[name]?.[camel] ?? context.info.overrides[camel] // Global override
+  
+            if (override) {
+              const typeOf = typeof override
+              if (typeOf === 'function') val = () => override(specInfo)
+              else if (typeOf === 'string') {
+                finalKey = override
+                specInfo[finalKey] = specInfo[k]
+                delete specInfo[k]
+              }
+            }
+            
+            const newKey = !(finalKey in this)
+            
+              const desc = Object.getOwnPropertyDescriptor(specInfo[propertyReactionRegistrySymbol].reactions, k)
+              if (desc) {
+
+                // NOTE: Don't lose the existing getter
+                const existing = Object.getOwnPropertyDescriptor(this, finalKey)
+                if (existing && existing.get) {
+                    const copy = {...existing}
+                    copy.set = desc.set  // Only overwrite existing setter
+                    Object.defineProperty(this, finalKey, copy)
+                } else Object.defineProperty(this, finalKey, { ...desc, enumerable: true})
+
+                if (newKey) this[finalKey] = val //
+              }
+          })
+  
+  
+          // proxy internal properties (if target found)
+          drill(specInfo, {
+            run: (o: any) => o && !!o.type, // check if has type,
+            drill: (o: any) => o && typeof o === 'object' // check if object
+          }, (o: any, path: string[]) => {
+  
+            let parent = this
+            const pathCopy = [...path]
+            const key = pathCopy.pop()
+            pathCopy.forEach(key => parent = parent?.[key])
+  
+            if (key) {
+              const target = parent?.[key]
+              if (target && o.type === 'group' && path.length > 1) {
+                if (!(key in this)) {
+                  Object.defineProperty(this, key, {
+                    get: () => parent[key],
+                    set: (val: any) => parent[key] = val,
+                    enumerable: true,
+                    configurable: false
+                  })
+                } else console.error(`${name} already has key ${key}`)
+              }
+            }
+          })
+  
+        } else console.error(`class ${name} does not have any info`);
+  
+        context.applyHelpers(this, undefined, specInfo, [name]) // Apply helpers using context
+  
+        }
+      }
+    })[name];
+  }
+
+  applyHelpers = (instance: any, base?: string, valueToDrill?: any, path: string[] = [], aliases: string | string[] = []) => {
 
     let str = ``
 
@@ -77,9 +162,7 @@ export default class Classify {
       const methods = Array.from(pascalMethodNames)
       methods.forEach(method => {
 
-        const options = this.info
-
-        const updatedMethod = getPropertyName.call(prototype, method, options)
+        const updatedMethod = getPropertyName.call(instance, method, this.info)
 
         const addName = `add${updatedMethod}`
         const getName = `get${updatedMethod}`
@@ -88,12 +171,12 @@ export default class Classify {
         pascal = updatedMethod // Use updated property name
 
 
-        const classifyInfoName = options.name
+        const classifyInfoName = this.info.name
 
         if (!_deleted.includes(method)) {
           try {
 
-            setProperty.call(prototype, addName, {
+            setProperty.call(instance, addName, {
               value: function add(obj: any) {
                 // const isMap = this[camel] instanceof Map
                 // const name = obj.name ?? (isMap ? this[camel].size : Object.keys(this[camel]).length)
@@ -107,7 +190,7 @@ export default class Classify {
               },
             })
 
-            setProperty.call(prototype, getName, {
+            setProperty.call(instance, getName, {
               value: function get(name: string) {
                 // if (this[camel] instanceof Map) return this[camel].get(name)
                 // else 
@@ -116,25 +199,31 @@ export default class Classify {
               },
             })
 
-            setProperty.call(prototype, createName, {
-              value: function create(o: any, classOptions: ClassOptionsType = options) {
+            setProperty.call(instance, createName, {
+              value: function create(o: any, classOptions: ClassOptionsType = this.info) {
                 const cls = (globalThis as any).apify[classifyInfoName].get(pascal, o) // NOTE: This is a tightly-coupled dependency—but magically creates the right class (if properly constrained)
                 if (cls) {
                   const created = new cls(o, classOptions)
                   return this[addName](created)
                   // return this[addName](o)
                 } else {
-                  console.error(`[${classifyInfoName}]: Could not find class for ${pascal}`);
+                  console.error(`[${classifyInfoName}]: Could not find class for ${pascal}`, o);
                   return null
                 }
               },
             })
 
+            // Create from the queue when the function is available
+            if (instance[createQueueSymbol][createName]) {
+              instance[createQueueSymbol][createName].forEach((f: Function) => f())
+              delete instance[createQueueSymbol][createName]
+            }
+
           } catch (e) {
-            console.warn(`[${options.name}]: Trying to redeclare a helper function for ${pascal}`, 'removing aliases: ' + aliases);
+            console.warn(`[${this.info.name}]: Trying to redeclare a helper function for ${pascal}`, 'removing aliases: ' + aliases);
 
             (aliases as string[]).forEach((alias: string) => {
-              delete prototype[alias]
+              delete instance[alias]
               _deleted.push(alias)
             })
           };
@@ -166,7 +255,7 @@ export default class Classify {
 
 
           if (!test.isClass(key)) {
-            str += this.applyHelpers(prototype, key, newVal, [...path, key], newVal?.inherits?.value)
+            str += this.applyHelpers(instance, key, newVal, [...path, key], newVal?.inherits?.value)
           }
           //   }
         }
@@ -190,82 +279,9 @@ export default class Classify {
         if (inheritName) cls = this.get(inheritName, undefined, inheritance)
       }
 
-      const generatedClassV2 = createClass(name, cls, this.info);
+      const generatedClassV2 = this.createClass(name, cls, info);
       // generatedClassV2.prototype.name = name // always have the name specified
-
-      // Map keys to attributes
-      if (info) {
-        const keys = Object.keys(info)
-        keys.map((k: string) => {
-          let val = info[k]
-
-          const camel = caseUtils.set(rename.base(k, this.info.allCaps)) // ensure all keys (even classes) are camel case
-
-          // Add to argMap
-          if (!this.attributeMap[camel]) this.attributeMap[camel] = []
-          this.attributeMap[camel].push(name)
-          this.attributeMap['name'].push(name) // all may have names
-
-          let finalKey = camel
-
-          // Map to declaration
-          let override = this.info.overrides[name]?.[camel] ?? this.info.overrides[camel] // Global override
-
-          if (override) {
-            const typeOf = typeof override
-            if (typeOf === 'function') val = () => override(info)
-            else if (typeOf === 'string') {
-              finalKey = override
-              info[finalKey] = info[k]
-              delete info[k]
-            }
-          }
-
-          generatedClassV2.prototype[finalKey] = val
-        })
-
-
-        // TO REMOVE: declare a type on the object if specified
-        drill(info, {
-          run: (o: any) => o && !!o.type, // check if has type,
-          drill: (o: any) => o && typeof o === 'object' // check if object
-        }, (o: any, path: string[]) => {
-
-          let target = generatedClassV2.prototype
-          const pathCopy = [...path]
-          const key = pathCopy.pop()
-          pathCopy.forEach(key => target = target?.[key])
-
-          const parent = target
-          if (key) target = parent?.[key]
-
-          // proxy internal properties (if target found)
-          if (key && target && o.type === 'group' && path.length > 1) {
-            if (!(key in generatedClassV2.prototype)) {
-              Object.defineProperty(generatedClassV2.prototype, key, {
-                get: () => parent[key],
-                set: (val: any) => parent[key] = val,
-                enumerable: true,
-                configurable: false
-              })
-            } else console.error(`${name} already has key ${key}`)
-          }
-
-          // TODO: Figure out why this removes nonsense from the class (targets are undefined)
-          if (target) Object.defineProperty(target, "type", {
-            value: o.type,
-            enumerable: false,
-            writable: false
-          })
-        })
-
-      } else console.error(`class ${name} does not have any info`)
-
-
-      this.applyHelpers(generatedClassV2.prototype, undefined, info, [name])
-
-      // Add to flat classes
-      this.flat.classes[name] = generatedClassV2
+      this.flat.classes[name] = generatedClassV2 // Add to flat classes
     }
 
     return this.flat.classes[name]

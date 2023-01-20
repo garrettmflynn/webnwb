@@ -22,7 +22,7 @@ export type DatasetType = {
     data_type_inc?: string // Inherited object
 }
 
-export type ArbitraryObject = {[x:string]: any}
+export type ArbitraryObject = {[x:string | symbol]: any}
 
 export type LinkType = {
     doc: string

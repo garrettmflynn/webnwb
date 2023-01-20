@@ -29,7 +29,43 @@ export default class NWBAPI extends API {
       namespacesToFlatten: ['base', 'file'], // Namespaces to flatten into the base of the API
       patternsToRemove: ['nwb.', '.extensions', '.yaml'], // Patterns to remove from the name
       baseClass: NWBBaseClass, // Base Class to use for all classes
-      getValue: (o) => o.value ?? o.default_value, // Get the value from the schema
+
+      // Get the value from the schema
+      getValue: (value, o) => {
+
+        if (value === undefined) value = o.value ?? o.default_value
+
+        if (value === undefined) return value // return value
+
+          if (o.quantity) {
+            // if (o.shape) {
+              if (typeof o.dtype === 'string') {
+                const arrayType = `${o.dtype[0].toUpperCase() + o.dtype.slice(1)}Array`
+                const typedArray = globalThis[arrayType]
+                if (typedArray) return new typedArray(value)
+              }
+              
+              return new Array(value)
+            // }
+          } 
+          else if (typeof o.dtype === 'string') {
+            const typeOf = typeof value
+            if (o.dtype === 'isodatetime' && (typeOf === 'string' || typeOf === 'number' || value instanceof Date)) return new String(new Date(value).toISOString()) // Return as a object here
+            if (typeOf === 'string') {
+              if (o.dtype === 'text') return new String(value)
+            }
+            else if (typeOf === 'number') {
+              if (o.dtype === 'numeric' || o.dtype.includes('float') || o.dtype.includes('int')) return new Number(value)
+            }
+            // else console.error('Unknown dtype', o.dtype, o)
+            // else if (o.dtype === 'bool') return new Boolean(value)
+            // else if (o.dtype === 'float') return new Number(value)
+          }
+          else {
+            // if (!value) console.error('No value found', o.dtype, o)
+            return value
+          }
+      },
 
       classKey: 'neurodata_type', // Key to use for the class name
 

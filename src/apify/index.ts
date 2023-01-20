@@ -6,6 +6,7 @@ import * as rename from "./utils/rename"
 import Classify from './classify';
 import InheritanceTree from './classify/InheritanceTree';
 import { isNativeClass } from './utils/classes';
+import { propertyReactionRegistrySymbol } from './utils/globals';
 
 type SpecificationType = { [x: OptionsType['coreName']]: ArbitraryObject } & ArbitraryObject
 
@@ -107,22 +108,55 @@ export default class API {
     }
 
 
-    const newPath = [...path]
+    const newPath = name ? [...path, name] : path
 
     if (name) {
 
-      // TODO: Arbitrary define default value marker
-      // const value = this._options.getValue(o) ?? (!hasObject ? undefined : {})
-      const value = this._options.getValue(o) ?? ((!isDataset && (!isClass && !isGroup)) ? undefined : (isGroup) ? {} : {})
+      // const value = this._options.getValue(undefined, o) ?? ((!isDataset && (!isClass && !isGroup)) ? undefined : (isGroup) ? {} : {})
+      const value = o.value ?? o.default_value ?? ((isClass || isGroup) ? {} : undefined)
+
+      // console.log('Getting value', newPath, value, o, aggregator.type)
 
       if (typeof aggregator[name] === 'function') {
         const isClass = isNativeClass(aggregator[name])
-        if (isClass) aggregator[name].prototype[name] = inherit // NOTE: Avoids finding the key property on Maps
-        // else console.error('Cannot inherit on non-class', name, aggregator[name], aggregator)
+        if (isClass) aggregator[name].prototype[name] = inherit
       }
-      else aggregator[name] = value
+      else if (aggregator.type === 'dataset') Object.defineProperty(aggregator, name, { value }) // Setting additional information on the dataset
+      else {
 
+        aggregator[name] = value // Set aggregator value
+
+        if (!(propertyReactionRegistrySymbol in aggregator)) Object.defineProperty(aggregator, propertyReactionRegistrySymbol, {value: { values: {}, reactions: {}  }})
+
+        // Ensure that object properties will react to values that are set
+        if (!isClass){
+          const id = Symbol('property registry value id')
+          const options = this._options
+          Object.defineProperty(aggregator[propertyReactionRegistrySymbol].reactions, name, {
+            get: function () { 
+              return this[propertyReactionRegistrySymbol]?.values?.[id] 
+            },
+            set: function (v: any){
+
+              // Ensure that the registry is defined
+              if (!(propertyReactionRegistrySymbol in this)) Object.defineProperty(this, propertyReactionRegistrySymbol, {value: { values: {}, reactions: {}  }})
+
+                // Set new current value
+                let current = this[propertyReactionRegistrySymbol].values[id] = options.getValue(v, o) // Always get an object
+                
+                // Add metadata
+                if (current && typeof current === 'object') {
+                  for (let key in o) Object.defineProperty(current, key, { value: o[key], enumerable: false })
+                }
+            },
+            configurable: true
+          })
+        }
+
+      }
     }
+
+
 
     // Assign default name
     if (o.default_name) aggregator[name].name = o.default_name
@@ -241,8 +275,6 @@ export default class API {
                 const info = (typeof schemaInfo === 'string') ? JSON.parse(schemaInfo) : schemaInfo
 
                 base[name] = this._setFromObject(info, undefined, undefined, [name])
-
-                console.log('Namespace Info', name, info)
 
                 const path = [namespace.name, namespace.version, name]
 
