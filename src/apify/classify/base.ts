@@ -9,6 +9,9 @@ export type ClassOptionsType = {
     transformToSnakeCase?: boolean,
 } & Partial<OptionsType>
 
+const isPromise = (o: any) => typeof o === 'object' && typeof o.then === 'function'
+
+
 class ApifyBaseClass {
 
     [x: string]: any; // arbitrary
@@ -33,31 +36,82 @@ class ApifyBaseClass {
         const arr = Object.keys(info)
 
         arr.forEach((key: string) => {
-            const val = info[key]
-            if (key in this) {
-            
-                // if (this[key] && typeof this[key] === 'object' && this[key].type === 'group') {
-                if (this[key] && typeof this[key] === 'object'){
 
-                    const pascalKey = key[0].toUpperCase() + key.slice(1);
-                    let finalKey = getPropertyName.call(this, pascalKey, options)
+            const desc = Object.getOwnPropertyDescriptor(info, key)
+            const hasGetter = desc && desc.get
 
-                    // Reinstantiate objects as classes
-                    if (this[`create${finalKey}`]) {
-                        for (let name in val) {
-                            const instance = val[name]
-                            instance.name = name // automatically set name
-                            this[`create${finalKey}`](instance, options); // create class from raw object
+            // NOTE: Streamed data still has camelCase keys here...
+            if (hasGetter) {
+
+                Object.defineProperty(this, key, { get: () => {
+                    
+                    const value = info[key]
+                    if (isPromise(value)) return value.then((v: any) => {
+                        if ( typeof v === 'object') {
+                            let isGroup = this.#isGroup(key, options)
+                             if (isGroup) {
+                                const groupKey = isGroup as string
+                                Object.defineProperty(v, '__onPropertyResolved', {
+                                    value: async (name:string, value: any) => {
+                                        if (options.classKey) await value[options.classKey] // Just access the class key so it's available synchronously
+                                        this.#onPropertyResolved(name, value, groupKey, options)
+                                    },
+                                    configurable: true,
+                                })
+                             }
+
+                             Object.defineProperty(this, key, {value: v, enumerable: key in this})
                         }
-                    } else this[key] = val // just set
+                        return v
+                    })
 
-                } else this[key] = val // assign raw attribute
+                    return value
 
-            } else {
-                Object.defineProperty(this, key, { value: val }) // Set property as write-only
-                if (options.onRejectKey) options.onRejectKey(key, val, info) // Handle rejection
+                }, enumerable: key in this })
+            } else if (key in this) this.#onValidKey(key, info, options)
+            else {
+                const value = info[key]
+                Object.defineProperty(this, key, { value }) // Set property as non-enumerable write-only property
+                if (options.onRejectKey) options.onRejectKey(key, value, info) // Handle rejection
             }
+
         })
+    }
+
+    #onValidKey = (key:string, value: any, options: ClassOptionsType) => {
+
+        // if (this[key] && typeof this[key] === 'object' && this[key].type === 'group') {
+        if (this[key] && typeof this[key] === 'object'){
+
+            // Reinstantiate objects as classes
+            let groupKey = this.#isGroup(key, options)
+
+            const group = value[key]
+
+            if (groupKey) {
+                for (let name in group) this.#onPropertyResolved(name, group[name], groupKey, options)
+            } else this[key] = group
+
+        } else this[key] = value[key] // assign raw attribute
+    }
+
+    #getKey = (name: string, options: ClassOptionsType) => {
+        const pascalKey = name[0].toUpperCase() + name.slice(1);
+        return getPropertyName.call(this, pascalKey, options)
+    }
+
+    #isGroup = (name: string, options: ClassOptionsType) => {
+        let groupKey = this.#getKey(name, options)
+
+        return (this[`create${groupKey}`]) ? groupKey : false
+    }
+
+    #onPropertyResolved = (name: string, instance: any, groupKey: string, options: ClassOptionsType) => {
+        if (isPromise(instance)) return instance.then((v: any) => this.#onPropertyResolved(name, v, groupKey, options))
+        else {
+            instance.name = name // automatically set name
+            return this[`create${groupKey}`](instance, options); // create class from raw object
+        }
     }
 }
 

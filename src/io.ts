@@ -13,13 +13,13 @@ export default class NWBHDF5IO extends HDF5IO {
     this.initFS()
   }
 
-  _postprocess = (info: any) => {
+  _postprocess = (info: any, transformToSnakeCase = true) => {
      const version = info.nwb_version ?? 'latest'
      let api = this.apis.get(version) ?? new NWBAPI(info.specifications, this._debug) // Get / Create the API
      this.apis.set(api._version ?? api._latest, api) // Store the API
 
      // Output a file object
-     if (api.NWBFile) return new api.NWBFile(info, { transformToSnakeCase: true })
+     if (api.NWBFile) return new api.NWBFile(info, { transformToSnakeCase })
      else {
         console.warn('Failed to create an NWBFile class on the API. Outputting the raw file structure instead.')
         return info

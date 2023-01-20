@@ -31,6 +31,8 @@ export default class NWBAPI extends API {
       baseClass: NWBBaseClass, // Base Class to use for all classes
       getValue: (o) => o.value ?? o.default_value, // Get the value from the schema
 
+      classKey: 'neurodata_type', // Key to use for the class name
+
       // Override properties of a generated class instance
       overrides: {
 

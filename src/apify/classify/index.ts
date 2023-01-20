@@ -100,7 +100,8 @@ export default class Classify {
                 // if (isMap) this[camel].set(name, obj)
                 // else 
                 const name = obj.name ?? Object.keys(this[camel]).length
-                this[camel][name] = obj
+                // this[camel][name] = obj
+                Object.defineProperty(this[camel], name, {value: obj, enumerable: true})
                 return obj
                 // this[camel].set(obj.name, obj)
               },
@@ -200,10 +201,6 @@ export default class Classify {
 
           const camel = caseUtils.set(rename.base(k, this.info.allCaps)) // ensure all keys (even classes) are camel case
 
-          const isSame = camel !== k
-          const isClass = val?.type === 'class'
-          if (isSame !== isClass) console.error('PROBABLY BAD', k, val.type)
-
           // Add to argMap
           if (!this.attributeMap[camel]) this.attributeMap[camel] = []
           this.attributeMap[camel].push(name)
@@ -275,6 +272,7 @@ export default class Classify {
   }
 
   // Fuzzy match for class type
+  // TODO: Ensure that this handles inheritance well
   match = (input: any) => {
 
     const keys = Object.keys(input)

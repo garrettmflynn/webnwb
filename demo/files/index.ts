@@ -283,7 +283,6 @@ if (lines.length > 0) Plotly.newPlot(plot, lines, {
 
 async function runFetch(useStreaming = fileStreamingCheckbox?.checked, testOther = true) {
 
-  console.log('Is Streaming', useStreaming)
   const result = await io.fetch(
     file, 
     name, 

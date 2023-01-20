@@ -46,18 +46,17 @@ export const set = (base:string, type?: CaseType) => {
 
 
   // Deep clone and convert all keys to a certain case
-  export const setAll = (info: any, type?: CaseType, condition: CaseType | Function = () => info.type !== 'group') => {
+  export const setAll = (
+    info: any, 
+    type?: CaseType, 
+    condition: CaseType | Function = () => info.type !== 'group', 
+    drill: boolean = false
+) => {
 
         const newInfo = Object.assign({}, info)
 
         for (let key in newInfo) {
 
-        // let toTransform
-        // if (typeof condition === 'function') toTransform = condition(key)
-        // else {
-        //     const got = get(key)
-        //     toTransform = got === condition
-        // }
 
         const toTransform = (typeof condition === 'function') ? condition(key) : get(key) === condition
         const newKey = (toTransform) ? set(key, type) : key // skip for children of groups
@@ -66,7 +65,7 @@ export const set = (base:string, type?: CaseType) => {
 
         if (newKey != key) delete newInfo[key]
 
-        if (newInfo[newKey] && typeof newInfo[newKey] === 'object' && !array.check(newInfo[newKey])) {
+        if (drill && newInfo[newKey] && typeof newInfo[newKey] === 'object' && !array.check(newInfo[newKey])) {
                 const drilled = setAll(info[key], type, condition) // drill original object
                 newInfo[newKey] = drilled
             }

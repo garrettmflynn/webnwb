@@ -15,6 +15,8 @@ export type OptionsType = {
     patternsToRemove: string[],
     singularName: {[x:string]: string}
 
+    classKey?: string,
+
     baseClass?: ApifyBaseClass // Add functionality to the base class
 
     // Override properties on a generated class instance

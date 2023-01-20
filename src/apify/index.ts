@@ -70,6 +70,10 @@ export default class API {
 
   // Get schema item (constructor function)
   get = (name:string, objectShape?: any, target=this._registry): null | Function => {
+
+    const key = this._options.classKey
+    if (key && objectShape && key in objectShape)  name = objectShape[key] ?? name
+
     const path = this._nameToSchema[name]?.path
     if (path){
       path.forEach((str:string) => target = target[str] ?? target)
@@ -188,10 +192,6 @@ export default class API {
 
   _generate(spec: any = this._registry, key?: string) {
 
-    const ogSpec = JSON.parse(JSON.stringify(spec))
-
-    console.log('Original Specification', ogSpec)
-
     if (!this._options.coreName) {
       this._options.coreName = 'core'
       spec = {core: spec} // nest core in a root specification
@@ -241,6 +241,8 @@ export default class API {
                 const info = (typeof schemaInfo === 'string') ? JSON.parse(schemaInfo) : schemaInfo
 
                 base[name] = this._setFromObject(info, undefined, undefined, [name])
+
+                console.log('Namespace Info', name, info)
 
                 const path = [namespace.name, namespace.version, name]
 
