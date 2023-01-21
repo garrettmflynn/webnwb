@@ -7,6 +7,7 @@ import Classify from './classify';
 import InheritanceTree from './classify/InheritanceTree';
 import { isNativeClass } from './utils/classes';
 import { propertyReactionRegistrySymbol } from './utils/globals';
+import { isPromise } from 'src/utils/promise';
 
 type SpecificationType = { [x: OptionsType['coreName']]: ArbitraryObject } & ArbitraryObject
 
@@ -130,24 +131,34 @@ export default class API {
 
         // Ensure that object properties will react to values that are set
         if (!isClass){
-          const id = Symbol('property registry value id')
+          const id = Symbol('property registry value id') // newPath.join('/') //
           const options = this._options
           Object.defineProperty(aggregator[propertyReactionRegistrySymbol].reactions, name, {
             get: function () { 
-              return this[propertyReactionRegistrySymbol]?.values?.[id] 
+              const values = this[propertyReactionRegistrySymbol]?.values
+              const toReturn = values?.[id] 
+              return toReturn
             },
-            set: function (v: any){
+            set: function setWithPreprocessingStep(v: any){
 
-              // Ensure that the registry is defined
-              if (!(propertyReactionRegistrySymbol in this)) Object.defineProperty(this, propertyReactionRegistrySymbol, {value: { values: {}, reactions: {}  }})
+              let toReturn;
+              if (isPromise(v)) toReturn = v.then((res: any) => setWithPreprocessingStep.call(this, res))
+              else {
+                // Ensure that the registry is defined
+                if (!(propertyReactionRegistrySymbol in this)) Object.defineProperty(this, propertyReactionRegistrySymbol, {value: { values: {}, reactions: {}  }})
 
-                // Set new current value
-                let current = this[propertyReactionRegistrySymbol].values[id] = options.getValue(v, o) // Always get an object
-                
-                // Add metadata
-                if (current && typeof current === 'object') {
-                  for (let key in o) Object.defineProperty(current, key, { value: o[key], enumerable: false })
-                }
+                  // Set new current value
+                  toReturn = this[propertyReactionRegistrySymbol].values[id] = options.getValue(v, o) // Always get an object
+                  
+                  // Add metadata
+                  if (toReturn && typeof toReturn === 'object') {
+                    for (let key in o) {
+                      if (!(key in toReturn)) Object.defineProperty(toReturn, key, { value: o[key], enumerable: false })
+                    }
+                  }
+              }
+
+              return toReturn
             },
             configurable: true
           })

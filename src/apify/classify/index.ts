@@ -7,6 +7,7 @@ import ApifyBaseClass, { ClassOptionsType } from "./base"
 import InheritanceTree from "./InheritanceTree"
 import { getPropertyName, setProperty } from "./utils"
 import { createQueueSymbol, propertyReactionRegistrySymbol } from "../utils/globals"
+import { isPromise } from "src/utils/promise"
 
 
 type InheritanceType = {
@@ -59,6 +60,7 @@ export default class Classify {
         // Map keys to attributes
         if (specInfo) {
           const keys = Object.keys(specInfo)
+
           keys.map((k: string) => {
             let val = specInfo[k]
 
@@ -85,19 +87,43 @@ export default class Classify {
             }
             
             const newKey = !(finalKey in this)
+            if (newKey) this[finalKey] = val // Set the key
             
               const desc = Object.getOwnPropertyDescriptor(specInfo[propertyReactionRegistrySymbol].reactions, k)
-              if (desc) {
+              if (desc && desc.set && desc.get) {
 
-                // NOTE: Don't lose the existing getter
+                const setter = desc.set
+
                 const existing = Object.getOwnPropertyDescriptor(this, finalKey)
-                if (existing && existing.get) {
+                const alreadySet = desc.get?.toString() === existing?.get?.toString()
+                const keepExisting = !!(existing && existing.get)
+
+                // Handles streaming values
+                if (!alreadySet) {
+
+                  if (keepExisting) {
                     const copy = {...existing}
+
+                    copy.get = function() {
+                      const val = existing?.get?.call(this) // get existing value
+                      const res = setter.call(this, val)
+                      //     copy.get = desc.get
+                      // console.log('Wanting to redefine', finalKey, copy)
+                      // // Object.defineProperty(this, finalKey, copy)
+                      // // console.log('PASSING FORM GET', name, finalKey, res)
+                      return res
+                    }
+
                     copy.set = desc.set  // Only overwrite existing setter
                     Object.defineProperty(this, finalKey, copy)
-                } else Object.defineProperty(this, finalKey, { ...desc, enumerable: true})
+                  }
 
-                if (newKey) this[finalKey] = val //
+                  // Handles non-streaming values
+                  else Object.defineProperty(this, finalKey, { ...desc, enumerable: true})
+
+                  let value = (existing && existing.value) ? existing.value : val
+                  this[finalKey] = value // Pass new value through the setter
+                }
               }
           })
   
