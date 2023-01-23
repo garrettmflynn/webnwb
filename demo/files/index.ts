@@ -35,6 +35,9 @@ const getSummary = (o: any) => {
 const dandi = document.getElementById('dandi') as HTMLSelectElement
 const assetSelect = document.getElementById('assets') as HTMLSelectElement
 const fromDANDI = document.getElementById('dandiButton') as HTMLSelectElement
+const sampleButton = document.getElementById('sampleButton') as HTMLSelectElement
+const dandiStatus = document.getElementById('dandiStatus') as HTMLSpanElement
+const dandiDiv = document.getElementById('dandiDiv') as HTMLDivElement
 
 
 let collection: {[x:string]: any} = {}
@@ -48,6 +51,7 @@ const loadAsset = () => {
 }
 
 const setAssetOptions = async () => {
+  dandiStatus.innerHTML = `Loading assets for ${ dandi.options[dandi.selectedIndex].innerHTML as string}...`
   const assets = await getAssets(dandi.value)
   console.log(`Got all assets for ${dandi.value}`, assets)
   Array.from(assetSelect.children).forEach(o => o.remove()) // Remove all children
@@ -62,6 +66,8 @@ const setAssetOptions = async () => {
     }))
 
     options.forEach(o => assetSelect.insertAdjacentElement('beforeend', o))
+    dandiStatus.style.display = "none"
+    dandiDiv.style.display = "block"
     return options.map(o => o.value)
   } else return null
 }
@@ -69,6 +75,8 @@ const setAssetOptions = async () => {
 fromDANDI.onclick = loadAsset
 
 dandi.onchange = async () =>{
+  dandiDiv.style.display = "none"
+  dandiStatus.style.display = "block"
   setAssetOptions()
 }
 
@@ -96,8 +104,8 @@ getDandisets().then(async dandisets => {
 
 const fileStreamingCheckbox = document.getElementById('streaming') as HTMLInputElement
 
-// Buttons
-const buttons = document.getElementById('buttons') as HTMLButtonElement
+// sampleSelect
+const sampleSelect = document.getElementById('sampleSelect') as HTMLSelectElement
 const input = document.getElementById('file') as HTMLButtonElement
 const get = document.getElementById('get') as HTMLButtonElement
 const save = document.getElementById('save') as HTMLButtonElement
@@ -126,45 +134,42 @@ globalThis.onbeforeunload = () => {
     io.syncFS(false) // Sync IndexedDB
 }
 
+// ------------------ Update File samples
 for (let type in links) {
-const section = document.createElement('div')
-const header = document.createElement('h3')
-header.innerHTML = type
-section.insertAdjacentElement('afterbegin', header)
 
 for (let paperName in links[type]) {
-  const paper = document.createElement('div')
   const linkArr = links[type][paperName]
 
-  if (linkArr.length > 1){
-    const h4 = document.createElement('h4')
-    h4.innerHTML = paperName
-    paper.insertAdjacentElement('afterbegin', h4)
-  }
-
   linkArr.forEach((src, i) => {
-    const button = document.createElement('button')
-    button.classList.add('button')
-    button.classList.add('button--secondary')
-    // const link = document.createElement('a')
-    // link.insertAdjacentElement('beforeend', button)
-    // link.src = src
+    const option = document.createElement('option')
+    option.value = src
 
     const displayName = `${(linkArr.length > 1) ? `${paperName.split(' ')[0]} ${i + 1}` : `${paperName}`}`
-    button.innerHTML = displayName
-    paper.insertAdjacentElement('beforeend', button)
-    button.onclick = () => {
+    option.setAttribute('data-displayname', displayName)
+
+    option.innerHTML = `${displayName} (${type})`
+    option.onchange = () => {
       loader.progress = 0
       file = src
       name = `${displayName.replaceAll(/\s+/g, '')}.nwb` // Must change name for new files to request
       runFetch()
     }
+
+    sampleSelect.insertAdjacentElement('beforeend', option)
+
   })
 
-  section.insertAdjacentElement('beforeend', paper)
 }
-buttons.insertAdjacentElement('beforeend', section)
 
+}
+
+sampleButton.onclick = () => {
+  loader.progress = 0
+  file = sampleSelect.value
+  const displayName = sampleSelect.options[sampleSelect.selectedIndex].getAttribute('data-displayname') as string
+  console.log('displayName', displayName)
+  name = `${displayName.replaceAll(/\s+/g, '')}.nwb` // Must change name for new files to request
+  runFetch()
 }
 
 async function parseFile(file: any){

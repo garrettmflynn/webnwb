@@ -17,45 +17,42 @@
     <!-- <script src="https://cdn.jsdelivr.net/npm/webnwb@latest"></script> -->
 </head>
 <body>
+    <!-- <visualscript-app>
+    <visualscript-dashboard> -->
+
     <visualscript-main>
+
         <visualscript-tab name="Files">
             <section>
                 <div id="options">
-
-                    <h2>Controls</h2>
-                    <button id="file">Load Local File</button><br/><br/>
-                    <button id="get">Download - filesystem</button><br/><br/>
-                    <button id="save">Save - browser</button><br/><br/>
-
+                    <button id="file">Load File</button>
+                    <button id="get">Download</button>
+                    <button id="save">Save</button>
+        
+                    <br/><br/>
                     <label>Stream Remote Files</label>
                     <input id="streaming" type="checkbox" checked><br/><br/>
-
+        
                     <hr/>
-
-                    <h2>DANDI</h2>
-                    <label>Dandiset</label>
-                    <select id="dandi">
-                        <!-- <option selected disabled value="">Select a dandiset</option> -->
-                    </select>
-
-                    <br>
-                    <br>
-
-                    <label>File</label>
-                    <select id="assets">
-                        <!-- <option selected disabled value="">Select a file</option> -->
-                    </select>
-                    <br>
-                    <br>
-
-                    <button id="dandiButton">Load</button>
-                    <br/><br/>
-
+        
+                    <!-- DANDI Stuff -->
+                    <h2 id="dandiHeader">DANDI</h2>
+                    <span><i id="dandiStatus">Loading dandisets...</i></span>
+                    <div id="dandiDiv" style="display:none;">
+                        <select id="dandi"></select>
+                        <select id="assets"></select>
+                        <button id="dandiButton">Get</button>
+                    </div>
+        
                     <hr/>
+        
+                    <!-- NWB Explorer Replication -->
+                    <h2>Samples</h2>
+                    <select id="sampleSelect"></select>
+                    <button id="sampleButton">Get</button>
+            </div>
 
-                    <h2>Presets</h2>
-                    <div id="buttons"></div>
-                </div>
+                <!-- Visualization of Data -->
                 <div id="display">
                     <div id="plot"></div>
                     <div id="gallery"></div>
@@ -68,6 +65,8 @@
             </section>
         </visualscript-tab>
     </visualscript-main>
+<!-- </visualscript-dashboard>
+</visualscript-app> -->
 </body>
 <script src="./demo/dist/index.js" type="module">
 

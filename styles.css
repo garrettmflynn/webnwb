@@ -27,6 +27,15 @@ select {
     overflow: scroll;
 }
 
+
+#dandiHeader {
+    margin-bottom: 0;
+}
+
+#dandiStatus {
+    font-size: 80%;
+}
+
 #display {
     height: calc(100% - 75px);
     width: 100%;
