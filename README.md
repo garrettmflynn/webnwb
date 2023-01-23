@@ -1,9 +1,11 @@
 # WebNWB
 Neurodata without Borders — directly on the browser.
 
-![status](https://img.shields.io/npm/v/webnwb) 
-![downloads](https://img.shields.io/npm/dt/webnwb)
-![lic](https://img.shields.io/npm/l/webnwb)
+[![Npm package version](https://badgen.net/npm/v/webnwb)](https://npmjs.com/package/webnwb)
+[![Npm package monthly downloads](https://badgen.net/npm/dm/webnwb)](https://npmjs.ccom/package/webnwb)
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Discord](https://img.shields.io/badge/community-discord-7289da.svg?sanitize=true)](https://discord.gg/CDxskSh9ZB)
+
 
 `webnwb` is a library for reading and writing Neurodata without Borders (NWB) files on the web. It uses [h5wasm](https://github.com/usnistgov/h5wasm) to parse HDF5 files.
 
