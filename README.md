@@ -5,43 +5,37 @@ Neurodata without Borders — directly on the browser.
 ![downloads](https://img.shields.io/npm/dt/webnwb)
 ![lic](https://img.shields.io/npm/l/webnwb)
 
-> Note: Further development is expected to integrate into the NIH Brain Initiative’s [Distributed Archives for Neurophysiology Data Integration (DANDI)](https://gui.dandiarchive.org/#/) and acceptance as an official Neurodata without Borders API.
+`webnwb` is a library for reading and writing Neurodata without Borders (NWB) files on the web. It uses [h5wasm](https://github.com/usnistgov/h5wasm) to parse HDF5 files.
 
-## Requirements
-- Used typed arrays when adding data
-
-## Development Progress + Backlog
-https://docs.google.com/document/d/1qGuBUHIRhal0d4DLK3urtj9YU6lTt8CddRkqCF-faQg/edit#
-
-### Additional Tasks
-- Keep important metadata in file (e.g. neurodata_type). Don’t search!
-    - Fix getMatchingClass to find the closest set. Actually use the spec info
-- Remove undefined values from actual file. Null is fine.
-- Support in freerange
-- Track whether required: false... (attributes)
-- Quantities: 1 = required, ? = optional, * = zero to many, + = 1 or more ( groups )
-- _inc is inheritance when combined to _def. Otherwise it is just about composition.
-- **Just edit metadata** (is this the best demonstration use-case?)
-    - Only allow add beneath groups
-
-- Differentiate Datasets and Groups
-- Handle links, references, and tables with reference
-- Implement write using [best practices](https://www.nwb.org/best-practices/) and the [schema](https://nwb-schema.readthedocs.io/en/latest/format_description.html#nwbcontainer-nwbdata-nwbdatainterface-base-neurodata-types-for-containers-and-datasets)
-- Demonstrate in the documentation with [tutorials](https://pynwb.readthedocs.io/en/latest/tutorials/general/scratch.html#raw-data)
-- Create a viewer like [Vizarr](https://github.com/hms-dbmi/vizarr)
+## Features
+- 🔬 Read data from NWB files based on the included specification.
+- ⚒️ Use helper functions like `addAcquisition`, `getAcquisition`, and `createAcquisition` to quickly interact with data.
+- ⚡ Lazy-load large files (e.g. from the NIH Brain Initiative’s [Distributed Archives for Neurophysiology Data Integration (DANDI)](https://gui.dandiarchive.org/#/)).
 
 
+## Contributing
+The essential features of the WebNWB API are aggregated in the [api.ts](./src/api.ts) file, which configures [hdf5-io] to process the underlying HDF5 file in a way that conforms with the NWB Schema.
 
-## Derivatives
-**hdf5-io:** A simple way to load HDF5 files as JavaScript objects
-**apify:** A way to generate APIs from simple specification languages (e.g. the NWB Schema)
+Anyone who would like to contribute to the acceptance of `webnwb` as an official NWB API is welcome to message[Garrett Flynn](mailto:garrettmflynn@gmail) to coordinate work on the following areas (or anything else you think will be useful):
 
+#### Read Access
+1. Use getters to access / update original HDF5 contents (that can then be written), including metadata such as `size` and `false`
+2. Handle links
+3. Handle references
+4. Handle tables with reference
 
-## Dependencies
-**h5wasm:** https://github.com/usnistgov/h5wasm
-> Note: [h5wasm](https://github.com/usnistgov/h5wasm) was difficult to bundle with Rollup, so it's required as an argument to the `nwb.NWBHDF5IO` class.
+#### Write Access
+1. Validate writing a dataset using [best practices](https://www.nwb.org/best-practices/) and the [schema](https://nwb-schema.readthedocs.io/en/latest/format_description.html#nwbcontainer-nwbdata-nwbdatainterface-base-neurodata-types-for-containers-and-datasets)
+2. Allow writing a dataset in place using the File Access API (Chrome)
+3. Support the Zarr backend
 
-**YAML Loaders:** [Rollup](https://www.npmjs.com/package/@rollup/plugin-yaml), [Webpack](https://github.com/eemeli/yaml-loader)
+#### Documentation
+1. Demonstrate in the documentation with [tutorials](https://pynwb.readthedocs.io/en/latest/tutorials/general/scratch.html#raw-data) and a viewer like [Vizarr](https://github.com/hms-dbmi/vizarr)
+
+## Derivative Packages
+- [hdf5-io](https://github.com/garrettmflynn/hdf5-io): Load HDF5 files as JavaScript objects
+- [apify](./src/apify/index.ts): A way to generate APIs from simple specification languages (e.g. the NWB Schema)
+- [dandi](./src/dandi/index.ts): A basic API for making calls to the DANDI REST API.
 
 ## Acknowledgments
-**WebNWB** was originally prototyped as part of the [2022 NWB-DANDI Remote Developer Hackathon](https://neurodatawithoutborders.github.io/nwb_hackathons/HCK12_2022_Remote/) by Garrett Flynn (gflynn@usc.edu), with help from Chandhana Sathishkumar (chandhanasathishkumar@gmail.com) and Emilio Bazan (Asim-v).
+Since January 2023, the development of **WebNWB** has been generously supported by a contract from the [Kavli Foundation](https://kavlifoundation.org/). The basic API was originally prototyped as part of the [2022 NWB-DANDI Remote Developer Hackathon](https://neurodatawithoutborders.github.io/nwb_hackathons/HCK12_2022_Remote/) and refined during the [2022 NWB User Days](https://neurodatawithoutborders.github.io/nwb_hackathons/HCK13_2022_Janelia/) event by [Garrett Flynn](https://github.com/garrettmflynn) from [Brains@Play](https://github.com/brainsatplay).
