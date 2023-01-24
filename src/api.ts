@@ -47,7 +47,7 @@ export default class NWBAPI extends API {
                 if (typedArray) toReturn = new typedArray(value)
               }
               
-              toReturn = new Array(value)
+              toReturn = (Array.isArray(value) ? value : new Array(value)) // Create an array object here
             // }
           } 
           else if (typeof o.dtype === 'string') {

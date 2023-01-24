@@ -32,6 +32,102 @@ const getSummary = (o: any) => {
   }
 }
 
+async function onRender(key: string, target: any, history: {key: string, value: any}[]) {
+
+    const div = document.createElement('div')
+
+  // const stimulus = await file.stimulus
+  // const presentation = await stimulus.presentation
+  // // file.acquisition
+  // let key = Object.keys(acquisition)[0]
+
+  // let stimKey = (presentation) ? Object.keys(presentation)[0] : undefined
+  const presentationObj = undefined //(stimKey) ? await presentation[stimKey] : undefined
+
+  const lines = []
+
+  // Show Images
+  const externalFile = await target?.externalFile
+  if (externalFile) {
+    
+    div.style.display = 'flex'
+    div.style.flexWrap = 'wrap'
+    div.style.alignItems = 'center'
+    div.style.justifyContent = 'center'
+    div.style.padding = '10px'
+    div.style.fontSize = '80%'
+    div.innerText = "Loading external images..."
+
+    let count = 0
+    function createImg(src: string) {
+      return new Promise(resolve => {
+        // Create an Image object
+        var img = new Image();
+        // Add CORS approval to prevent a tainted canvas
+        img.crossOrigin = 'Anonymous';
+        img.onload = function () { 
+          count++
+          div.innerText = `Loading external images... (${count}/${externalFile.length})` 
+          resolve(img) 
+        };
+        // Load the image
+        img.src = src;
+        // make sure the load event fires for cached images too
+        if (img.complete || img.complete === undefined) {
+          // Flush cache
+          img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+          // Try again
+          img.src = src;
+        }
+      })
+
+    }
+
+    Promise.all(externalFile.map(createImg)).then(arr => {
+      div.innerText = ''
+      arr.forEach(o => div.insertAdjacentElement('beforeend', o))
+    })
+  }
+
+  // Show TimeSeries
+  else {
+    const dataValue = await target.data
+    if (dataValue) lines.push({
+      name: 'Acquisition',
+      x: (await target?.timestamps) ?? Array.from({ length: dataValue.length }, (_, i) => i),
+      y: dataValue
+    })
+  }
+
+
+  // // Show Stimulus
+  // if (presentationObj) {
+  //   const data = await presentationObj.data
+  //   lines.push({
+  //     name: 'Stimulus',
+  //     x: await presentationObj.timestamps ?? Array.from({ length: data.length }, (_, i) => i),
+  //     y: data,
+  //     yaxis: 'y2',
+  //     opacity: 0.5,
+  //   })
+  // }
+
+  if (lines.length > 0) Plotly.newPlot(div, lines, {
+    title: key ?? stimKey,
+    margin: { t: 0 },
+    yaxis: { title: 'Acquisition' },
+    yaxis2: {
+      title: 'Stimulus',
+      titlefont: { color: 'rgb(148, 103, 189)' },
+      tickfont: { color: 'rgb(148, 103, 189)' },
+      overlaying: 'y',
+      side: 'right'
+    }
+  });
+
+  return div
+}
+
 const dandi = document.getElementById('dandi') as HTMLSelectElement
 const assetSelect = document.getElementById('assets') as HTMLSelectElement
 const fromDANDI = document.getElementById('dandiButton') as HTMLSelectElement
@@ -111,25 +207,19 @@ const get = document.getElementById('get') as HTMLButtonElement
 const save = document.getElementById('save') as HTMLButtonElement
 
 // Divs
-const display = document.getElementById('display') as HTMLDivElement
-const gallery = document.getElementById('gallery') as HTMLDivElement
+const editorDiv = document.getElementById('editorDiv') as HTMLDivElement
 const plot = document.getElementById('plot') as HTMLDivElement
 
 // Add loader
 let loader = new visualscript.Loader({ color: '#7aff80', type: 'linear', text: 'Select a file', showPercent: false, textBackground: 'black', textColor: 'white'})
 loader.id = 'loader'
-display.insertAdjacentElement('beforeend', loader)
+editorDiv.insertAdjacentElement('beforeend', loader)
 
 // Add object editor
-let editor = new visualscript.ObjectEditor({
-  toPlot: (...args) => {
-    console.log('args', ...args)
-    return false
-  }
-})
+let editor = new visualscript.ObjectEditor({ onRender })
 // let editor = new visualscript.Tree()
 editor.id = 'editor'
-display.insertAdjacentElement('afterbegin', editor)
+editorDiv.insertAdjacentElement('afterbegin', editor)
 
 console.log('API', nwb)
 
@@ -172,124 +262,15 @@ sampleButton.onclick = () => {
   loader.progress = 0
   file = sampleSelect.value
   const displayName = sampleSelect.options[sampleSelect.selectedIndex].getAttribute('data-displayname') as string
-  console.log('displayName', displayName)
   name = `${displayName.replaceAll(/\s+/g, '')}.nwb` // Must change name for new files to request
   runFetch()
 }
 
 async function parseFile(file: any){
 loader.progress = 1
-plot.innerHTML = ''
-gallery.innerHTML = ''
-
-file.test = 'Hello!'
 editor.set(file)
 console.log('File', file)
 // progressDiv.innerHTML = 'Loaded ' + name + '. Check the console for output.'
-
-
-const acquisition = await file.acquisition
-
-const stimulus = await file.stimulus
-const presentation = await stimulus.presentation
-// file.acquisition
-let key = Object.keys(acquisition)[0]
-let stimKey = (presentation) ? Object.keys(presentation)[0] : undefined
-const presentationObj = (stimKey) ? await presentation[stimKey] : undefined
-const acquisitionObj = await file.acquisition[key]
-
-const lines = []
-
-
-console.log('Acquisition', acquisition)
-console.log('Stimulus', stimulus)
-console.log('Presentation', presentation)
-console.log('Acquisition Object', acquisitionObj)
-console.log('Presentation Object', presentationObj)
-
-// Show Images
-
-const externalFile = await acquisitionObj?.externalFile
-
-
-if (acquisitionObj && externalFile) {
-
-  let waiter = new visualscript.Loader({ showPercent: false })
-  waiter.id = 'waiter'
-  plot.insertAdjacentElement('beforeend', waiter)
-
-  function createImg(src: string) {
-    return new Promise(resolve => {
-      // Create an Image object
-      var img = new Image();
-      // Add CORS approval to prevent a tainted canvas
-      img.crossOrigin = 'Anonymous';
-      img.onload = function () {
-        resolve(img);
-      };
-      // Load the image
-      img.src = src;
-      // make sure the load event fires for cached images too
-      if (img.complete || img.complete === undefined) {
-        // Flush cache
-        img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-        // Try again
-        img.src = src;
-      }
-    })
-
-  }
-
-  const arr = await Promise.all(externalFile.map(createImg))
-
-
-  arr.forEach(o => {
-    gallery.insertAdjacentElement('beforeend', o)
-  })
-
-  waiter.remove()
-  waiter = undefined
-}
-
-// Show TimeSeries
-else {
-
-  const dataValue = await acquisitionObj.data
-
-  if (dataValue) lines.push({
-    name: 'Acquisition',
-    x: (await acquisitionObj?.timestamps) ?? Array.from({ length: dataValue.length }, (_, i) => i),
-    y: dataValue
-  })
-
-  else console.error('No data value...')
-}
-
-
-// Show Stimulus
-if (presentationObj) {
-  const data = await presentationObj.data
-  lines.push({
-    name: 'Stimulus',
-    x: await presentationObj.timestamps ?? Array.from({ length: data.length }, (_, i) => i),
-    y: data,
-    yaxis: 'y2',
-    opacity: 0.5,
-  })
-}
-
-if (lines.length > 0) Plotly.newPlot(plot, lines, {
-  title: key ?? stimKey,
-  margin: { t: 0 },
-  yaxis: { title: 'Acquisition' },
-  yaxis2: {
-    title: 'Stimulus',
-    titlefont: { color: 'rgb(148, 103, 189)' },
-    tickfont: { color: 'rgb(148, 103, 189)' },
-    overlaying: 'y',
-    side: 'right'
-  }
-});
 }
 
 async function runFetch(useStreaming = fileStreamingCheckbox?.checked, testOther = true) {
@@ -303,11 +284,13 @@ async function runFetch(useStreaming = fileStreamingCheckbox?.checked, testOther
         loader.text = `${utils.formatBytes(ratio * length, 2)} of ${utils.formatBytes(length, 2)} downloaded.`
       }, 
       successCallback: (fromRemote, id) => { 
-        if (!fromRemote) loader.text = 'File loaded from local storage.'
+        loader.text = `${name} has been loaded${fromRemote ? '' : ' from local storage'}.`
       },
       useStreaming
     }
   )
+
+  if (useStreaming) loader.text = `${name} is being streamed.`
 
 
   // if (testOther){

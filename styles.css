@@ -36,7 +36,7 @@ select {
     font-size: 80%;
 }
 
-#display {
+#editorDiv {
     height: calc(100% - 75px);
     width: 100%;
     overflow: scroll;
@@ -47,18 +47,6 @@ select {
     opacity: 0.5;
     pointer-events: none;
     transition: 0.5s;
-}
-
-#plot {
-    padding: 25px;
-    height: 300px;
-}
-
-
-#gallery {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
 }
 
 #loader {
