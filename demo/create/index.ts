@@ -1,5 +1,4 @@
-import * as visualscript from '../../external/visualscript/index.esm'
-import * as hdf5 from "https://cdn.jsdelivr.net/npm/h5wasm@latest/dist/esm/hdf5_hl.js";
+import * as visualscript from '../../../visualscript/src/index'
 
 import nwb from '../../src/index'
 import NWBHDF5IO from 'src/io';
@@ -319,8 +318,6 @@ const step = async (i:number) => {
 
 }
 
-hdf5.ready.then(() => {
-    io = new nwb.NWBHDF5IO(true)
-    increment.classList.remove('disabled')
-    console.log('File', nwbFile, nwbFile.nwbVersion)
-})
+io = new nwb.NWBHDF5IO(true)
+increment.classList.remove('disabled')
+console.log('File', nwbFile, nwbFile.nwbVersion)

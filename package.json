@@ -34,7 +34,10 @@
     "yaml": "^2.1.1"
   },
   "devDependencies": {
-    "tinybuild": "^0.3.169"
+    "lit": "^2.6.1",
+    "resize-observer-polyfill": "^1.5.1",
+    "tinybuild": "^0.3.169",
+    "webgl-plot": "^0.7.0"
   },
   "peerDependencies": {
     "h5wasm": ">= 0.2.2 < 1"

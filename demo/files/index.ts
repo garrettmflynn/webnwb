@@ -1,4 +1,4 @@
-import * as visualscript from '../../external/visualscript/index.esm'
+import * as visualscript from '../../../visualscript/src/index'
 import * as NWBCodec from '../../external/freerange/nwb/index'
 import * as freerange from '../../external/freerange/index.esm'
 
@@ -121,7 +121,12 @@ loader.id = 'loader'
 display.insertAdjacentElement('beforeend', loader)
 
 // Add object editor
-let editor = new visualscript.ObjectEditor()
+let editor = new visualscript.ObjectEditor({
+  toPlot: (...args) => {
+    console.log('args', ...args)
+    return false
+  }
+})
 // let editor = new visualscript.Tree()
 editor.id = 'editor'
 display.insertAdjacentElement('afterbegin', editor)
@@ -177,6 +182,7 @@ loader.progress = 1
 plot.innerHTML = ''
 gallery.innerHTML = ''
 
+file.test = 'Hello!'
 editor.set(file)
 console.log('File', file)
 // progressDiv.innerHTML = 'Loaded ' + name + '. Check the console for output.'
