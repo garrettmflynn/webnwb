@@ -10,7 +10,7 @@ import links from '../links'
 import NWBHDF5IO from 'src/io'
 import { getAssets, getDandisets, getInfo, getInfoURL, getJSON } from 'src/dandi'
 
-let file:string, name:string, io: NWBHDF5IO;
+let file:string, name:string
 
 
 function formatBytes(bytes: number, decimals: number = 2) {
@@ -223,7 +223,7 @@ editorDiv.insertAdjacentElement('afterbegin', editor)
 
 console.log('API', nwb)
 
-io = new nwb.NWBHDF5IO(true)
+const io = new nwb.NWBHDF5IO(true)
 
 globalThis.onbeforeunload = () => {
     io.syncFS(false) // Sync IndexedDB
@@ -267,9 +267,13 @@ sampleButton.onclick = () => {
 }
 
 async function parseFile(file: any){
+  console.log('File', file)
+
+
+
 loader.progress = 1
 editor.set(file)
-console.log('File', file)
+
 // progressDiv.innerHTML = 'Loaded ' + name + '. Check the console for output.'
 }
 
@@ -348,6 +352,7 @@ input.onclick = async (ev) => {
   if (nwbFile){
     name = nwbFile.name
     const body = await nwbFile.body
+    console.log('GOT?', body)
     console.log('File', body)
     name = nwbFile.name
 
@@ -362,17 +367,13 @@ input.onclick = async (ev) => {
 }
 
 save.onclick = () => {
-  if (nwbFile) {
     io.save(name)
-    nwbFile.save() // restrict experimentation to one file
-  }
+    // nwbFile.save() // restrict experimentation to one file
 }
 
 
 // 3. Allow User to Download an NWB File off the Browser
 get.onclick = async () => {
-  if (io) {
     io.save(name) // save current object edits
     io.download(name)
-  }
 }

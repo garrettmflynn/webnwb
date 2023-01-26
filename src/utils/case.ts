@@ -1,5 +1,6 @@
+import { isGroup as isGroupType } from '../../../hdf5-io/src';
+
 import * as array from "./array"
-import { isPromise } from "./promise"
 
 export type CaseType = 'pascal' | 'camel' | 'snake' | 'other'
 
@@ -50,7 +51,7 @@ export const set = (base:string, type?: CaseType) => {
   export const setAll = (
     info: any, 
     type?: CaseType, 
-    condition: CaseType | Function = () => info.type !== 'group', 
+    condition: CaseType | Function = () => !info.type[isGroupType],
     drill: boolean = false
 ) => {
 

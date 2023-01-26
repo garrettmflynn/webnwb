@@ -51,7 +51,7 @@ const step = async (i:number) => {
                 // Add TimeSeries Data
                 const timestamps = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
                 const data = Array.from(timestamps, e => 100 + e * 10)
-
+                
                 testTs = new nwb.TimeSeries({
                     name: 'testTimeseries', 
                     data: data, 
@@ -62,6 +62,9 @@ const step = async (i:number) => {
                 })
 
                 nwbFile.addAcquisition(testTs)
+                nwbFile.acquisition.testTimeseries.startingTime = 0.0
+
+                console.log('Has set startingTime', nwbFile.acquisition.testTimeseries.startingTime, nwbFile.acquisition.testTimeseries)
                 update(nwbFile)
 
                 break;
@@ -244,14 +247,13 @@ const step = async (i:number) => {
             // io4.write(nwbFile2)
     }
 
-
-    // NOTE: Unable to store after second iteration...
+    
     await io.write(nwbFile, fileName)
-
 
     // ----------------- Check Saved NWB File -----------------
     const nwbFileIn = await io.read()
     console.log('Latest NWB File from Local Storage', nwbFileIn)
+
 
     // if (nwbFileIn) {
 

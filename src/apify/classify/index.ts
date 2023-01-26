@@ -1,13 +1,13 @@
 import drill from "../../utils/drill"
 import * as caseUtils from '../../utils/case'
 import { InfoType, OptionsType } from "../types"
-import * as test from "../utils/test"
 import * as rename from "../utils/rename"
 import ApifyBaseClass, { ClassOptionsType } from "./base"
 import InheritanceTree from "./InheritanceTree"
 import { getPropertyName, setProperty } from "./utils"
-import { createQueueSymbol, propertyReactionRegistrySymbol } from "../utils/globals"
-import { isPromise } from "src/utils/promise"
+import { createQueueSymbol, hasNestedGroups, propertyReactionRegistrySymbol } from "../utils/globals"
+import { isGroup as isGroupType } from '../../../../hdf5-io/src';
+import { isNullSetter } from "./descriptions"
 
 
 type InheritanceType = {
@@ -29,10 +29,8 @@ export default class Classify {
   baseClass?: ApifyBaseClass
 
   attributeMap: {
-    [x: string]: string[]
-  } = {
-      name: []
-    }
+    [x: string]: Set<string>
+  } = {}
 
   constructor(info?: InfoType) {
     if (info) this.set(info);
@@ -45,32 +43,26 @@ export default class Classify {
 
   createClass = (name: string, cls: any, specInfo: any) => {
 
+
     const context = this
     return ({
       [name]: class extends cls {
         constructor(info: InfoType, classOptions: any, specs: any | any[]) {
+
+          // Performance Note: All of this is run every time this class is instantiated...
           const copy = Object.assign({}, context.info)
           if (!specs) specs = [specInfo]
           else specs.push(specInfo)
 
           super(info, Object.assign(copy, classOptions), specs)
-  
-          const attrMap = context.attributeMap
-  
+
         // Map keys to attributes
         if (specInfo) {
           const keys = Object.keys(specInfo)
 
           keys.map((k: string) => {
             let val = specInfo[k]
-
             const camel = caseUtils.set(rename.base(k, context.info.allCaps)) // ensure all keys (even classes) are camel case
-  
-            // Add to argMap
-            if (!attrMap[camel]) attrMap[camel] = []
-            attrMap[camel].push(name)
-            attrMap['name'].push(name) // all may have names
-  
             let finalKey = camel
   
             // Map to declaration
@@ -87,14 +79,23 @@ export default class Classify {
             }
             
             const newKey = !(finalKey in this)
-            if (newKey) this[finalKey] = val // Set the key
+
+            // const isNull = typeof val === 'object' && !('constructor' in val)
+            if (newKey) {
+              this[finalKey] = val  // Set the key
+            }
             
-              const desc = Object.getOwnPropertyDescriptor(specInfo[propertyReactionRegistrySymbol].reactions, k)
-              if (desc && desc.set && desc.get) {
+              const reactions = specInfo[propertyReactionRegistrySymbol]?.reactions
+              
+              const desc = Object.getOwnPropertyDescriptor(reactions, k)
+
+              const pass = desc && desc.set && desc.get
+              if (pass) {
 
                 const setter = desc.set
 
                 const existing = Object.getOwnPropertyDescriptor(this, finalKey)
+
                 const alreadySet = desc.get?.toString() === existing?.get?.toString()
                 const keepExisting = !!(existing && existing.get)
 
@@ -106,12 +107,7 @@ export default class Classify {
 
                     copy.get = function() {
                       const val = existing?.get?.call(this) // get existing value
-                      const res = setter.call(this, val)
-                      //     copy.get = desc.get
-                      // console.log('Wanting to redefine', finalKey, copy)
-                      // // Object.defineProperty(this, finalKey, copy)
-                      // // console.log('PASSING FORM GET', name, finalKey, res)
-                      return res
+                      return setter.call(this, val)
                     }
 
                     copy.set = desc.set  // Only overwrite existing setter
@@ -121,9 +117,12 @@ export default class Classify {
                   // Handles non-streaming values
                   else Object.defineProperty(this, finalKey, { ...desc, enumerable: true})
 
+
+                  // Always run values through the setter
                   let value = (existing && existing.value) ? existing.value : val
                   this[finalKey] = value // Pass new value through the setter
-                }
+                } 
+
               }
           })
   
@@ -141,7 +140,7 @@ export default class Classify {
   
             if (key) {
               const target = parent?.[key]
-              if (target && o.type === 'group' && path.length > 1) {
+              if (target && o[isGroupType] && path.length > 1) {
                 if (!(key in this)) {
                   Object.defineProperty(this, key, {
                     get: () => parent[key],
@@ -153,11 +152,9 @@ export default class Classify {
               }
             }
           })
-  
         } else console.error(`class ${name} does not have any info`);
   
-        context.applyHelpers(this, undefined, specInfo, [name]) // Apply helpers using context
-  
+        context.applyHelpers(this, undefined, specInfo, [name]) // Apply helpers using context  
         }
       }
     })[name];
@@ -165,11 +162,8 @@ export default class Classify {
 
   applyHelpers = (instance: any, base?: string, valueToDrill?: any, path: string[] = [], aliases: string | string[] = []) => {
 
-    let str = ``
 
-
-    const pass = base // Must have a base
-      && (valueToDrill?.type === 'group' || valueToDrill?.type === 'class'); // Must be a group to add to
+    const pass = base && valueToDrill[isGroupType] && !valueToDrill[hasNestedGroups] // Has a base and is a group (without internal groups)
 
     if (pass) {
 
@@ -204,24 +198,15 @@ export default class Classify {
 
             setProperty.call(instance, addName, {
               value: function add(obj: any) {
-                // const isMap = this[camel] instanceof Map
-                // const name = obj.name ?? (isMap ? this[camel].size : Object.keys(this[camel]).length)
-                // if (isMap) this[camel].set(name, obj)
-                // else 
                 const name = obj.name ?? Object.keys(this[camel]).length
-                // this[camel][name] = obj
                 Object.defineProperty(this[camel], name, {value: obj, enumerable: true})
                 return obj
-                // this[camel].set(obj.name, obj)
               },
             })
 
             setProperty.call(instance, getName, {
               value: function get(name: string) {
-                // if (this[camel] instanceof Map) return this[camel].get(name)
-                // else 
                 return this[camel][name]
-                // return this[camel].get(name)
               },
             })
 
@@ -231,7 +216,6 @@ export default class Classify {
                 if (cls) {
                   const created = new cls(o, classOptions)
                   return this[addName](created)
-                  // return this[addName](o)
                 } else {
                   console.error(`[${classifyInfoName}]: Could not find class for ${pascal}`, o);
                   return null
@@ -246,6 +230,7 @@ export default class Classify {
             }
 
           } catch (e) {
+
             console.warn(`[${this.info.name}]: Trying to redeclare a helper function for ${pascal}`, 'removing aliases: ' + aliases);
 
             (aliases as string[]).forEach((alias: string) => {
@@ -257,10 +242,15 @@ export default class Classify {
       })
     }
 
-    if (valueToDrill) {
+    // Apply helpers to nested groups
+    if (valueToDrill?.[hasNestedGroups]) {
       for (let key in valueToDrill) {
         const newVal = valueToDrill[key]
-        if (newVal && typeof newVal === 'object') {
+
+        // Group object
+        if (newVal && newVal[isGroupType]) {
+
+          const newPath = [...path, key]
 
           //   const nestedGroup = newVal.inherits && newVal.inherits.value
 
@@ -273,22 +263,17 @@ export default class Classify {
             if (newKey != key) {
               valueToDrill[newKey] = newVal // transfer
               delete valueToDrill[key] // delete
-
-              // reassign
-              key = newKey
+              key = newKey // reassign
             }
           }
 
-
-          if (!test.isClass(key)) {
-            str += this.applyHelpers(instance, key, newVal, [...path, key], newVal?.inherits?.value)
-          }
-          //   }
+          
+            this.applyHelpers(instance, key, newVal, newPath, newVal?.inherits?.value)
         }
       }
     }
 
-    return str
+    return path
   }
 
   get = (name: string, info: any = this.flat.info[name], inheritance = this.inheritance) => {
@@ -306,6 +291,17 @@ export default class Classify {
       }
 
       const generatedClassV2 = this.createClass(name, cls, info);
+
+
+      const attrMap = this.attributeMap
+  
+      // Map keys to attributes
+      Object.keys(info).map((k: string) => {
+        const camel = caseUtils.set(rename.base(k, this.info.allCaps)) // ensure all keys (even classes) are camel case
+        if (!attrMap[camel]) attrMap[camel] = new Set()
+        attrMap[camel].add(name)
+      })
+
       // generatedClassV2.prototype.name = name // always have the name specified
       this.flat.classes[name] = generatedClassV2 // Add to flat classes
     }
@@ -326,9 +322,9 @@ export default class Classify {
       const isZero = choices.length === 0
       if (selection && (isZero || choices.length > 1)) {
 
-        if (isZero) choices = selection
+        if (isZero) choices = Array.from(selection)
         else choices = choices.reduce((a: string[], name) => {
-          const res = selection.includes(name)
+          const res = selection.has(name)
           if (res) a.push(name)
           return a
         }, [])

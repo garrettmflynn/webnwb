@@ -2,9 +2,12 @@ import { ArbitraryObject } from './types/general.types';
 import schemas from './schema'
 import API from './apify';
 import NWBBaseClass from './base';
+import { objectify } from '../../hdf5-io/src';
 
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 type SpecificationType = { 'core': ArbitraryObject } & ArbitraryObject
+
+const getNamespaceKey = (str: string) => str.replace('.yaml', '').replace('.extensions', '')
 
 // Generate the NWB API from included specification
 export default class NWBAPI extends API {
@@ -26,12 +29,14 @@ export default class NWBAPI extends API {
       methodName: ['neurodata_type_def',  'data_type_def', 'name', 'default_name' ],
       allCaps: ['NWB'], // Ensure these strings are always capitalized
       coreName: 'core', // Name of the core schema
-      namespacesToFlatten: ['base', 'file'], // Namespaces to flatten into the base of the API
-      patternsToRemove: ['nwb.', '.extensions', '.yaml'], // Patterns to remove from the name
+      namespacesToFlatten: ['nwb.base', 'nwb.file'], // Namespaces to flatten into the base of the API
+      getNamespaceKey, // Get the key for the namespace
+      getNamespaceLabel: (str: string) => getNamespaceKey(str.replace('.nwb', '')), // Get the key for the namespace
+
       baseClass: NWBBaseClass, // Base Class to use for all classes
 
       // Get the value from the schema
-      getValue: (value, o) => {
+      getValue: (key, value, o) => {
 
         if (value === undefined) value = o.value ?? o.default_value
 
@@ -39,7 +44,7 @@ export default class NWBAPI extends API {
 
         let toReturn = value
 
-          if (o.quantity) {
+          if (o.shape) {
             // if (o.shape) {
               if (typeof o.dtype === 'string') {
                 const arrayType = `${o.dtype[0].toUpperCase() + o.dtype.slice(1)}Array`
@@ -47,22 +52,23 @@ export default class NWBAPI extends API {
                 if (typedArray) toReturn = new typedArray(value)
               }
               
-              toReturn = (Array.isArray(value) ? value : new Array(value)) // Create an array object here
+              toReturn = (Array.isArray(value) ? value : [value]) // Create an array object here (if required)
             // }
           } 
           else if (typeof o.dtype === 'string') {
             const typeOf = typeof value
-            if (o.dtype === 'isodatetime' && (typeOf === 'string' || typeOf === 'number' || value instanceof Date)) toReturn = new String(new Date(value).toISOString()) // Return as a object here
+            if (o.dtype === 'isodatetime' && (typeOf === 'string' || typeOf === 'number' || value instanceof Date)) toReturn = objectify(new Date(value).toISOString()) // Return as a object here
             if (typeOf === 'string') {
-              if (o.dtype === 'text') toReturn = new String(value)
+              if (o.dtype === 'text') toReturn = objectify(value)
             }
             else if (typeOf === 'number') {
-              if (o.dtype === 'numeric' || o.dtype.includes('float') || o.dtype.includes('int')) toReturn = new Number(value)
+              if (o.dtype === 'numeric' || o.dtype.includes('float') || o.dtype.includes('int')) toReturn = objectify(value)
             }
             // else console.error('Unknown dtype', o.dtype, o)
             // else if (o.dtype === 'bool') return new Boolean(value)
             // else if (o.dtype === 'float') return new Number(value)
           }
+
 
           return toReturn
       },
@@ -95,6 +101,14 @@ export default class NWBAPI extends API {
     })
 
     this._generate()
+
+    //  Move the specification to the file declaration
+    const core = this._specification.core
+    const version = Object.keys(core)[0]
+
+    const fileConfig = core[version]['nwb.file'].NWBFile
+    fileConfig.specifications = specification // Add specification to the file
+
 
   }
 }

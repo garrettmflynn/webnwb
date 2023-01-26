@@ -3,6 +3,7 @@ import { isPromise } from "src/utils/promise";
 import { OptionsType } from "../types";
 import { createQueueSymbol } from "../utils/globals";
 import { getPropertyName } from "./utils";
+import { getAllPropertyNames, isGroup as isGroupType, onPropertyResolved } from '../../../../hdf5-io/src';
 
 export type ClassOptionsType = {
     // Use to skip autorejection and otherwise generate values
@@ -16,7 +17,7 @@ class ApifyBaseClass {
     #specs: any[];
     [createQueueSymbol]: any;
 
-    [x: string]: any; // arbitrary
+    [x: string|symbol]: any; // arbitrary
 
     constructor(info: any = {}, options: ClassOptionsType = {}, specs: any[] = []) {
 
@@ -33,9 +34,9 @@ class ApifyBaseClass {
         })
 
         // Load information from the user (based on keys expected in the spec)
-        const arr = Object.keys(info)
+        const keys = [...getAllPropertyNames(info), ...Object.getOwnPropertySymbols(info)]
 
-        arr.forEach((key: string) => {
+        keys.forEach((key: string | symbol) => {
 
             const isValid = validKeys.has(key)
             const desc = Object.getOwnPropertyDescriptor(info, key)
@@ -55,7 +56,7 @@ class ApifyBaseClass {
                                 // Create custom handler for when group properties are resolved...
                                 if (isGroup) {
                                     const groupKey = isGroup as string
-                                    Object.defineProperty(v, '__onPropertyResolved', {
+                                    Object.defineProperty(v, onPropertyResolved, {
                                         value: async (name:string, value: any) => {
                                             if (options.classKey) await value[options.classKey] // Just access the class key so it's available synchronously
                                             return this.#onPropertyResolved(name, value, groupKey, options)
@@ -85,9 +86,7 @@ class ApifyBaseClass {
         })
     }
 
-    #onValidKey = (key:string, value: any, options: ClassOptionsType) => {
-
-        // if (this[key] && typeof this[key] === 'object' && this[key].type === 'group') {
+    #onValidKey = (key:string|symbol, value: any, options: ClassOptionsType) => {
 
         // Reinstantiate objects as classes
         let groupKey = this.#isGroup(key, options)
@@ -95,20 +94,19 @@ class ApifyBaseClass {
         const group = value[key]
 
         if (groupKey) {
-            for (let name in group) {
-                this.#onPropertyResolved(name, group[name], groupKey, options)
-            }
+            for (let name in group) this.#onPropertyResolved(name, group[name], groupKey, options)
         } else this[key] = group // assign raw value
 
     }
 
     #getKey = (name: string, options: ClassOptionsType) => {
-        const pascalKey = name[0].toUpperCase() + name.slice(1);
-        return getPropertyName.call(this, pascalKey, options)
+            const pascalKey = name[0].toUpperCase() + name.slice(1);
+            return getPropertyName.call(this, pascalKey, options)
     }
 
-    #isGroup = (name: string, options: ClassOptionsType) => {
-        const found = this.#specs.find(spec => spec[name]?.type === 'group')
+    #isGroup = (name: string | symbol, options: ClassOptionsType) => {
+        if (typeof name === 'symbol') return false
+        const found = this.#specs.find(spec => spec[name]?.[isGroupType])
         if (found) return this.#getKey(name, options)
         else return false
     }

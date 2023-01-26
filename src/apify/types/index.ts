@@ -12,7 +12,10 @@ export type OptionsType = {
     methodName: string[],
     allCaps: string[],
     namespacesToFlatten: string[],
-    patternsToRemove: string[],
+    
+    getNamespaceKey: (str: string) => string,
+    getNamespaceLabel: (str: string) => string,
+
     singularName: {[x:string]: string}
 
     classKey?: string,
@@ -23,7 +26,7 @@ export type OptionsType = {
     overrides: {
       [x: string]: NamespaceOverride | OverrideType
     },
-    getValue: (value: any, o: any) => any
+    getValue: (key: string, value: any, o: any) => any
 }
 
 export type InfoType = OptionsType & {
