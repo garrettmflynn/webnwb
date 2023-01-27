@@ -78,7 +78,7 @@ export default class NWBAPI extends API {
       // Override properties of a generated class instance
       overrides: {
 
-        nwbDataInterface: 'dataInterface',
+        nwbDataInterface: 'dataInterface', // NOTE: Why is this in camel case?
 
         NWBFile: {
           Processing: 'ProcessingModule'

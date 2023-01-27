@@ -7,12 +7,49 @@ import InheritanceTree from "./InheritanceTree"
 import { getPropertyName, setProperty } from "./utils"
 import { createQueueSymbol, hasNestedGroups, propertyReactionRegistrySymbol } from "../utils/globals"
 import { isGroup as isGroupType } from '../../../../hdf5-io/src';
-import { isNullSetter } from "./descriptions"
 
 
 type InheritanceType = {
   tree: InheritanceTree,
   type: string
+}
+
+
+// NOTE: Currently only applied to the top-level of a class
+function reactToProperties(key:string, spec: any, specVal: any = spec[key]) {
+  const reactions = spec[propertyReactionRegistrySymbol]?.reactions
+  const desc = Object.getOwnPropertyDescriptor(reactions, key)
+
+  if (desc && desc.set && desc.get) {
+
+    const setter = desc.set
+
+    const existing = Object.getOwnPropertyDescriptor(this, key)
+
+    const alreadySet = desc.get?.toString() === existing?.get?.toString()
+    const keepExisting = !!(existing && existing.get)
+
+    // Handles streaming values
+    if (!alreadySet) {
+
+      if (keepExisting) {
+        const copy = {...existing}
+
+        copy.get = function() {
+          const val = existing?.get?.call(this) // get existing value
+          return setter.call(this, val)
+        }
+
+        copy.set = desc.set  // Only overwrite existing setter
+        Object.defineProperty(this, key, copy)
+      }
+
+      // Handles non-streaming values
+      else Object.defineProperty(this, key, { ...desc, enumerable: true})
+
+      this[key] = (existing && existing.value) ? existing.value : specVal // Pass value through the setter
+    } 
+  } 
 }
 
 export default class Classify {
@@ -47,30 +84,34 @@ export default class Classify {
     const context = this
     return ({
       [name]: class extends cls {
+
+        // ---------------- Performance Note ----------------
+        // All of this is run every time ANY class is instantiated...
         constructor(info: InfoType, classOptions: any, specs: any | any[]) {
 
-          // Performance Note: All of this is run every time this class is instantiated...
+          // Gather the specification information
           const copy = Object.assign({}, context.info)
           if (!specs) specs = [specInfo]
           else specs.push(specInfo)
 
           super(info, Object.assign(copy, classOptions), specs)
 
-        // Map keys to attributes
+        // Map the specification to the class
         if (specInfo) {
           const keys = Object.keys(specInfo)
 
           keys.map((k: string) => {
-            let val = specInfo[k]
-            const camel = caseUtils.set(rename.base(k, context.info.allCaps)) // ensure all keys (even classes) are camel case
+            let specVal = specInfo[k]
+
+            const camel = caseUtils.set(rename.base(k, context.info.allCaps)) // force camel case
             let finalKey = camel
   
-            // Map to declaration
-            let override = context.info.overrides[name]?.[camel] ?? context.info.overrides[camel] // Global override
+            // Allow users to override the specification key / value
+            let override = context.info.overrides[name]?.[camel] ?? context.info.overrides[camel] // global override
   
             if (override) {
               const typeOf = typeof override
-              if (typeOf === 'function') val = () => override(specInfo)
+              if (typeOf === 'function') specVal = () => override(specInfo)
               else if (typeOf === 'string') {
                 finalKey = override
                 specInfo[finalKey] = specInfo[k]
@@ -79,73 +120,36 @@ export default class Classify {
             }
             
             const newKey = !(finalKey in this)
-
-            // const isNull = typeof val === 'object' && !('constructor' in val)
-            if (newKey) {
-              this[finalKey] = val  // Set the key
-            }
-            
-              const reactions = specInfo[propertyReactionRegistrySymbol]?.reactions
-              
-              const desc = Object.getOwnPropertyDescriptor(reactions, k)
-
-              const pass = desc && desc.set && desc.get
-              if (pass) {
-
-                const setter = desc.set
-
-                const existing = Object.getOwnPropertyDescriptor(this, finalKey)
-
-                const alreadySet = desc.get?.toString() === existing?.get?.toString()
-                const keepExisting = !!(existing && existing.get)
-
-                // Handles streaming values
-                if (!alreadySet) {
-
-                  if (keepExisting) {
-                    const copy = {...existing}
-
-                    copy.get = function() {
-                      const val = existing?.get?.call(this) // get existing value
-                      return setter.call(this, val)
-                    }
-
-                    copy.set = desc.set  // Only overwrite existing setter
-                    Object.defineProperty(this, finalKey, copy)
-                  }
-
-                  // Handles non-streaming values
-                  else Object.defineProperty(this, finalKey, { ...desc, enumerable: true})
-
-
-                  // Always run values through the setter
-                  let value = (existing && existing.value) ? existing.value : val
-                  this[finalKey] = value // Pass new value through the setter
-                } 
-
-              }
+            if (newKey) this[finalKey] = specVal  // If a new key, add the specification value
+            reactToProperties.call(this, finalKey, specInfo, specVal)
           })
   
   
-          // proxy internal properties (if target found)
-          drill(specInfo, {
-            run: (o: any) => o && !!o.type, // check if has type,
-            drill: (o: any) => o && typeof o === 'object' // check if object
-          }, (o: any, path: string[]) => {
+          // Apply the entire specification
+          drill(specInfo, (
+            o: any, 
+            path: string[], 
+            // specParent: any
+          ) => {
   
             let parent = this
             const pathCopy = [...path]
             const key = pathCopy.pop()
             pathCopy.forEach(key => parent = parent?.[key])
-  
-            if (key) {
-              const target = parent?.[key]
-              if (target && o[isGroupType] && path.length > 1) {
+            const target = key ? parent?.[key] : undefined
+
+            if (key && target) {
+
+              // // react to internal group property changes
+              // reactToProperties.call(parent, key, specParent)
+
+              // proxy internal groups
+              if (o[isGroupType] && path.length > 1) {
                 if (!(key in this)) {
                   Object.defineProperty(this, key, {
                     get: () => parent[key],
                     set: (val: any) => parent[key] = val,
-                    enumerable: true,
+                    enumerable: false, // Do not enumerate these proxies
                     configurable: false
                   })
                 } else console.error(`${name} already has key ${key}`)
@@ -154,7 +158,8 @@ export default class Classify {
           })
         } else console.error(`class ${name} does not have any info`);
   
-        context.applyHelpers(this, undefined, specInfo, [name]) // Apply helpers using context  
+        // Apply helpers to the entire class object
+        context.applyHelpers(this, undefined, specInfo, [name]) 
         }
       }
     })[name];
