@@ -83,6 +83,7 @@ export default class NWBAPI extends API {
       },
 
       classKey: 'neurodata_type', // Key to use for the class name
+      specClassKey: 'neurodata_type_def',
 
       // Override properties of a generated class instance
       overrides: {

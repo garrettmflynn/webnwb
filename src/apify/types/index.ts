@@ -19,6 +19,7 @@ export type OptionsType = {
     singularName: {[x:string]: string}
 
     classKey?: string,
+    specClassKey?: string,
 
     baseClass?: ApifyBaseClass // Add functionality to the base class
 

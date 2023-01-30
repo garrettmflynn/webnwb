@@ -295,7 +295,6 @@ export default class Classify {
   match = (input: any) => {
 
     const keys = Object.keys(input)
-    console.error('Mathing', keys, this.attributeMap)
 
     let choices: string[] = []
     keys.forEach(k => {

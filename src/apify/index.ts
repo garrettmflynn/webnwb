@@ -6,7 +6,7 @@ import * as rename from "./utils/rename"
 import Classify from './classify';
 import InheritanceTree from './classify/InheritanceTree';
 import { isNativeClass } from './utils/classes';
-import { hasNestedGroups } from './utils/globals';
+import { hasNestedGroups, isClassType } from './utils/globals';
 import { 
   // objectify, 
   isGroup as isGroupType, 

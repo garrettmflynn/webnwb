@@ -1,6 +1,6 @@
 import * as caseUtils from "src/utils/case";
 import { OptionsType } from "../types";
-import { hasNestedGroups } from "../utils/globals";
+import { hasNestedGroups, isClassType } from "../utils/globals";
 import { isGroup as isGroupType } from '../../../../hdf5-io/src';
 import { Model, transfer } from "../../../../esmodel/src/index";
 
@@ -22,19 +22,32 @@ class ApifyBaseClass {
         // Object.defineProperty(this, createQueueSymbol, {value: {}}) // ensure queue property is non-enumerable
 
         const getValue = (typeof options.getValue === 'function') ? options.getValue : ((_, v) => v) as OptionsType['getValue']
+
+        const clsKey = options.classKey as string
+        // const camelClassKey = caseUtils.set(clsKey, 'camel')
+        const specClassKey = options.specClassKey
+
         const model = new Model({
             
             keys: (key, specObj) => {
 
                 const isPropertyOfGroup = specObj[isGroupType] && !specObj[hasNestedGroups]
-
                 const camel = caseUtils.set(key, 'camel', 'snake') // Convert to camel case
 
-                const desc = Object.getOwnPropertyDescriptor(specObj, camel) // NOTE: The specification matches the transformed case
-                const isEnumerable = desc?.enumerable
-                const enumerable = isEnumerable ?? (isPropertyOfGroup) ? true : false // Match spec + default to false
+                const toReturn = { 
+                    value: camel, 
+                    // silence: false  // silence nothing...
+                 } as any
 
-                return { value: camel,  enumerable }
+                // Allow for the enumerability of groups with arbitrary names...
+                if (isPropertyOfGroup) {
+                    const desc = Object.getOwnPropertyDescriptor(specObj, key) as PropertyDescriptor
+                    toReturn.enumerable = desc?.enumerable ?? true // Properly enumerate properties on top-level groups
+                    if (specClassKey && !specObj[specClassKey]) toReturn.silence = false // Do not silence arbitrary properties
+                }
+
+
+                return toReturn
             },
 
             // NOTE: Internal keys are not transformed here...
@@ -44,11 +57,15 @@ class ApifyBaseClass {
                 // ensure groups are resolved as objects
                 if (spec?.[isGroupType] && value === undefined) value = {}
 
-                // Recognize user-specified class key to allow for automatic class transformations
+                // Recognize class keys to allow for automatic class transformations
                 let cls; 
-                const clsKey = options.classKey as string
-                if (clsKey && value && typeof value === 'object' && clsKey in value) {
-                    const clsName = caseUtils.set(value.neurodataType, 'pascal')
+                const clsKeys = [
+                    clsKey,  // User-specified class key
+                    specClassKey // Spec-specified class key
+                ]
+                const foundClsKey = clsKeys.find(key => key && value && typeof value === 'object' && key in value)
+                if (foundClsKey) {
+                    const clsName = caseUtils.set(value[foundClsKey], 'pascal')
                     const name = options.name as string
                     cls = (globalThis as any).apify[name].get(caseUtils.set(clsName, 'pascal'), value) // NOTE: This is a tightly-coupled dependency—but magically creates the right class (if properly constrained)
                     if (cls) value = new cls(value, options)
@@ -85,6 +102,8 @@ class ApifyBaseClass {
 
         // Apply file info to the class (basd on the spec in the model)
         model.apply(info, { target: this })
+
+        if (info.name) this.name = info.name // Transfer name
 
     }
 }
