@@ -43,7 +43,7 @@ class ApifyBaseClass {
                 if (isPropertyOfGroup) {
                     const desc = Object.getOwnPropertyDescriptor(specObj, key) as PropertyDescriptor
                     toReturn.enumerable = desc?.enumerable ?? true // Properly enumerate properties on top-level groups
-                    if (specClassKey && !specObj[specClassKey]) toReturn.silence = false // Do not silence arbitrary properties
+                    toReturn.silence = false // Do not silence arbitrary properties
                 }
 
 

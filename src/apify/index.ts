@@ -133,9 +133,10 @@ export default class API {
       // Group
       else if (isGroup) {
         const value = aggregator[name] = {} as any// Set aggregator value
-
-        Object.defineProperty(value, isGroupType, { value: true })
-        if (aggregator[isGroupType] && !aggregator[hasNestedGroups]) Object.defineProperty(aggregator, hasNestedGroups, { value: true })
+        if (!isClass) {
+          Object.defineProperty(value, isGroupType, { value: true })
+          if (aggregator[isGroupType] && !aggregator[hasNestedGroups]) Object.defineProperty(aggregator, hasNestedGroups, { value: true })
+        }
       }      
 
       // Nested classes
@@ -155,6 +156,9 @@ export default class API {
         Object.defineProperty(aggregator, name, {value: objectValue, enumerable: true})
 
       } 
+
+      const value = aggregator?.[name]
+      if (isClass && value) Object.defineProperty(value, isClassType, { value: true }) // Distinguish classes
 
       // Add to inheritance tree
       if (inherit.value && inherit.type) this._inheritanceTree.add(inherit.value, name, isClass ? 'classes' : 'groups')
