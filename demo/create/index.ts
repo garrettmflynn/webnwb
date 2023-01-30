@@ -48,23 +48,29 @@ const step = async (i:number) => {
     switch(i) {
 
         case 1: 
+
                 // Add TimeSeries Data
                 const timestamps = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
                 const data = Array.from(timestamps, e => 100 + e * 10)
-                
-                testTs = new nwb.TimeSeries({
+
+                const object = {
                     name: 'testTimeseries', 
                     data: data, 
                     units: 'm',
                     // starting_time:0.0,
                     // rate:1.0,
                     timestamps
-                })
+                }
+                
+                testTs = new nwb.TimeSeries({ ...object})
 
                 nwbFile.addAcquisition(testTs)
-                nwbFile.acquisition.testTimeseries.startingTime = 0.0
+                nwbFile.createAcquisition({...object, name: 'testTimeseries2'})
 
-                console.log('Has set startingTime', nwbFile.acquisition.testTimeseries.startingTime, nwbFile.acquisition.testTimeseries)
+                const ogStartTime = testTs.startingTime 
+                testTs.startingTime  = 0.0
+                console.log('Has set startingTime', nwbFile.acquisition.testTimeseries.startingTime, ogStartTime)
+
                 update(nwbFile)
 
                 break;

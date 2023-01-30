@@ -26,7 +26,7 @@ export type OptionsType = {
     overrides: {
       [x: string]: NamespaceOverride | OverrideType
     },
-    getValue: (key: string, value: any, o: any) => any
+    getValue: (key: string | symbol | number, value: any, o: any) => any
 }
 
 export type InfoType = OptionsType & {

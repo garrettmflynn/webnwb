@@ -1,10 +1,8 @@
-import { setAll } from "src/utils/case";
-import { isPromise } from "src/utils/promise";
+import * as caseUtils from "src/utils/case";
 import { OptionsType } from "../types";
-import { createQueueSymbol, hasNestedGroups } from "../utils/globals";
-import { getPropertyName } from "./utils";
-import { getAllPropertyNames, isGroup as isGroupType, onPropertyResolved as onPropertyResolvedType } from '../../../../hdf5-io/src';
-// import drill from "src/utils/drill";
+import { hasNestedGroups } from "../utils/globals";
+import { isGroup as isGroupType } from '../../../../hdf5-io/src';
+import { Model, transfer } from "../../../../esmodel/src/index";
 
 export type ClassOptionsType = {
     // Use to skip autorejection and otherwise generate values
@@ -12,153 +10,82 @@ export type ClassOptionsType = {
     transformToSnakeCase?: boolean,
 } & Partial<OptionsType>
 
-function onValidKey (key:string|symbol, value: any, options: ClassOptionsType, specs: any[], instance: any) {
-
-    // reinstantiate objects as classes
-    let groupKey = isGroup(key, options, specs, instance)
-
-    // assign raw value
-    const group = this[key] = value[key]
-
-    // individually resolve group keys
-    if (groupKey) {
-        for (let name in group) onPropertyResolved.call(instance, name, group[name], groupKey, options)
-    } 
-
-}
-
-function getMethodName (name: string, options: ClassOptionsType) {
-    const pascalKey = name[0].toUpperCase() + name.slice(1);
-    return getPropertyName.call(this, pascalKey, options)
-}
-
-// function isGroupDirect(specs) {
-//     return specs.find(spec => spec?.[isGroupType] && !spec?.[hasNestedGroups]) // Is a group without nested groups
-// }
-
-function isGroup(name: string | symbol, options: ClassOptionsType, specs: any[], instance: any) {
-    if (typeof name === 'symbol') return false
-    const found = specs.find(spec => spec[name]?.[isGroupType] && !spec[name]?.[hasNestedGroups]) // Is a group without nested groups
-    if (found) return getMethodName.call(instance, name, options)
-    else return false
-}
-
-// NOTE: 'this' is the base class with helper functions
-function onPropertyResolved (name: string, instance: any, groupKey: string, options: ClassOptionsType) {
-    if (isPromise(instance)) return instance.then((v: any) => onPropertyResolved.call(this, name, v, groupKey, options))
-    else {
-        instance.name = name // automatically set name
-
-        console.log('Resolving property', groupKey)
-        const createKey = `create${groupKey}`
-        const create = () => this[createKey](instance, options)
-        if (this[createKey]) return create(); // create class from raw object
-        else {
-            const queue = this[createQueueSymbol]
-            if (queue[createKey]) queue[createKey].push(create)
-            else queue[createKey] = [create]
-        }
-    }
-}
-
-function processLayer (info: any, options: ClassOptionsType, specs: any[], instance: any = this) {
-        // Register the specification
-        let validKeys = new Set()
-        specs.forEach((spec: any) => {
-            for (let key in spec) validKeys.add(key)
-        })
-
-        // Load information from the user (based on keys expected in the spec)
-        const keys = [...getAllPropertyNames(info), ...Object.getOwnPropertySymbols(info)]
-
-        keys.forEach((key: string | symbol) => {
-
-            const isValid = validKeys.has(key)
-            const desc = Object.getOwnPropertyDescriptor(info, key)
-            const hasGetter = desc && desc.get
-
-            if (hasGetter) {
-
-                Object.defineProperty(this, key, { 
-                    
-                    get: () => {
-                    
-                        const value = info[key]
-                        if (isPromise(value)) return value.then((v: any) => {
-                            if ( typeof v === 'object') {
-                                let group = isGroup(key, options, specs, instance)
-
-                                // Create custom handler for when group properties are resolved...
-                                if (group) {
-                                    const groupKey = group as string
-                                    Object.defineProperty(v, onPropertyResolvedType, {
-                                        value: async (name:string, value: any) => {
-                                            if (options.classKey) await value[options.classKey] // Just access the class key so it's available synchronously
-                                            return onPropertyResolved.call(instance, name, value, groupKey, options)
-                                        },
-                                        configurable: true,
-                                    })
-                                }
-
-                                Object.defineProperty(this, key, {value: v, enumerable: isValid})
-                            }
-                            return v
-                        })
-
-                        return value
-
-                }, 
-                enumerable: isValid, // Hide if not in schema
-                configurable: true  // Allow overwriting later with the actual value
-            })
-            } else if (isValid) onValidKey.call(this, key, info, options, specs, instance)
-            else {
-                const value = info[key]
-                Object.defineProperty(this, key, { value }) // Set property as non-enumerable write-only property
-                if (options.onRejectKey) options.onRejectKey(key, value, info) // Handle rejection
-            }
-
-        })
-}
-
-
 class ApifyBaseClass {
 
-    [createQueueSymbol]: any;
+    // [createQueueSymbol]: any;
 
     [x: string|symbol]: any; // arbitrary
 
     constructor(info: any = {}, options: ClassOptionsType = {}, specs: any[] = []) {
 
-        Object.defineProperty(this, createQueueSymbol, {value: {}}) // ensure this property is non-enumerable
 
-        if (options.transformToSnakeCase) info = setAll(info, 'camel', 'snake') // Convert all keys to snake case
+        // Object.defineProperty(this, createQueueSymbol, {value: {}}) // ensure queue property is non-enumerable
 
-        processLayer.call(this, info, options, specs)
-
-        // // Apply the entire specification
-        // drill(info, (
-        //     o: any, 
-        //     path: string[], 
-        //     parent: any
-        //   ) => {
-  
-        //     const pathCopy = [...path]
-        //     let target = this
-        //     pathCopy.forEach(key => {
-        //         target = target?.[key]
-        //         specs = specs.map(spec => spec?.[key])
-        //     })
+        const getValue = (typeof options.getValue === 'function') ? options.getValue : ((_, v) => v) as OptionsType['getValue']
+        const model = new Model({
             
-        //     if (
-        //         target 
-        //         && !isGroupDirect(specs) // Excludes top layer
-        //     ) {
-        //         processLayer.call(target, o, options, specs, this)
-        //         return false
-        //     }
+            keys: (key, specObj) => {
 
-        //   })
+                const isPropertyOfGroup = specObj[isGroupType] && !specObj[hasNestedGroups]
+
+                const camel = caseUtils.set(key, 'camel', 'snake') // Convert to camel case
+
+                const desc = Object.getOwnPropertyDescriptor(specObj, camel) // NOTE: The specification matches the transformed case
+                const isEnumerable = desc?.enumerable
+                const enumerable = isEnumerable ?? (isPropertyOfGroup) ? true : false // Match spec + default to false
+
+                return { value: camel,  enumerable }
+            },
+
+            // NOTE: Internal keys are not transformed here...
+            values: (key, value, spec) => {
+                
+
+                // ensure groups are resolved as objects
+                if (spec?.[isGroupType] && value === undefined) value = {}
+
+                // Recognize user-specified class key to allow for automatic class transformations
+                let cls; 
+                const clsKey = options.classKey as string
+                if (clsKey && value && typeof value === 'object' && clsKey in value) {
+                    const clsName = caseUtils.set(value.neurodataType, 'pascal')
+                    const name = options.name as string
+                    cls = (globalThis as any).apify[name].get(caseUtils.set(clsName, 'pascal'), value) // NOTE: This is a tightly-coupled dependency—but magically creates the right class (if properly constrained)
+                    if (cls) value = new cls(value, options)
+                }
+
+                // Transform object into a class
+                if (cls) value = new cls(value, options)
+
+                // Process based on the user-defined callback
+                else value = getValue(key, value, spec)
+
+                // // Return the specification value if the value is undefined
+                // if (!value && spec) value = spec
+
+                
+                // // Move all metadata from the existing value
+                // if (value && typeof value === 'object') {
+                // //   const hasPrevious = (og && typeof og === 'object')
+                // //   const keys = getAllPropertyNames((hasPrevious) ? og : o) 
+
+                //   // Set Attribute Keys
+                //   const attributes = spec.attributes ?? []
+                //   attributes.forEach((o:any) => {
+                //     const value = o.value ?? o.default_value
+                //     Object.defineProperty(value, o.name, { value, enumerable: true })
+                //   })
+                // }
+
+                return value
+            },
+
+            specification: specs, // Merged together...
+        })
+
+        // Apply file info to the class (basd on the spec in the model)
+        model.apply(info, { target: this })
+
     }
 }
 

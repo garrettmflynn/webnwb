@@ -1,55 +1,17 @@
-import drill from "../../utils/drill"
 import * as caseUtils from '../../utils/case'
 import { InfoType, OptionsType } from "../types"
 import * as rename from "../utils/rename"
 import ApifyBaseClass, { ClassOptionsType } from "./base"
 import InheritanceTree from "./InheritanceTree"
 import { getPropertyName, setProperty } from "./utils"
-import { createQueueSymbol, hasNestedGroups, propertyReactionRegistrySymbol } from "../utils/globals"
+import { createQueueSymbol, hasNestedGroups } from "../utils/globals"
 import { isGroup as isGroupType } from '../../../../hdf5-io/src';
+import { newKeySymbol } from '../../../../esmodel/src'
 
 
 type InheritanceType = {
   tree: InheritanceTree,
   type: string
-}
-
-
-// NOTE: Currently only applied to the top-level of a class
-function reactToProperties(key:string, spec: any, specVal: any = spec[key]) {
-  const reactions = spec[propertyReactionRegistrySymbol]?.reactions
-  const desc = Object.getOwnPropertyDescriptor(reactions, key)
-
-  if (desc && desc.set && desc.get) {
-
-    const setter = desc.set
-
-    const existing = Object.getOwnPropertyDescriptor(this, key)
-
-    const alreadySet = desc.get?.toString() === existing?.get?.toString()
-    const keepExisting = !!(existing && existing.get)
-
-    // Handles streaming values
-    if (!alreadySet) {
-
-      if (keepExisting) {
-        const copy = {...existing}
-
-        copy.get = function() {
-          const val = existing?.get?.call(this) // get existing value
-          return setter.call(this, val)
-        }
-
-        copy.set = desc.set  // Only overwrite existing setter
-        Object.defineProperty(this, key, copy)
-      }
-
-      // Handles non-streaming values
-      else Object.defineProperty(this, key, { ...desc, enumerable: true})
-
-      this[key] = (existing && existing.value) ? existing.value : specVal // Pass value through the setter
-    } 
-  } 
 }
 
 export default class Classify {
@@ -96,67 +58,67 @@ export default class Classify {
 
           super(info, Object.assign(copy, classOptions), specs)
 
-        // Map the specification to the class
-        if (specInfo) {
-          const keys = Object.keys(specInfo)
+        // // Map the specification to the class
+        // if (specInfo) {
+        //   const keys = Object.keys(specInfo)
 
-          keys.map((k: string) => {
-            let specVal = specInfo[k]
+        //   keys.map((k: string) => {
+        //     let specVal = specInfo[k]
 
-            const camel = caseUtils.set(rename.base(k, context.info.allCaps)) // force camel case
-            let finalKey = camel
+        //     const camel = caseUtils.set(rename.base(k, context.info.allCaps)) // force camel case
+        //     let finalKey = camel
   
-            // Allow users to override the specification key / value
-            let override = context.info.overrides[name]?.[camel] ?? context.info.overrides[camel] // global override
+        //     // Allow users to override the specification key / value
+        //     let override = context.info.overrides[name]?.[camel] ?? context.info.overrides[camel] // global override
   
-            if (override) {
-              const typeOf = typeof override
-              if (typeOf === 'function') specVal = () => override(specInfo)
-              else if (typeOf === 'string') {
-                finalKey = override
-                specInfo[finalKey] = specInfo[k]
-                delete specInfo[k]
-              }
-            }
+        //     if (override) {
+        //       const typeOf = typeof override
+        //       if (typeOf === 'function') specVal = () => override(specInfo)
+        //       else if (typeOf === 'string') {
+        //         finalKey = override
+        //         specInfo[finalKey] = specInfo[k]
+        //         delete specInfo[k]
+        //       }
+        //     }
             
-            const newKey = !(finalKey in this)
-            if (newKey) this[finalKey] = specVal  // If a new key, add the specification value
-            reactToProperties.call(this, finalKey, specInfo, specVal)
-          })
+        //     const newKey = !(finalKey in this)
+        //     if (newKey) this[finalKey] = specVal  // If a new key, add the specification value
+        //     // reactToProperties.call(this, finalKey, specInfo, specVal)
+        //   })
   
   
-          // Apply the entire specification
-          drill(specInfo, (
-            o: any, 
-            path: string[], 
-            // specParent: any
-          ) => {
+        //   // Apply the entire specification
+        //   drill(specInfo, (
+        //     o: any, 
+        //     path: string[], 
+        //     // specParent: any
+        //   ) => {
   
-            let parent = this
-            const pathCopy = [...path]
-            const key = pathCopy.pop()
-            pathCopy.forEach(key => parent = parent?.[key])
-            const target = key ? parent?.[key] : undefined
+        //     let parent = this
+        //     const pathCopy = [...path]
+        //     const key = pathCopy.pop()
+        //     pathCopy.forEach(key => parent = parent?.[key])
+        //     const target = key ? parent?.[key] : undefined
 
-            if (key && target) {
+        //     if (key && target) {
 
-              // // react to internal group property changes
-              // reactToProperties.call(parent, key, specParent)
+        //       // // react to internal group property changes
+        //       // reactToProperties.call(parent, key, specParent)
 
-              // proxy internal groups
-              if (o[isGroupType] && path.length > 1) {
-                if (!(key in this)) {
-                  Object.defineProperty(this, key, {
-                    get: () => parent[key],
-                    set: (val: any) => parent[key] = val,
-                    enumerable: false, // Do not enumerate these proxies
-                    configurable: false
-                  })
-                } else console.error(`${name} already has key ${key}`)
-              }
-            }
-          })
-        } else console.error(`class ${name} does not have any info`);
+        //       // proxy internal groups
+        //       if (o[isGroupType] && path.length > 1) {
+        //         if (!(key in this)) {
+        //           Object.defineProperty(this, key, {
+        //             get: () => parent[key],
+        //             set: (val: any) => parent[key] = val,
+        //             enumerable: false, // Do not enumerate these proxies
+        //             configurable: false
+        //           })
+        //         } else console.error(`${name} already has key ${key}`)
+        //       }
+        //     }
+        //   })
+        // } else console.error(`class ${name} does not have any info`);
   
         // Apply helpers to the entire class object
         context.applyHelpers(this, undefined, specInfo, [name]) 
@@ -195,17 +157,14 @@ export default class Classify {
 
         pascal = updatedMethod // Use updated property name
 
-
-        const classifyInfoName = this.info.name
-
         if (!_deleted.includes(method)) {
           try {
 
             setProperty.call(instance, addName, {
               value: function add(obj: any) {
                 const name = obj.name ?? Object.keys(this[camel]).length
-                Object.defineProperty(this[camel], name, {value: obj, enumerable: true})
-                return obj
+                if (this[camel][newKeySymbol]) return this[camel][newKeySymbol](name, obj)
+                else console.error('Cannot add a new object...', this, obj)
               },
             })
 
@@ -215,24 +174,41 @@ export default class Classify {
               },
             })
 
+            const context = this
             setProperty.call(instance, createName, {
-              value: function create(o: any, classOptions: ClassOptionsType = this.info) {
-                const cls = (globalThis as any).apify[classifyInfoName].get(pascal, o) // NOTE: This is a tightly-coupled dependency—but magically creates the right class (if properly constrained)
-                if (cls) {
-                  const created = new cls(o, classOptions)
-                  return this[addName](created)
-                } else {
-                  console.error(`[${classifyInfoName}]: Could not find class for ${pascal}`, o);
-                  return null
+              value: function create(o: any, classOptions: ClassOptionsType = context.info) {
+
+
+                const clsKey = classOptions.classKey as string
+
+                if (!o[clsKey]) {
+                  // const copy = {...o}
+                  // delete copy.name
+                  o[clsKey] = context.match(o)
                 }
+
+                console.warn('Trying to create a new object', o.name, o, o[clsKey])
+
+                instance[addName](o)
+                // if (this[newKeySymbol]) this[newKeySymbol]()
+                // else console.error('Cannot create a new object...', this, o)
+
+                // const cls = (globalThis as any).apify[classifyInfoName].get(pascal, o) // NOTE: This is a tightly-coupled dependency—but magically creates the right class (if properly constrained)
+                // if (cls) {
+                //   const created = new cls(o, classOptions)
+                //   return this[addName](created)
+                // } else {
+                //   console.error(`[${classifyInfoName}]: Could not find class for ${pascal}`, o);
+                //   return null
+                // }
               },
             })
 
-            // Create from the queue when the function is available
-            if (instance[createQueueSymbol][createName]) {
-              instance[createQueueSymbol][createName].forEach((f: Function) => f())
-              delete instance[createQueueSymbol][createName]
-            }
+            // // Create from the queue when the function is available
+            // if (instance[createQueueSymbol][createName]) {
+            //   instance[createQueueSymbol][createName].forEach((f: Function) => f())
+            //   delete instance[createQueueSymbol][createName]
+            // }
 
           } catch (e) {
 
@@ -299,7 +275,7 @@ export default class Classify {
 
 
       const attrMap = this.attributeMap
-  
+
       // Map keys to attributes
       Object.keys(info).map((k: string) => {
         const camel = caseUtils.set(rename.base(k, this.info.allCaps)) // ensure all keys (even classes) are camel case
@@ -319,6 +295,7 @@ export default class Classify {
   match = (input: any) => {
 
     const keys = Object.keys(input)
+    console.error('Mathing', keys, this.attributeMap)
 
     let choices: string[] = []
     keys.forEach(k => {

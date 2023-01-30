@@ -3,6 +3,7 @@ import schemas from './schema'
 import API from './apify';
 import NWBBaseClass from './base';
 import { objectify } from '../../hdf5-io/src';
+import { valueSymbol } from '../../esmodel/src';
 
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 type SpecificationType = { 'core': ArbitraryObject } & ArbitraryObject
@@ -35,15 +36,23 @@ export default class NWBAPI extends API {
 
       baseClass: NWBBaseClass, // Base Class to use for all classes
 
-      // Get the value from the schema
+      // Get the value from the HDF5 schema
       getValue: (key, value, o) => {
 
-        if (value === undefined) value = o.value ?? o.default_value
+        if (o  === undefined) return value // No schema
 
-        if (value === undefined) return value // return value
+        if (value === undefined) value = o.value ?? o.default_value // Set to default value if not defined
+
+        if (value === undefined) return value // return undefined value
 
         let toReturn = value
+    
+        const constructor = value?.constructor
 
+        // -------------- BigInt Support --------------
+        if (constructor === BigInt) toReturn = Number(toReturn);
+        
+        // -------------- HDF5 Schema Support --------------
           if (o.shape) {
             // if (o.shape) {
               if (typeof o.dtype === 'string') {

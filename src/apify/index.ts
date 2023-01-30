@@ -6,11 +6,17 @@ import * as rename from "./utils/rename"
 import Classify from './classify';
 import InheritanceTree from './classify/InheritanceTree';
 import { isNativeClass } from './utils/classes';
-import { propertyReactionRegistrySymbol, hasNestedGroups } from './utils/globals';
-import { isPromise } from 'src/utils/promise';
-import { getAllPropertyNames, objectify, isGroup as isGroupType, isDataset as isDatasetType } from '../../../hdf5-io/src';
+import { hasNestedGroups } from './utils/globals';
+import { 
+  // objectify, 
+  isGroup as isGroupType, 
+  isDataset as isDatasetType 
+} from '../../../hdf5-io/src';
+import { objectify } from '../../../esmodel/src/presets';
 
 type SpecificationType = { [x: OptionsType['coreName']]: ArbitraryObject } & ArbitraryObject
+
+let recognizeUndefinedError = false
 
 // Generate an API from included specification
 export default class API {
@@ -138,94 +144,24 @@ export default class API {
       // Dataset
       else {
         let value = o.value ?? o.default_value // Create a null object
-        if (value !== undefined) {
-          const objectValue = value = objectify(value)
+        const objectValue = value = objectify(name, value)
+        // if (objectValue) {
           Object.defineProperty(objectValue, isDatasetType, { value: true }) // Setting type on the dataset
-        }
+        // } else if (recognizeUndefinedError === false) {
+        //   console.error('Get this to recognize undefined...')
+        //   recognizeUndefinedError = true
+        // }
 
-        Object.defineProperty(aggregator, name, {value: value, enumerable: true})
+        Object.defineProperty(aggregator, name, {value: objectValue, enumerable: true})
+
       } 
 
-        // Create registry for property reactions
-        const value = aggregator[name]
-        if (value && (value[isGroupType] || value[isDatasetType])) {
-          if (!(propertyReactionRegistrySymbol in value)) Object.defineProperty(value, propertyReactionRegistrySymbol, {value: { values: {}, reactions: {}  }})
-        }
+      // Add to inheritance tree
+      if (inherit.value && inherit.type) this._inheritanceTree.add(inherit.value, name, isClass ? 'classes' : 'groups')
 
-        // // Assign default name
-        // if (o.default_name) aggregator[name].name = o.default_name
-
-        // Add to inheritance tree
-        if (inherit.value && inherit.type) this._inheritanceTree.add(inherit.value, name, isClass ? 'classes' : 'groups')
-
-        // Ensure that object properties will react to values that are set
-        // Ignore classes and groups
-        if (!isClass && !aggregator[name]?.[isGroupType]) {
-  
-          const reactions = aggregator[propertyReactionRegistrySymbol]?.reactions
-          if (reactions){
-            const id = Symbol('property registry value id') // newPath.join('/') //
-            const options = this._options
-
-            Object.defineProperty(reactions, name, {
-              get: function () { 
-                const values = this[propertyReactionRegistrySymbol]?.values
-                const toReturn = values?.[id] 
-                return toReturn
-              },
-              set: function setWithPreprocessingStep(v: any){
-  
-                if (isPromise(v)) return  v.then((res: any) => setWithPreprocessingStep.call(this, res))
-                else {
-  
-                  // Ensure that the registry is defined
-                  if (!(propertyReactionRegistrySymbol in this)) {
-                    const react: any = {}
-                    for (let key in reactions) react[key] = true
-                    Object.defineProperty(this, propertyReactionRegistrySymbol, {value: { values: {}, reactions: react  }}) // Instance the values. Note which keys are reactive
-                  }
-
-                  const values =  this[propertyReactionRegistrySymbol].values
-                  const previous = values[id]
-  
-                  // Set new current value
-                  const toReturn = values[id] = options.getValue(name, v, o) // Always get an object
-                    
-                    // Move all metadata from the existing value
-                    if (toReturn && typeof toReturn === 'object') {
-                      const hasPrevious = (previous && typeof previous === 'object')
-                      const keys = getAllPropertyNames((hasPrevious) ? previous : o) 
-
-                      // Set Attribute Keys
-                      const attributes = o.attributes ?? []
-                      attributes.forEach((o:any) => {
-                        const value = o.value ?? o.default_value
-                        Object.defineProperty(toReturn, o.name, { value, enumerable: true })
-                      })
-  
-                      // Hidden Schema Keys
-                      for (let key of keys) {
-                        if (!(key in toReturn)) {
-                          let hiddenReadableDescriptor = { value: o[key], enumerable: false }
-                          if (hasPrevious) {
-                            const descriptor = Object.getOwnPropertyDescriptor(previous, key) ?? hiddenReadableDescriptor
-                            Object.defineProperty(toReturn, key, descriptor)
-                          } else Object.defineProperty(toReturn, key, hiddenReadableDescriptor)
-                        }
-                      }
-                    }
-  
-                    return toReturn
-                }
-              },
-              configurable: true
-            })
-          } 
-
-        }
     }
 
-    const aggregated = (name) ? aggregator[name] : aggregator
+      const aggregated = (name) ? aggregator[name] : aggregator
 
     // Set properties
       const set = (o: any, type:string) => this._setFromObject(o, aggregated, type, newPath)

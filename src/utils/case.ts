@@ -21,9 +21,21 @@ export const get = (str: string) => {
     return 'camel'
 }
 
-export const set = (base:string, type?: CaseType) => {
 
-    if (!base) return ''
+type ConditionType = CaseType | Function
+export const set = (
+    base:string | number | symbol, 
+    type?: CaseType, 
+    condition?: ConditionType,
+) => {
+
+    if (base == undefined) return ''
+    else if (typeof base !== 'string') return base
+
+
+    const toTransform = (typeof condition === 'function') ? condition(base) : (condition) ? get(base) === condition : true
+    if (!toTransform) return base
+
 
     const setFirst = (str:string, method: 'toUpperCase' | 'toLowerCase' ='toUpperCase') => `${(str[0] ?? '')[method]()}${str.slice(1)}`
     switch(type){
@@ -51,7 +63,7 @@ export const set = (base:string, type?: CaseType) => {
   export const setAll = (
     info: any, 
     type?: CaseType, 
-    condition: CaseType | Function = () => !info.type[isGroupType],
+    condition: CaseType | Function = () => !info.type[isGroupType], // skip for children of groups
     drill: boolean = false
 ) => {
 
@@ -59,9 +71,7 @@ export const set = (base:string, type?: CaseType) => {
 
         for (let key in newInfo) {
 
-
-        const toTransform = (typeof condition === 'function') ? condition(key) : get(key) === condition
-        const newKey = (toTransform) ? set(key, type) : key // skip for children of groups
+            const newKey = set(key, type, condition)
 
         // Copy property descriptions
         const desc = Object.getOwnPropertyDescriptor(newInfo, key)
