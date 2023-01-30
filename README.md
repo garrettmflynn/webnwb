@@ -93,6 +93,7 @@ Anyone who would like to contribute to the acceptance of `webnwb` as an official
 ## Derivative Packages
 - [hdf5-io](https://github.com/garrettmflynn/hdf5-io): Load HDF5 files as JavaScript objects
 - [apify](./src/apify/index.ts): A way to generate APIs from simple specification languages (e.g. the NWB Schema)
+    - [esmodel]((https://github.com/garrettmflynn/esmodel): A generic library for enforcing schema properties
 - [dandi](./src/dandi/index.ts): A basic API for making calls to the DANDI REST API.
 
 ## Acknowledgments

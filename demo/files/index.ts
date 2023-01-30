@@ -34,7 +34,7 @@ const getSummary = (o: any) => {
 
 async function onRender(key: string, target: any, history: {key: string, value: any}[]) {
 
-    const div = document.createElement('div')
+  let toReturn;
 
   // const stimulus = await file.stimulus
   // const presentation = await stimulus.presentation
@@ -45,10 +45,13 @@ async function onRender(key: string, target: any, history: {key: string, value: 
   const presentationObj = undefined //(stimKey) ? await presentation[stimKey] : undefined
 
   const lines = []
+  let dataValue
 
   // Show Images
   const externalFile = await target?.externalFile
   if (externalFile) {
+
+    const div = document.createElement('div')
     
     div.style.display = 'flex'
     div.style.flexWrap = 'wrap'
@@ -87,17 +90,12 @@ async function onRender(key: string, target: any, history: {key: string, value: 
       div.innerText = ''
       arr.forEach(o => div.insertAdjacentElement('beforeend', o))
     })
+
+    toReturn = div
   }
 
-  // Show TimeSeries
-  else {
-    const dataValue = await target.data
-    if (dataValue) lines.push({
-      name: 'Acquisition',
-      x: (await target?.timestamps) ?? Array.from({ length: dataValue.length }, (_, i) => i),
-      y: dataValue
-    })
-  }
+  // Configure TimeSeries
+  else dataValue = await target.data
 
 
   // // Show Stimulus
@@ -112,20 +110,64 @@ async function onRender(key: string, target: any, history: {key: string, value: 
   //   })
   // }
 
-  if (lines.length > 0) Plotly.newPlot(div, lines, {
-    title: key ?? stimKey,
-    margin: { t: 0 },
-    yaxis: { title: 'Acquisition' },
-    yaxis2: {
-      title: 'Stimulus',
-      titlefont: { color: 'rgb(148, 103, 189)' },
-      tickfont: { color: 'rgb(148, 103, 189)' },
-      overlaying: 'y',
-      side: 'right'
-    }
-  });
 
-  return div
+
+  // Show Timeseries
+  if (dataValue) {
+    this.timeseries.data = [
+      {
+        name: 'Acquisition',
+        x: (await target?.timestamps) ?? Array.from({ length: dataValue.length }, (_, i) => i),
+        y: dataValue
+      }
+    ]
+
+    const unit = await dataValue.unit
+    this.timeseries.layout = {
+      // title: {
+      //   text: key,
+      //   font: {
+      //     size: 15
+      //   },
+      // },
+      margin: {
+        b: 40,
+        t: 40,
+        // t: 0,
+        pad: 4
+      },
+      xaxis: {
+        title: {
+          text:'Samples',
+          font: {
+            size: 10
+          }
+        },
+      },
+      yaxis: { 
+        title: {
+          text: unit[0].toUpperCase() + unit.slice(1),
+          font: {
+            size: 10
+          }
+        },
+      },
+      // yaxis2: {
+      //   title: 'Stimulus',
+      //   titlefont: { color: 'rgb(148, 103, 189)' },
+      //   tickfont: { color: 'rgb(148, 103, 189)' },
+      //   overlaying: 'y',
+      //   side: 'right'
+      // }
+    }
+
+    return this.timeseries
+
+  } 
+  
+  // Return what has been specified
+  else return toReturn
+
 }
 
 const dandi = document.getElementById('dandi') as HTMLSelectElement
