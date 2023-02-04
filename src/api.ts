@@ -7,7 +7,7 @@ import { objectify } from '../../hdf5-io/src';
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 type SpecificationType = { 'core': ArbitraryObject } & ArbitraryObject
 
-const getNamespaceKey = (str: string) => str.replace('.yaml', '').replace('.extensions', '')
+const getNamespaceKey = (str: string) => str.replace('.yaml', '')//.replace('.extensions', '')
 
 var TypedArray = Object.getPrototypeOf(Uint8Array);
 
