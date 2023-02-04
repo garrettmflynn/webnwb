@@ -258,7 +258,7 @@ loader.id = 'loader'
 editorDiv.insertAdjacentElement('beforeend', loader)
 
 // Add object editor
-let editor = new visualscript.ObjectEditor({ onRender, showType: false })
+let editor = new visualscript.ObjectEditor({ onRender })
 // let editor = new visualscript.Tree()
 editor.id = 'editor'
 editorDiv.insertAdjacentElement('afterbegin', editor)
@@ -310,7 +310,7 @@ sampleButton.onclick = () => {
 
 async function parseFile(file: any, isStreamed: boolean = false){
   console.log('File', file)
-  editor.showType = !isStreamed
+  editor.deferValues = isStreamed
 
 
 loader.progress = 1
