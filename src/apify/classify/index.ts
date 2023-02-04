@@ -267,8 +267,9 @@ export default class Classify {
       if (inheritance) {
         const group = inheritance.type
         const info = inheritance.tree.tree[group][name]
-        const inheritName = info.inherits
-        if (inheritName) cls = this.get(inheritName, undefined, inheritance)
+        if (info) {
+          if (info.inherits) cls = this.get(info.inherits, undefined, inheritance)
+        } else console.error(`[${this.info.name}]: Could not find inheritance information for ${name}`)
       }
 
       const generatedClassV2 = this.createClass(name, cls, info);

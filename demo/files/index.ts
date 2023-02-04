@@ -258,7 +258,7 @@ loader.id = 'loader'
 editorDiv.insertAdjacentElement('beforeend', loader)
 
 // Add object editor
-let editor = new visualscript.ObjectEditor({ onRender })
+let editor = new visualscript.ObjectEditor({ onRender, showType: false })
 // let editor = new visualscript.Tree()
 editor.id = 'editor'
 editorDiv.insertAdjacentElement('afterbegin', editor)
@@ -308,9 +308,9 @@ sampleButton.onclick = () => {
   runFetch()
 }
 
-async function parseFile(file: any){
+async function parseFile(file: any, isStreamed: boolean = false){
   console.log('File', file)
-
+  editor.showType = !isStreamed
 
 
 loader.progress = 1
@@ -367,7 +367,7 @@ async function runFetch(useStreaming = fileStreamingCheckbox?.checked, testOther
   // }
 
   // Visualize the requested file
-  parseFile(result)
+  parseFile(result, useStreaming)
 
   return result
 
