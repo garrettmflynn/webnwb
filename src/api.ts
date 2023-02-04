@@ -3,12 +3,13 @@ import schemas from './schema'
 import API from './apify';
 import NWBBaseClass from './base';
 import { objectify } from '../../hdf5-io/src';
-import { valueSymbol } from '../../esmodel/src';
 
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 type SpecificationType = { 'core': ArbitraryObject } & ArbitraryObject
 
 const getNamespaceKey = (str: string) => str.replace('.yaml', '').replace('.extensions', '')
+
+var TypedArray = Object.getPrototypeOf(Uint8Array);
 
 // Generate the NWB API from included specification
 export default class NWBAPI extends API {
@@ -58,10 +59,10 @@ export default class NWBAPI extends API {
               if (typeof o.dtype === 'string') {
                 const arrayType = `${o.dtype[0].toUpperCase() + o.dtype.slice(1)}Array`
                 const typedArray = globalThis[arrayType]
-                if (typedArray) toReturn = new typedArray(value)
+                if (typedArray) value = new typedArray(value)
               }
               
-              toReturn = (Array.isArray(value) ? value : [value]) // Create an array object here (if required)
+              toReturn = (Array.isArray(value) || (value instanceof TypedArray) ? value : [value]) // Create an array object here (if required)
             // }
           } 
           else if (typeof o.dtype === 'string') {
