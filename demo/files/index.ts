@@ -188,12 +188,17 @@ const loadAsset = () => {
   else console.error('No dandiset selected')
 }
 
+const fromStaging = false 
+const instance = (fromStaging ? 'staging' : 'main') as 'staging' | 'main'
+
+const versionOptions =  { instance }
+
 const setAssetOptions = async () => {
   dandiStatus.innerHTML = `Loading assets for ${ dandi.options[dandi.selectedIndex].innerHTML as string}...`
-  const assets = await getAssets(dandi.value)
+  const assets = await getAssets(dandi.value, versionOptions)
   console.log(`Got all assets for ${dandi.value}`, assets)
   Array.from(assetSelect.children).forEach(o => o.remove()) // Remove all children
-  const url = `${getInfoURL(dandi.value)}/assets`
+  const url = `${getInfoURL(dandi.value, versionOptions)}/assets`
   if (assets) {
    const options = await Promise.all(assets.map(async (o: any) => {
       const assetInfo = await getJSON(`${url}/${o.asset_id}/info`)
@@ -218,7 +223,7 @@ dandi.onchange = async () =>{
   setAssetOptions()
 }
 
-getDandisets().then(async dandisets => {
+getDandisets(instance).then(async dandisets => {
 
   // Filter drafts
   dandisets = dandisets.filter(o => o.draft_version.status === 'Valid')
@@ -226,7 +231,7 @@ getDandisets().then(async dandisets => {
   // Display dandisets
   console.log('Got all dandisets', dandisets)
   const options = await Promise.all(dandisets.map(async (o) => {
-    const res = getSummary(await getInfo(o.identifier))
+    const res = getSummary(await getInfo(o.identifier, versionOptions))
     const option = document.createElement('option')
     option.value = res.id
     collection[res.id] = o
