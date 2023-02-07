@@ -2,7 +2,8 @@ import { ArbitraryObject } from './types/general.types';
 import schemas from './schema'
 import API from './apify';
 import NWBBaseClass from './base';
-import { objectify } from '../../hdf5-io/src';
+// import { objectify } from '../../hdf5-io/src';
+import { objectify } from 'hdf5-io/dist/index.esm';
 
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 type SpecificationType = { 'core': ArbitraryObject } & ArbitraryObject

@@ -83,7 +83,8 @@ Anyone who would like to contribute to the acceptance of `webnwb` as an official
 
 #### Write Access
 ##### Scripting
-1. Use neurodata_type_def to limit the type produced at a certain position
+1. Use neurodata_type_def to limit the type produced at a certain position (instead of blind matching)
+
 ##### File Creation
 1. Validate writing a dataset using [best practices](https://www.nwb.org/best-practices/) and the [schema](https://nwb-schema.readthedocs.io/en/latest/format_description.html#nwbcontainer-nwbdata-nwbdatainterface-base-neurodata-types-for-containers-and-datasets)
 2. Allow writing a dataset in place using the File Access API (Chrome)
@@ -98,7 +99,7 @@ Anyone who would like to contribute to the acceptance of `webnwb` as an official
 ## Derivative Packages
 - [hdf5-io](https://github.com/garrettmflynn/hdf5-io): Load HDF5 files as JavaScript objects
 - [apify](./src/apify/index.ts): A way to generate APIs from simple specification languages (e.g. the NWB Schema)
-    - [esmodel]((https://github.com/garrettmflynn/esmodel): A generic library for enforcing schema properties
+    - [esconform]((https://github.com/garrettmflynn/esconform): A generic library for enforcing schema properties
 - [dandi](./src/dandi/index.ts): A basic API for making calls to the DANDI REST API.
 
 ## Acknowledgments

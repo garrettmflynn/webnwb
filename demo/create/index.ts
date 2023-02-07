@@ -1,5 +1,8 @@
-import * as visualscript from '../../../visualscript/src/index'
+// Visualscript
+// import * as visualscript from '../../../visualscript/src/index'
+import * as visualscript from 'visualscript/dist/index.esm'
 
+// WebNWB
 import nwb from '../../src/index'
 import NWBHDF5IO from 'src/io';
 

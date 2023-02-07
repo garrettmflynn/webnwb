@@ -1,8 +1,12 @@
-import * as caseUtils from "src/utils/case";
+import * as caseUtils from "../../utils/case";
 import { OptionsType } from "../types";
-import { hasNestedGroups, isClassType } from "../utils/globals";
-import { isGroup as isGroupType } from '../../../../hdf5-io/src';
-import { Model, transfer } from "../../../../esmodel/src/index";
+import { hasNestedGroups } from "../utils/globals";
+// import { isGroup as isGroupType } from '../../../../hdf5-io/src';
+import { isGroup as isGroupType } from 'hdf5-io/dist/index.esm';
+
+// import { Model } from "../../../../esmodel/src/index";
+
+import * as conform from 'esconform/dist/index.esm'
 
 export type ClassOptionsType = {
     // Use to skip autorejection and otherwise generate values
@@ -27,7 +31,7 @@ class ApifyBaseClass {
         // const camelClassKey = caseUtils.set(clsKey, 'camel')
         const specClassKey = options.specClassKey
 
-        const model = new Model({
+        const model = new conform.Model({
             
             keys: (key, specObj) => {
 

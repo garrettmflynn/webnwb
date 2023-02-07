@@ -1,4 +1,4 @@
-import { ArbitraryObject } from "src/types/general.types";
+import { ArbitraryObject } from "../../types/general.types";
 
 
 let thrownError = false

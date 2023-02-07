@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,59 +17,48 @@
     <!-- Browser Import (remote) -->
     <!-- <script src="https://cdn.jsdelivr.net/npm/webnwb@latest"></script> -->
 </head>
+
 <body>
-    <!-- <visualscript-app>
-    <visualscript-dashboard> -->
+        <visualscript-main>
 
-    <visualscript-main>
-
-        <visualscript-tab name="Files">
-            <section>
-                <div id="options">
-                    <button id="file">Load File</button>
-                    <button id="get">Download</button>
-                    <button id="save">Save</button>
-        
-                    <br/><br/>
-                    <label>Stream Remote Files</label>
-                    <input id="streaming" type="checkbox" checked><br/><br/>
-        
-                    <hr/>
-        
-                    <!-- DANDI Stuff -->
-                    <h2 id="dandiHeader">DANDI</h2>
-                    <span><i id="dandiStatus">Loading dandisets...</i></span>
-                    <div id="dandiDiv" style="display:none;">
-                        <select id="dandi"></select>
-                        <select id="assets"></select>
-                        <button id="dandiButton">Get</button>
-                    </div>
-        
-                    <hr/>
-        
-                    <!-- NWB Explorer Replication -->
-                    <h2>Samples</h2>
-                    <select id="sampleSelect"></select>
-                    <button id="sampleButton">Get</button>
-            </div>
-
-                <!-- Visualization of Data -->
-                <div id="editorDiv">
-
+            <visualscript-tab name="Files">
+                <section>
+                    <div id="options">
+                        <button id="file">Load File</button>
+                        <button id="get">Download</button>
+                        <button id="save">Save</button>
+            
+                        <br/><br/>
+                        <label>Stream Remote Files</label>
+                        <input id="streaming" type="checkbox" checked><br/><br/>
+            
+                        <hr/>
+            
+                        <h2 id="dandiHeader">DANDI</h3>
+                        <span><i id="dandiStatus">Loading dandisets...</i></span>
+                        <div id="dandiDiv" style="display:none;">
+                            <select id="dandi"></select>
+                            <select id="assets"></select>
+                            <button id="dandiButton">Get</button>
+                        </div>
+            
+                        <hr/>
+            
+                        <h3>Samples</h3>
+                        <select id="sampleSelect"></select>
+                        <button id="sampleButton">Get</button>
                 </div>
-            </section>
-        </visualscript-tab>
-        <visualscript-tab name="Create">
-            <section id="create">
-                <button id="increment" class="disabled">Change Data</button>
-            </section>
-        </visualscript-tab>
-    </visualscript-main>
-<!-- </visualscript-dashboard>
-</visualscript-app> -->
+
+                    <div id="editorDiv"></div>
+                </section>
+            </visualscript-tab>
+            <visualscript-tab name="Create">
+                <section id="create">
+                    <button id="increment" class="disabled">Change Data</button>
+                </section>
+            </visualscript-tab>
+        </visualscript-main>
+    </section>
 </body>
-<script src="./demo/dist/index.js" type="module">
-
-
-</script>
+<script src="./demo/dist/index.js" type="module"></script>
 </html>

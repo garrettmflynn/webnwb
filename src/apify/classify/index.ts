@@ -4,10 +4,13 @@ import * as rename from "../utils/rename"
 import ApifyBaseClass, { ClassOptionsType } from "./base"
 import InheritanceTree from "./InheritanceTree"
 import { getPropertyName, setProperty } from "./utils"
-import { createQueueSymbol, hasNestedGroups } from "../utils/globals"
-import { isGroup as isGroupType } from '../../../../hdf5-io/src';
-import { newKeySymbol } from '../../../../esmodel/src'
+import { hasNestedGroups } from "../utils/globals"
+// import { isGroup as isGroupType } from '../../../../hdf5-io/src';
+import { isGroup as isGroupType } from 'hdf5-io/dist/index.esm';
 
+// import { newKeySymbol } from '../../../../esmodel/src'
+import * as conform from 'esconform/dist/index.esm'
+const newKeySymbol = conform.newKeySymbol
 
 type InheritanceType = {
   tree: InheritanceTree,
@@ -132,14 +135,16 @@ export default class Classify {
 
     const pass = base && valueToDrill[isGroupType] && !valueToDrill[hasNestedGroups] // Has a base and is a group (without internal groups)
 
-    if (pass) {
+    const info = this.info as OptionsType
 
-      let pascal = caseUtils.set(base, 'pascal')
+    if (pass && typeof base === 'string') {
 
-      let camel = caseUtils.set(rename.base(base, this.info.allCaps)) // ensure special all-caps strings are fully lowercase
+      let pascal = caseUtils.set(base, 'pascal') as string
+
+      let camel = caseUtils.set(rename.base(base, info.allCaps)) // ensure special all-caps strings are fully lowercase
 
       let aliasArray = ((aliases && !Array.isArray(aliases)) ? [aliases] : aliases) as string[]
-      aliasArray = aliasArray.map(name => caseUtils.set(name, 'pascal')) // All methods are pascal case
+      aliasArray = aliasArray.map(name => caseUtils.set(name, 'pascal') as string) // All methods are pascal case
       const pascalMethodNames = new Set(aliases)
       pascalMethodNames.add(pascal)
 
@@ -176,7 +181,7 @@ export default class Classify {
 
             const context = this
             setProperty.call(instance, createName, {
-              value: function create(o: any, classOptions: ClassOptionsType = context.info) {
+              value: function create(o: any, classOptions: ClassOptionsType = context.info as ClassOptionsType) {
 
 
                 const clsKey = classOptions.classKey as string
@@ -212,7 +217,7 @@ export default class Classify {
 
           } catch (e) {
 
-            console.warn(`[${this.info.name}]: Trying to redeclare a helper function for ${pascal}`, 'removing aliases: ' + aliases);
+            console.warn(`[${info.name}]: Trying to redeclare a helper function for ${pascal}`, 'removing aliases: ' + aliases);
 
             (aliases as string[]).forEach((alias: string) => {
               delete instance[alias]
@@ -240,7 +245,7 @@ export default class Classify {
 
           // update / remove class key
           if (path.length === 1) {
-            let newKey = caseUtils.set(key) // Updated key
+            let newKey = caseUtils.set(key) as string // Updated key
             if (newKey != key) {
               valueToDrill[newKey] = newVal // transfer
               delete valueToDrill[key] // delete
@@ -259,6 +264,8 @@ export default class Classify {
 
   get = (name: string, info: any = this.flat.info[name], inheritance = this.inheritance) => {
 
+    const options = this.info as OptionsType
+    
     // Create class if required
     if (!this.flat.classes[name]) {
       let cls = this.baseClass ?? ApifyBaseClass
@@ -269,7 +276,7 @@ export default class Classify {
         const info = inheritance.tree.tree[group][name]
         if (info) {
           if (info.inherits) cls = this.get(info.inherits, undefined, inheritance)
-        } else console.error(`[${this.info.name}]: Could not find inheritance information for ${name}`)
+        } else console.error(`[${options.name}]: Could not find inheritance information for ${name}`)
       }
 
       const generatedClassV2 = this.createClass(name, cls, info);
@@ -279,7 +286,7 @@ export default class Classify {
 
       // Map keys to attributes
       Object.keys(info).map((k: string) => {
-        const camel = caseUtils.set(rename.base(k, this.info.allCaps)) // ensure all keys (even classes) are camel case
+        const camel = caseUtils.set(rename.base(k, options.allCaps)) as string // ensure all keys (even classes) are camel case
         if (!attrMap[camel]) attrMap[camel] = new Set()
         attrMap[camel].add(name)
       })

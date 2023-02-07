@@ -1,4 +1,8 @@
-import * as visualscript from '../../../visualscript/src/index'
+// Visualscript
+// import * as visualscript from '../../../visualscript/src/index'
+import * as visualscript from 'visualscript/dist/index.esm'
+
+// Freerange
 import * as NWBCodec from '../../external/freerange/nwb/index'
 import * as freerange from '../../external/freerange/index.esm'
 
@@ -7,8 +11,7 @@ import * as utils from '../utils'
 import links from '../links'
 
 // import * as nwb from 'https://cdn.jsdelivr.net/npm/webnwb@latest/dist/index.esm.js'
-import NWBHDF5IO from 'src/io'
-import { getAssets, getDandisets, getInfo, getInfoURL, getJSON } from 'src/dandi'
+import { getAssets, getDandisets, getInfo, getInfoURL, getJSON } from '../../src/dandi'
 
 let file:string, name:string
 

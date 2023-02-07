@@ -7,16 +7,24 @@ import Classify from './classify';
 import InheritanceTree from './classify/InheritanceTree';
 import { isNativeClass } from './utils/classes';
 import { hasNestedGroups, isClassType } from './utils/globals';
+
+// import { 
+//   // objectify, 
+//   isGroup as isGroupType, 
+//   isDataset as isDatasetType 
+// } from '../../../hdf5-io/src';
+
 import { 
   // objectify, 
   isGroup as isGroupType, 
   isDataset as isDatasetType 
-} from '../../../hdf5-io/src';
-import { objectify } from '../../../esmodel/src/presets';
+ } from 'hdf5-io/dist/index.esm';
+
+// import { objectify } from '../../../esmodel/src/presets';
+import * as conform from 'esconform/dist/index.esm'
 
 type SpecificationType = { [x: OptionsType['coreName']]: ArbitraryObject } & ArbitraryObject
 
-let recognizeUndefinedError = false
 
 // Generate an API from included specification
 export default class API {
@@ -145,7 +153,7 @@ export default class API {
       // Dataset
       else {
         let value = o.value ?? o.default_value // Create a null object
-        const objectValue = value = objectify(name, value)
+        const objectValue = value = conform.presets.objectify(name, value)
         // if (objectValue) {
           Object.defineProperty(objectValue, isDatasetType, { value: true }) // Setting type on the dataset
         // } else if (recognizeUndefinedError === false) {

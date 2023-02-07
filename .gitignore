@@ -11,4 +11,7 @@ docs/dist
 **.lock
 **.log
 
-*-lock/.j
+*-lock
+
+# Jest
+coverage
