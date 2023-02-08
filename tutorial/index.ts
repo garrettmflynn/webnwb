@@ -15,21 +15,30 @@ import * as visualscript from "../node_modules/visualscript/dist/index.esm.js"
 
 const localEditorDiv = document.getElementById('localEditorDiv') as HTMLDivElement
 const dandiEditorDiv = document.getElementById('dandiEditorDiv') as HTMLDivElement
-const dandiEditor = new visualscript.ObjectEditor()
+const dandiEditor = new visualscript.ObjectEditor({ readOnly: true }) // TODO: Allow for a read-only option
 dandiEditorDiv.insertAdjacentElement('beforeend', dandiEditor)
 
 const getLocalFileButton = document.querySelector('button') as HTMLButtonElement
 getLocalFileButton.innerText = 'Get local file'
-const localEditor = new visualscript.ObjectEditor()
+const localEditor = new visualscript.ObjectEditor({ readOnly: true })
 localEditorDiv.insertAdjacentElement('beforeend', getLocalFileButton)
+
+const writeEditorDiv = document.getElementById('writeEditorDiv') as HTMLDivElement
+const writeEditor = new visualscript.ObjectEditor()
+writeEditorDiv.insertAdjacentElement('beforeend', writeEditor)
+
+let localFile: any;
+let dandiFile;
 
 getLocalFileButton.onclick = async () => {
     const io = new nwb.NWBHDF5IO()
-    const file = await io.read()
-    localEditor.set(file)
+    localFile = await io.read()
+    localEditor.set(localFile)
+    writeEditor.set(localFile)
     localEditorDiv.insertAdjacentElement('beforeend', localEditor)
     getLocalFileButton.remove()
 }
+
 
 const getDandiFile = async () => {
     const id = '000003'
@@ -39,9 +48,30 @@ const getDandiFile = async () => {
         // const gotDandiset = (await dandi.getAll()).find(o => o.identifier === id)// Get the first dandiset from the list of all dandisets
         const asset = await dandiset.getAsset('29ba1aaf-9091-469a-b331-6b8ab818b5a6')
         const io = new nwb.NWBHDF5IO()
-        const file = await io.fetch(asset.metadata.contentUrl[0], 'dandiTest.nwb', { useStreaming: true })
+        const start = Date.now()
+        dandiFile = await io.fetch(asset.metadata.contentUrl[0], 'dandiTest.nwb', { useStreaming: true })
+        const now = Date.now()
+        const timeToDownload = now - start
+
+        file.fileCreateDate = now
+        console.log(file.fileCreateDate) // [ 1622020000.0 ]
+
         // const url = 'https://api.dandiarchive.org/api/assets/29ba1aaf-9091-469a-b331-6b8ab818b5a6/download/'
-        dandiEditor.set(file)
+        dandiEditor.set(dandiFile)
+        
+        if (!localFile) writeEditor.set(dandiFile)
+
+        const styles = `
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 1;
+            font-size: 10px;
+            padding: 7px 10px;
+            color: white;
+        `
+
+        dandiEditorDiv.insertAdjacentHTML('beforebegin', `<span style="${styles}"><b>Time to stream:</b> ${(timeToDownload/1000).toFixed(2)}s</p>`)
     }
     
     else console.error(`No dandiset found with ID ${id}`)

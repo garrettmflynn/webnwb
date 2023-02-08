@@ -53,35 +53,48 @@ export default class NWBAPI extends API {
 
         // -------------- BigInt Support --------------
         if (constructor === BigInt) toReturn = Number(toReturn);
-        
-        // -------------- HDF5 Schema Support --------------
-          if (o.shape) {
-            // if (o.shape) {
-              if (typeof o.dtype === 'string') {
-                const arrayType = `${o.dtype[0].toUpperCase() + o.dtype.slice(1)}Array`
-                const typedArray = globalThis[arrayType]
-                if (typedArray) value = new typedArray(value)
+
+        const handleSingleValue = (value: any, expectedType?:string) => {
+
+          let toReturn = value
+          if (typeof expectedType === 'string') {
+              const typeOf = typeof value
+              if (expectedType === 'isodatetime' && (typeOf === 'string' || typeOf === 'number' || value instanceof Date)) toReturn = objectify(new Date(value).toISOString()) // Return as a object here
+              if (typeOf === 'string') {
+                if (expectedType === 'text') toReturn = objectify(value)
               }
-              
-              toReturn = (Array.isArray(value) || (value instanceof TypedArray) ? value : [value]) // Create an array object here (if required)
-            // }
-          } 
-          else if (typeof o.dtype === 'string') {
-            const typeOf = typeof value
-            if (o.dtype === 'isodatetime' && (typeOf === 'string' || typeOf === 'number' || value instanceof Date)) toReturn = objectify(new Date(value).toISOString()) // Return as a object here
-            if (typeOf === 'string') {
-              if (o.dtype === 'text') toReturn = objectify(value)
-            }
-            else if (typeOf === 'number') {
-              if (o.dtype === 'numeric' || o.dtype.includes('float') || o.dtype.includes('int')) toReturn = objectify(value)
-            }
-            // else console.error('Unknown dtype', o.dtype, o)
+              else if (typeOf === 'number') {
+                if (expectedType === 'numeric' || expectedType.includes('float') || expectedType.includes('int')) toReturn = objectify(value)
+              }
+            else console.error('Unknown dtype', expectedType, o)
             // else if (o.dtype === 'bool') return new Boolean(value)
             // else if (o.dtype === 'float') return new Number(value)
           }
 
-
           return toReturn
+        }
+        
+        // -------------- HDF5 Schema Support --------------
+          if (o.shape) {
+            // if (o.shape) {
+              let wasTypedArray = false
+
+              // Try making a specific type of array
+              if (typeof o.dtype === 'string') {
+                const arrayType = `${o.dtype[0].toUpperCase() + o.dtype.slice(1)}Array`
+                const typedArray = globalThis[arrayType]
+                wasTypedArray = !!typedArray
+                if (typedArray) value = new typedArray(value)
+              }
+              
+              toReturn = (Array.isArray(value) || (value instanceof TypedArray) ? value : [value]) // Create an array object here (if required)
+
+              // Otherwise map the values of the normal array
+              if (wasTypedArray) return toReturn
+              else return toReturn.map((v: any) => handleSingleValue(v, o.dtype)) // Map single values
+            // }
+          } 
+          else return handleSingleValue(value, o.dtype)
       },
 
       classKey: 'neurodata_type', // Key to use for the class name
