@@ -9,6 +9,8 @@ type AssetBase = {
     path: string
     size: number
     zarr: string | null // NOTE: Not sure if this type is correct
+
+    metadata: any
   }
   
 export class Asset {
@@ -20,16 +22,16 @@ export class Asset {
     path?: AssetBase['path']
     size?: AssetBase['size']
     zarr?: AssetBase['zarr']
+    metadata?: AssetBase['metadata'] // WE ASSUME THIS IS ALREADY HERE, THOUGH IT ISN'T WITH POINTERS
 
     #instance: InstanceType
     #dandiset: string
-    #info: any = {}
     
     constructor(dandiset: string, info: string | AssetBase, instance: InstanceType = 'main') {
-    if (info && typeof info === 'object' && !(info instanceof String)) this.#set(info)
-    else this.asset_id = info as string
-    this.#instance = instance
-    this.#dandiset = dandiset
+      if (info && typeof info === 'object' && !(info instanceof String)) this.#set(info)
+      else this.asset_id = info as string
+      this.#instance = instance
+      this.#dandiset = dandiset
     }
   
     #set = (o: any) => {
@@ -47,26 +49,15 @@ export class Asset {
       return asset
     }
   
-  
-    async getInfo(options?: Options) {
-      if (!this.#info) this.#info = await getAssetInfo(this.#dandiset, this.asset_id, {...options, instance: this.#instance})
-      return this.#info
-    }
-  
   }
 
 
 
 export const getAsset  = async (dandiset: string, id: string, options?: Options) => {
     const url = getInfoURL(dandiset, options)
-    const base = await getJSON(`${url}/${id}`)
+    // const altBase = await getJSON(`${url}/assets/${id}`) // Only metadata
+    const base = await getJSON(`${url}/assets/${id}/info`)
     return new Asset(dandiset, base, options?.instance)
-  }
-  
-  
-  export const getAssetInfo  = async (dandiset: string, id: string, options?: Options) => {
-    const url = getInfoURL(dandiset, options)
-    return await getJSON(`${url}/${id}/info`)
   }
 
   export default Asset

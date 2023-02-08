@@ -381,45 +381,36 @@ async function runFetch(useStreaming = fileStreamingCheckbox?.checked, testOther
 }
 
 
-let filesystem: any = null
-let nwbFile: any = null
-
 // 2. Allow User to Load their own NWB File
-input.onclick = async (ev) => {
+input.onclick = async () => parseFile(await io.upload())
 
-  filesystem = new freerange.System(undefined, {
-    debug: true,
-    ignore: ['DS_Store'],
-    codecs: { nwb: NWBCodec }
-  })
+// let filesystem: any = null
+// input.onclick = async () => {
+//   filesystem = new freerange.System(undefined, {
+//     debug: true,
+//     ignore: ['DS_Store'],
+//     codecs: { nwb: NWBCodec }
+//   })
 
-  // system.progress = globalProgressCallback
-  await filesystem.init()
-  // const f = await filesystem.open()
+//   // system.progress = globalProgressCallback
+//   await filesystem.init()
+//   // const f = await filesystem.open()
 
-  nwbFile = filesystem.files.types.nwb[0]
-  if (nwbFile){
-    name = nwbFile.name
-    const body = await nwbFile.body
-    console.log('GOT?', body)
-    console.log('File', nwbFile)
-    name = nwbFile.name
-
-    // io = new nwb.NWBHDF5IO(true)
-
-    // name = ev.target.files[0].name
-    // await io.upload(ev)
-    // let file = io.read(name)
-    // console.log('File', file)
-    parseFile(body)
-  } else console.error('No NWB files in this directory.')
-}
+//   nwbFile = filesystem.files.types.nwb[0]
+//   if (nwbFile){
+//     name = nwbFile.name
+//     const body = await nwbFile.body
+//     console.log('GOT?', body)
+//     console.log('File', nwbFile)
+//     name = nwbFile.name
+//     parseFile(body)
+//   } else console.error('No NWB files in this directory.')
+// }
 
 save.onclick = () => {
     io.save(name)
     // nwbFile.save() // restrict experimentation to one file
 }
-
 
 // 3. Allow User to Download an NWB File off the Browser
 get.onclick = async () => {

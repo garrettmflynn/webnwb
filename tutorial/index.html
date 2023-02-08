@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>WebNWB</title>
+        <link rel="stylesheet" href="./styles.css">
+        <link rel="stylesheet" href="./external/highlight/styles/github-dark.min.css">
+        <script src="./external/highlight/highlight.min.js"></script>
+        <script src="./dist/index.js" defer></script>
+        <script>hljs.highlightAll();</script>
+    </head>
+
+    <body>
+        <nav>
+            <div>
+                <h1>Getting Started with WebNWB</h1>
+                <small>Read and write NWB files on the browser.</small>
+            </div>
+            <div>
+                <a href="#read">Read</a>
+                <a href="#write">Write</a>
+            </div>
+        </nav>
+
+        <h2 id="read">Reading NWB Files</h2>
+        <section>
+            <p>NWB files can be read from several locations, including <b>local</b> files or <b>remote</b> URLs.</p>
+
+            <p>To read files, you'll need to create an <code>NWBHDF5IO</code> instance:</p>
+
+            <!-- A codeblock for creating an IO object -->
+            <pre>
+                <code>
+import nwb from 'webnwb'
+const io = new new nwb.NWBHDF5IO()
+                </code>
+            </pre>
+
+            <p>To access a file from the local filesystem, you can simply call the <code>read</code> command on a new <code>NWBHDF5IO</code> instance with no arguments:</p>
+
+            <!-- A codeblock for reading a file from the local file system -->
+            <pre>
+                <code>
+const file = await io.read()
+                </code>
+            </pre>
+
+            <p>It's best to create a new <code>NWBHDF5IO</code> instance for each file you're working with, though you can manage multiple files with a single instance.</p>
+
+            <div class="demo">
+                <div>
+                    <div id="localEditorDiv">
+                        <button>Select local file</button>
+                    </div>
+                </div>
+            </div>
+
+            <p>Files you'd like to load from a remote endpoint can be specified as the first argument to <code>read</code>, which will automatically be recognized as a URL. Many NWB files can be found on the Brain Initiative's <a href="https://dandiarchive.org">Distributed Archives for Neurophysiology Data Integration Archive (DANDI)</a> and loaded in this manner.</p>
+            <p>Yet since this is a huge file at 160.5GB, you'll want to provide the <code>useStreaming</code> option to avoid downloading the entire file into memory before interacting it!</p>
+
+            <!-- A codeblock for reading a file from a remote URL -->
+            <pre>
+                <code>
+const url = 'https://api.dandiarchive.org/api/assets/29ba1aaf-9091-469a-b331-6b8ab818b5a6/download/'
+const file = await io.read(url, { useStreaming: true })
+                </code>
+            </pre>
+            <div class="demo">
+                <div>
+                    <div id="dandiEditorDiv">
+                    </div>
+                </div>
+            </div>
+
+            <p>Instead of constructing the URL yourself, you may also use our provisional DANDI API to quickly get dandisets and assets based on their IDs:</p>
+            <pre>
+                    <code>
+import * as dandi from 'htts://jsdelivr.net/npm/dandi@0.0.3/dist/index.esm'
+const dandiset = await dandi.get('000003') // Request a dandiset by ID
+// const dandiset = (await dandi.getAll())[0] // Get the first dandiset from the list of all dandisets
+const asset = await dandiset.getAsset('29ba1aaf-9091-469a-b331-6b8ab818b5a6')
+// const asset = (await dandiset.getAssets())[0]
+const file = await io.read(asset.metadata.contentUrl[0], { useStreaming: true })
+                    </code>
+            </pre>
+        </section>
+
+        <h2 id="write">Acquiring Data on the Browser</h2>
+        <section>
+            <p>In this tutorial, we will show you how to store behavioral and electroencephalography (EEG) data in a NWB
+                file while users navigate a webpage.</p>
+
+            <h3>Creating an NWB File</h3>
+            <p>Create an NWBFile object with the required fields (session_description, identifier, session_start_time) and
+                additional metadata.</p>
+
+            <!-- A codeblock for declaring an NWB File -->
+            <pre>
+                    <code>
+import nwb from 'webnwb'
+const file = new nwb.NWBFile({
+    sessionDescription: 'EEG data and behavioral data recorded while navigating a webpage.',
+    identifier: 'WebNWB_Documentation_Session_' + Math.random().toString(36).substring(7),
+    sessionStartTime: Date.now(),
+    experimenter: 'Garrett Flynn',
+    institution: 'Brains@Play'
+})
+                    </code>
+                </pre>
+
+            <h3>Acquiring Behavioral Data</h3>
+            <p>SpatialSeries is a subclass of TimeSeries that represents data in space, such as the position of the user's
+                cursor over time.</p>
+
+            <p>In SpatialSeries data, the first dimension is always time (in seconds), the second dimension represents the
+                x, y position. SpatialSeries data should be stored as one continuous stream as it is acquired, not by trials
+                as is often reshaped for analysis.</p>
+
+            <p>We will use the <code>webtrack</code> library to track the user's cursor position in addition to other user
+                and page-driven events.</p>
+            <!-- A codeblock for listening to events using webtrack -->
+            <pre>
+                    <code>
+import * as webtrack from 'webtrack'
+const tracker = webtrack.Tracker()
+
+const spatialSeries = new nwb.SpatialSeries({
+    name: 'cursor',
+    description: 'The position (x, y) of the cursor over time.',
+    data: [
+        [],
+        []
+    ],
+    referenceFrame: '(0,0) is the top-left corner of the visible portion of the page.'
+})
+
+const startTime = Date.now()
+tracker.start((info) => {
+    if (info.type === 'pointermove'){
+        const { x, y, timestamp } = info
+        spatialSeries.data[0].push(x)
+        spatialSeries.data[1].push(y)
+
+        const secondsSincePageLoad = timestamp / 1000
+        spatialSeries.timestamps.push(secondsSincePageLoad)
+    }
+})
+                    </code>
+                </pre>
+
+            <div id="behaviorOutput">
+                <p><b>Latest Cursor Position:</b> <span id="cursorX">N/A</span>, <span id="cursorY">N/A</span> (<span
+                        id="cursorTime">N/A</span>s)</span></p>
+            </div>
+
+            <h3>Storing Behavioral Data to the NWB File</h3>
+            <p>To help data analysis and visualization tools know that this SpatialSeries object represents the position of
+                the user, store the SpatialSeries object inside a Position object, which can hold one or more SpatialSeries
+                objects.</p>
+            <pre>
+                    <code>
+const position = new nwb.Position()
+position.addSpatialSeries(spatialSeries)
+                    </code>
+                </pre>
+
+            <p>Create a processing module called "behavior" for storing behavioral data in the NWBFile, then add the
+                Position object to the processing module.</p>
+
+            <pre>
+                    <code>
+const behavior = new nwb.ProcessingModule({ description: 'Behavioral data recorded while navigating a webpage.' })
+behavior.addPosition('position', position)
+file.addProcessingModule('behavior', behavior)
+                    </code>
+                </pre>
+
+            <h3>Adding Behavioral Events</h3>
+            <p>Unlike user behaviors, page events should be stored as BehavioralEvents, which is used to store the timing
+                and amount of rewards (e.g. showing an emoji) related to a behavior (e.g. clicking the mouse).</p>
+
+                <p>Click to <button id="activateBehaviors">activate</button> behavioral rewards and related tracking. Now you can click the mouse and see an emoji!</p>
+            <pre>
+                    <code>
+// Create a TimeSeries object to track behavior events
+const data = []
+data.unit = 'ms'
+const timeseries = new nwb.TimeSeries({
+    description: 'The length of time the emoji was shown on the page.',
+    data: [],
+    timestamps: []
+})
+
+// Create the emoji to display on the UI
+const emoji = document.createElement('span')
+emoji.innerText = '😊'
+emoji.style.transform = 'translate(-50%, -50%)'
+emoji.style.position = 'fixed'
+emoji.style.display = 'none'
+emoji.style.fontSize = '100px'
+emoji.style.zIndex = '1000'
+emoji.style.userSelect = 'none'
+document.body.appendChild(emoji)
+
+// Track mouse clicks and show the emoji for a random amount of time (up to 1s)
+let active = false
+tracker.set('click', (info) => {
+
+    if (!active) {
+        emoji.style.display = 'block'
+        emoji.style.left = info.x + 'px'
+        emoji.style.top = info.y + 'px'
+        active = true
+
+        const msToShow = Math.random() * 1000
+        setTimeout(() => {
+            emoji.style.display = 'none'
+            active = false  
+        }, msToShow)
+
+        emoji.style.display = 'none'
+        timeseries.data.push(msToShow)
+        timeseries.timestamps.push(info.timestamp / 1000)
+    }
+}) 
+
+// Add these behavioral events to the NWB file
+const behavioralEvents = new nwb.BehavioralEvents()
+behavioralEvents.addTimeSeries('buttonPresses', timeseries)
+behavior.addDataInterface('behavioralEvents', behavioralEvents)
+                    </code>
+                </pre>
+
+            <h3>Download the NWB File</h3>
+            <p>All of the above commands build an NWBFile object in-memory. To download this file, create an NWBHDF5IO
+                object to write and download.</p>
+            <pre>
+                    <code>
+const filename = 'myFile.nwb'
+const io = new nwb.NWBHDF5IO()
+io.write(file, filename)
+io.save(filename) // Saves in browser storage
+io.download(filename) // Downloads to the user's computer
+                    </code>
+                </pre>
+        </section>
+    </body>
+</html> 

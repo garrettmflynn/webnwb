@@ -74,14 +74,16 @@ type DandisetVersionInfo = {
       return this.#info
     }
   
-    async getAsset(id: string) {
-        if (!this.#assets[id]) this.#assets[id] = await getAsset(this.identifier, id, {instance: this.#instance})
+    async getAsset(id: string, options: Options = {}) {
+        if (!this.#assets[id]) this.#assets[id] = await getAsset(this.identifier, id, {...options, instance: this.#instance})
         return this.#assets[id]
     }
   
     async getAssets(options: Options = {}) {
         if (!this.#gotAllAssets) {
         const assets = await getAssets(this.identifier, {...options, instance: this.#instance})
+        console.log('Got assets', assets)
+
         assets?.forEach((o: any) => this.#assets[o.asset_id] = o)
         this.#gotAllAssets = true
       }
@@ -100,7 +102,10 @@ export const getAssets = async (id: string, options?: Options) => {
     if (version) {
       const url = `${getAssetsUrl(id, {...options, version})}`
       const res = await getJSON(url)
-      return (await paginate(res)).map(o => new Asset(id, o, options?.instance))
+      return (await paginate(res)).map(pointer => {
+        console.log('Got asset pointer', pointer)
+        return getAsset(id, pointer.asset_id, options)
+      })
     }
   }
   

@@ -28,7 +28,7 @@
   "dependencies": {
     "esconform": "0.0.2",
     "h5wasm": "^0.4.9",
-    "hdf5-io": "0.0.7",
+    "hdf5-io": "0.0.8",
     "jest-transform-yaml": "^1.0.0",
     "yaml": "^2.1.1"
   },
