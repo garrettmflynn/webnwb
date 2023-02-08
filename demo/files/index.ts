@@ -11,10 +11,9 @@ import * as utils from '../utils'
 import links from '../links'
 
 // import * as nwb from 'https://cdn.jsdelivr.net/npm/webnwb@latest/dist/index.esm.js'
-import { getAssets, getDandisets, getInfo, getInfoURL, getJSON } from '../../src/dandi'
+import * as dandi from '../../packages/dandi/src/index'
 
 let file:string, name:string
-
 
 function formatBytes(bytes: number, decimals: number = 2) {
   if(bytes == 0) return '0 Bytes';
@@ -173,7 +172,7 @@ async function onRender(key: string, target: any, history: {key: string, value: 
 
 }
 
-const dandi = document.getElementById('dandi') as HTMLSelectElement
+const dandisetSelect = document.getElementById('dandi') as HTMLSelectElement
 const assetSelect = document.getElementById('assets') as HTMLSelectElement
 const fromDANDI = document.getElementById('dandiButton') as HTMLSelectElement
 const sampleButton = document.getElementById('sampleButton') as HTMLSelectElement
@@ -197,14 +196,14 @@ const instance = (fromStaging ? 'staging' : 'main') as 'staging' | 'main'
 const versionOptions =  { instance }
 
 const setAssetOptions = async () => {
-  dandiStatus.innerHTML = `Loading assets for ${ dandi.options[dandi.selectedIndex].innerHTML as string}...`
-  const assets = await getAssets(dandi.value, versionOptions)
-  console.log(`Got all assets for ${dandi.value}`, assets)
+  dandiStatus.innerHTML = `Loading assets for ${ dandisetSelect.options[dandisetSelect.selectedIndex].innerHTML as string}...`
+  const assets = await dandi.getAssets(dandisetSelect.value, versionOptions)
+  console.log(`Got all assets for ${dandisetSelect.value}`, assets)
   Array.from(assetSelect.children).forEach(o => o.remove()) // Remove all children
-  const url = `${getInfoURL(dandi.value, versionOptions)}/assets`
+  const url = `${dandi.getAssetsUrl(dandisetSelect.value, versionOptions)}`
   if (assets) {
    const options = await Promise.all(assets.map(async (o: any) => {
-      const assetInfo = await getJSON(`${url}/${o.asset_id}/info`)
+      const assetInfo = await dandi.utils.getJSON(`${url}/${o.asset_id}/info`)
       const option = document.createElement('option')
       option.value = assetInfo.metadata.contentUrl[0]
       option.innerHTML = `${assetInfo.path} (${formatBytes(assetInfo.size, 2)})`
@@ -220,13 +219,13 @@ const setAssetOptions = async () => {
 
 fromDANDI.onclick = loadAsset
 
-dandi.onchange = async () =>{
+dandisetSelect.onchange = async () =>{
   dandiDiv.style.display = "none"
   dandiStatus.style.display = "block"
   setAssetOptions()
 }
 
-getDandisets(instance).then(async dandisets => {
+dandi.getAll(instance).then(async dandisets => {
 
   // Filter drafts
   dandisets = dandisets.filter(o => o.draft_version.status === 'Valid')
@@ -234,7 +233,7 @@ getDandisets(instance).then(async dandisets => {
   // Display dandisets
   console.log('Got all dandisets', dandisets)
   const options = await Promise.all(dandisets.map(async (o) => {
-    const res = getSummary(await getInfo(o.identifier, versionOptions))
+    const res = getSummary(await o.getInfo(versionOptions))
     const option = document.createElement('option')
     option.value = res.id
     collection[res.id] = o
@@ -242,7 +241,7 @@ getDandisets(instance).then(async dandisets => {
     return option
   }))
 
-  options.forEach(el => dandi.insertAdjacentElement('beforeend', el))
+  options.forEach(el => dandisetSelect.insertAdjacentElement('beforeend', el))
 
 
   setAssetOptions()
@@ -403,7 +402,7 @@ input.onclick = async (ev) => {
     name = nwbFile.name
     const body = await nwbFile.body
     console.log('GOT?', body)
-    console.log('File', body)
+    console.log('File', nwbFile)
     name = nwbFile.name
 
     // io = new nwb.NWBHDF5IO(true)

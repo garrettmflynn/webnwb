@@ -1,4 +1,4 @@
-import ApifyBaseClass, { ClassOptionsType } from "./apify/classify/base";
+import ApifyBaseClass, { ClassOptionsType } from "../packages/apify/classify/base";
 
 export default class NWBBaseClass extends ApifyBaseClass {
 

@@ -1,6 +1,6 @@
 import { ArbitraryObject } from './types/general.types';
 import schemas from './schema'
-import API from './apify';
+import API from '../packages/apify';
 import NWBBaseClass from './base';
 // import { objectify } from '../../hdf5-io/src';
 import { objectify } from 'hdf5-io/dist/index.esm';

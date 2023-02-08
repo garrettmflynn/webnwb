@@ -19,45 +19,34 @@
 </head>
 
 <body>
-        <visualscript-main>
+    <section>
+        <div id="options">
+            <button id="file">Load File</button>
+            <button id="get">Download</button>
+            <button id="save">Save</button>
 
-            <visualscript-tab name="Files">
-                <section>
-                    <div id="options">
-                        <button id="file">Load File</button>
-                        <button id="get">Download</button>
-                        <button id="save">Save</button>
-            
-                        <br/><br/>
-                        <label>Stream Remote Files</label>
-                        <input id="streaming" type="checkbox" checked><br/><br/>
-            
-                        <hr/>
-            
-                        <h2 id="dandiHeader">DANDI</h3>
-                        <span><i id="dandiStatus">Loading dandisets...</i></span>
-                        <div id="dandiDiv" style="display:none;">
-                            <select id="dandi"></select>
-                            <select id="assets"></select>
-                            <button id="dandiButton">Get</button>
-                        </div>
-            
-                        <hr/>
-            
-                        <h3>Samples</h3>
-                        <select id="sampleSelect"></select>
-                        <button id="sampleButton">Get</button>
-                </div>
+            <br/><br/>
+            <label>Stream Remote Files</label>
+            <input id="streaming" type="checkbox" checked><br/><br/>
 
-                    <div id="editorDiv"></div>
-                </section>
-            </visualscript-tab>
-            <visualscript-tab name="Create">
-                <section id="create">
-                    <button id="increment" class="disabled">Change Data</button>
-                </section>
-            </visualscript-tab>
-        </visualscript-main>
+            <hr/>
+
+            <h2 id="dandiHeader">DANDI</h3>
+            <span><i id="dandiStatus">Loading dandisets...</i></span>
+            <div id="dandiDiv" style="display:none;">
+                <select id="dandi"></select>
+                <select id="assets"></select>
+                <button id="dandiButton">Get</button>
+            </div>
+
+            <hr/>
+
+            <h3>Samples</h3>
+            <select id="sampleSelect"></select>
+            <button id="sampleButton">Get</button>
+    </div>
+
+        <div id="editorDiv"></div>
     </section>
 </body>
 <script src="./demo/dist/index.js" type="module"></script>

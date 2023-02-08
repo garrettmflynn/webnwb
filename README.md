@@ -6,13 +6,16 @@ Neurodata without Borders — directly on the browser.
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Discord](https://img.shields.io/badge/community-discord-7289da.svg?sanitize=true)](https://discord.gg/CDxskSh9ZB)
 
-
-`webnwb` is a library for reading and writing Neurodata without Borders (NWB) files on the web. It uses [h5wasm] to parse HDF5 files.
+`webnwb` is a library for reading and writing Neurodata without Borders (NWB) files on the web. Visit [nwb.brainsatplay.com] for al
 
 ## Features
 - 🔬 Read data from NWB files based on the included specification.
-- ⚒️ Use helper functions like `addAcquisition`, `getAcquisition`, and `createAcquisition` to quickly interact with data.
-- ⚡ Lazy-load large files (e.g. from the NIH Brain Initiative’s [Distributed Archives for Neurophysiology Data Integration (DANDI)](https://gui.dandiarchive.org/#/)).
+- ⚡ Lazy-load large files (e.g. from the NIH Brain Initiative’s [Distributed Archives for Neurophysiology Data Integration (DANDI)](https://gui.
+dandiarchive.org/#/)).
+- 📦 Create NWB files from scratch.
+- ⚒️ Use helper functions like `addAcquisition`, `getAcquisition`, and `createAcquisition` to quickly write data to new and existing NWB files.
+
+> **Note:** While the read access API is stable, the write access API is still in development and not well-documented. Please see the [Contributing](#contributing) section for more information.
 
 ## Getting Started
 ### File Creation Mode
@@ -97,7 +100,7 @@ Anyone who would like to contribute to the acceptance of `webnwb` as an official
 1. Demonstrate in the documentation with [tutorials](https://pynwb.readthedocs.io/en/latest/tutorials/general/scratch.html#raw-data) and a viewer like [Vizarr](https://github.com/hms-dbmi/vizarr)
 
 ## Derivative Packages
-- [hdf5-io](https://github.com/garrettmflynn/hdf5-io): Load HDF5 files as JavaScript objects
+- [hdf5-io](https://github.com/garrettmflynn/hdf5-io): Load HDF5 files as JavaScript objects using [h5wasm].
 - [apify](./src/apify/index.ts): A way to generate APIs from simple specification languages (e.g. the NWB Schema)
     - [esconform]((https://github.com/garrettmflynn/esconform): A generic library for enforcing schema properties
 - [dandi](./src/dandi/index.ts): A basic API for making calls to the DANDI REST API.
