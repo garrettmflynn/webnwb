@@ -6,6 +6,9 @@
     "start": "tinybuild"
   },
   "dependencies": {
+    "esconform": "^0.0.3",
+    "h5wasm": "^0.4.9",
+    "hdf5-io": "^0.0.9",
     "yaml": "^2.2.1"
   }
 }

@@ -12,6 +12,7 @@ import links from '../links'
 
 // import * as nwb from 'https://cdn.jsdelivr.net/npm/webnwb@latest/dist/index.esm.js'
 import * as dandi from '../../packages/dandi/src/index'
+import { Asset } from '../../packages/dandi/src/index'
 
 let file:string, name:string
 
@@ -50,7 +51,7 @@ async function onRender(key: string, target: any, history: {key: string, value: 
   let dataValue
 
   // Show Images
-  const externalFile = await target?.externalFile
+  const externalFile = await target?.external_file
   if (externalFile) {
 
     const div = document.createElement('div')
@@ -198,12 +199,11 @@ const versionOptions =  { instance }
 const setAssetOptions = async () => {
   dandiStatus.innerHTML = `Loading assets for ${ dandisetSelect.options[dandisetSelect.selectedIndex].innerHTML as string}...`
   const assets = await dandi.getAssets(dandisetSelect.value, versionOptions)
-  console.log(`Got all assets for ${dandisetSelect.value}`, assets)
+  // console.log(`Got all assets for ${dandisetSelect.value}`, assets)
   Array.from(assetSelect.children).forEach(o => o.remove()) // Remove all children
-  const url = `${dandi.getAssetsUrl(dandisetSelect.value, versionOptions)}`
   if (assets) {
-   const options = await Promise.all(assets.map(async (o: any) => {
-      const assetInfo = await dandi.utils.getJSON(`${url}/${o.asset_id}/info`)
+   const options = await Promise.all(assets.map(async (o: Asset) => {
+      const assetInfo = await o.get()
       const option = document.createElement('option')
       option.value = assetInfo.metadata.contentUrl[0]
       option.innerHTML = `${assetInfo.path} (${formatBytes(assetInfo.size, 2)})`
@@ -231,7 +231,7 @@ dandi.getAll(instance).then(async dandisets => {
   dandisets = dandisets.filter(o => o.draft_version.status === 'Valid')
 
   // Display dandisets
-  console.log('Got all dandisets', dandisets)
+  // console.log('Got all dandisets', dandisets)
   const options = await Promise.all(dandisets.map(async (o) => {
     const res = getSummary(await o.getInfo(versionOptions))
     const option = document.createElement('option')

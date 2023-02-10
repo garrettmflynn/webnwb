@@ -3,7 +3,7 @@ import schemas from './schema'
 import API from '../packages/apify';
 import NWBBaseClass from './base';
 // import { objectify } from '../../hdf5-io/src';
-import { objectify } from 'hdf5-io/dist/index.esm';
+import { objectify } from 'hdf5-io';
 
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 type SpecificationType = { 'core': ArbitraryObject } & ArbitraryObject
@@ -29,12 +29,15 @@ export default class NWBAPI extends API {
     super(specification, {
       debug, // Show Debug Messages
       name: 'webnwb', // Name of the API
-      methodName: ['neurodata_type_def',  'data_type_def', 'name', 'default_name' ],
-      allCaps: ['NWB'], // Ensure these strings are always capitalized
+
+      propertyName: ['neurodata_type_def',  'data_type_def', 'name', 'default_name' ],
+      inheritsFrom: ['neurodata_type_inc', 'data_type_inc'],
+
       coreName: 'core', // Name of the core schema
-      namespacesToFlatten: ['nwb.base', 'nwb.file'], // Namespaces to flatten into the base of the API
+      namespacesToFlatten: ['base', 'file'], // Namespaces to flatten into the base of the API
+
       getNamespaceKey, // Get the key for the namespace
-      getNamespaceLabel: (str: string) => getNamespaceKey(str.replace('.nwb', '')), // Get the key for the namespace
+      getNamespaceLabel: (str: string) => getNamespaceKey(str.replace('nwb.', '')), // Get the key for the namespace
 
       baseClass: NWBBaseClass, // Base Class to use for all classes
 
@@ -54,19 +57,26 @@ export default class NWBAPI extends API {
         // -------------- BigInt Support --------------
         if (constructor === BigInt) toReturn = Number(toReturn);
 
+
         const handleSingleValue = (value: any, expectedType?:string) => {
 
           let toReturn = value
           if (typeof expectedType === 'string') {
+
+            const onMismatch = () => console.error(`Mismatched types for ${key as string}: ${expectedType} is expected but ${typeOf} was provided`, value, o)
+
               const typeOf = typeof value
               if (expectedType === 'isodatetime' && (typeOf === 'string' || typeOf === 'number' || value instanceof Date)) toReturn = objectify(new Date(value).toISOString()) // Return as a object here
-              if (typeOf === 'string') {
-                if (expectedType === 'text') toReturn = objectify(value)
+              else if (expectedType === 'text') {
+                if (typeOf === 'string') toReturn = objectify(value)
+                else if (!(value instanceof String)) onMismatch()
               }
-              else if (typeOf === 'number') {
-                if (expectedType === 'numeric' || expectedType.includes('float') || expectedType.includes('int')) toReturn = objectify(value)
+              else if (expectedType === 'numeric' || expectedType.includes('float') || expectedType.includes('int')) {
+                if (typeOf === 'number') toReturn = objectify(value)
+                else if (typeOf === 'bigint') toReturn = objectify(Number(value))
+                else if (!(value instanceof Number)) onMismatch()
               }
-            else console.error('Unknown dtype', expectedType, o)
+            else console.error('Unconverted dtype', expectedType, value, typeOf, o)
             // else if (o.dtype === 'bool') return new Boolean(value)
             // else if (o.dtype === 'float') return new Number(value)
           }
@@ -101,16 +111,9 @@ export default class NWBAPI extends API {
       specClassKey: 'neurodata_type_def',
 
       // Override properties of a generated class instance
-      overrides: {
+      aliases: {
 
-        nwbDataInterface: 'dataInterface', // NOTE: Why is this in camel case?
-
-        NWBFile: {
-          Processing: 'ProcessingModule'
-          // addProcessing: 'addProcessingModule',
-          // createProcessing: 'createProcessingModule',
-          // getProcessing: 'getProcessingModule',
-        },
+        NWBDataInterface: 'DataInterface', // NOTE: Why is this in camel case?
       },
 
       // In pascal case
@@ -131,7 +134,7 @@ export default class NWBAPI extends API {
     const core = this._specification.core
     const version = Object.keys(core)[0]
 
-    const fileConfig = core[version]['nwb.file'].NWBFile
+    const fileConfig = core[version].file.NWBFile
     fileConfig.specifications = specification // Add specification to the file
 
 

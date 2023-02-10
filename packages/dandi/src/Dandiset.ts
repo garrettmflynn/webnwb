@@ -102,10 +102,7 @@ export const getAssets = async (id: string, options?: Options) => {
     if (version) {
       const url = `${getAssetsUrl(id, {...options, version})}`
       const res = await getJSON(url)
-      return (await paginate(res)).map(pointer => {
-        console.log('Got asset pointer', pointer)
-        return getAsset(id, pointer.asset_id, options)
-      })
+      return await Promise.all((await paginate(res)).map(async pointer => getAsset(id, pointer.asset_id, options)))
     }
   }
   

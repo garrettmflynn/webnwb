@@ -9,12 +9,13 @@ export type OptionsType = {
     debug?: boolean,
     name: string,
     coreName: string,
-    methodName: string[],
-    allCaps: string[],
     namespacesToFlatten: string[],
-    
     getNamespaceKey: (str: string) => string,
     getNamespaceLabel: (str: string) => string,
+
+
+    propertyName: string[],
+    inheritsFrom: string[],
 
     singularName: {[x:string]: string}
 
@@ -24,7 +25,7 @@ export type OptionsType = {
     baseClass?: ApifyBaseClass // Add functionality to the base class
 
     // Override properties on a generated class instance
-    overrides: {
+    aliases: {
       [x: string]: NamespaceOverride | OverrideType
     },
     getValue: (key: string | symbol | number, value: any, o: any) => any

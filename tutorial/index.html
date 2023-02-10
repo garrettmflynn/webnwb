@@ -38,7 +38,7 @@
             <pre>
                 <code>
 import nwb from 'webnwb'
-const io = new new nwb.NWBHDF5IO()
+const io = new nwb.NWBHDF5IO()
                 </code>
             </pre>
 
@@ -108,7 +108,7 @@ file.description = 'This is my new description'
             <pre>
                 <code>
 file.fileCreateDate = Date.now() 
-console.log(file.fileCreateDate) // Will look like: [ String('2023-02-08T22:09:34.901Z') ]
+console.log(file.file_create_date) // Will look like: [ String('2023-02-08T22:09:34.901Z') ]
                 </code>
             </pre>
 
@@ -124,7 +124,7 @@ console.log(file.fileCreateDate) // Will look like: [ String('2023-02-08T22:09:3
             <p>While all of your changes have been registered in memory, we still have to save them to local browser storage.</p>
             <pre>
                 <code>
-io.write(file, filename) // NOTE: We don't have the filename here...
+io.write(file)
                 </code>
             </pre>
 
@@ -132,9 +132,17 @@ io.write(file, filename) // NOTE: We don't have the filename here...
             <p>Finally, if you'd like to have download the file, simply use the <code>download</code> function to start the download.</p>
             <pre>
                     <code>
-io.download(filename) // Downloads to the user's computer
+io.download(filename)
                     </code>
                 </pre>
+
+                <div class="demo">
+                    <div>
+                        <div>
+                            <button id="download">Download file</button>
+                        </div>
+                    </div>
+                </div>
         </section>
             
         <h2 id="acquire">Tutorial #3: Acquiring Data on the Browser</h2>
@@ -151,9 +159,9 @@ io.download(filename) // Downloads to the user's computer
                     <code>
 import nwb from 'webnwb'
 const file = new nwb.NWBFile({
-    sessionDescription: 'EEG data and behavioral data recorded while navigating a webpage.',
+    session_description: 'EEG data and behavioral data recorded while navigating a webpage.',
     identifier: 'WebNWB_Documentation_Session_' + Math.random().toString(36).substring(7),
-    sessionStartTime: Date.now(),
+    session_start_time: Date.now(),
     experimenter: 'Garrett Flynn',
     institution: 'Brains@Play'
 })
@@ -183,7 +191,7 @@ const spatialSeries = new nwb.SpatialSeries({
         [],
         []
     ],
-    referenceFrame: '(0,0) is the top-left corner of the visible portion of the page.'
+    reference_frame: '(0,0) is the top-left corner of the visible portion of the page.'
 })
 
 const startTime = Date.now()
@@ -293,6 +301,15 @@ io.write(file, filename)
 io.download(filename)
                     </code>
                 </pre>
+
+
+                <div class="demo">
+                    <div>
+                        <div>
+                            <button id="downloadAcquisition">Download file</button>
+                        </div>
+                    </div>
+                </div>
         </section>
     </body>
 </html> 

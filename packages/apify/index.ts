@@ -1,13 +1,10 @@
 import { ArbitraryObject, AttributeType, GroupType, LinkType, DatasetType } from '../../src/types/general.types';
-import * as caseUtils from '../../src/utils/case'
 import { OptionsType } from './types';
-import * as test from "./utils/test"
-import * as rename from "./utils/rename"
 import Classify from './classify';
 import InheritanceTree from './classify/InheritanceTree';
-import { isNativeClass } from './utils/classes';
-import { hasNestedGroups, isClassType } from './utils/globals';
+import { hasNestedGroups, childrenTypes } from './utils/globals';
 
+// HDF5-IO
 // import { 
 //   // objectify, 
 //   isGroup as isGroupType, 
@@ -18,10 +15,11 @@ import {
   // objectify, 
   isGroup as isGroupType, 
   isDataset as isDatasetType 
- } from 'hdf5-io/dist/index.esm';
+ } from 'hdf5-io';
 
-// import { objectify } from '../../../esmodel/src/presets';
-import * as conform from 'esconform/dist/index.esm'
+// ESConform
+// import * as conform from '../../../esmodel/src/index';
+import * as conform from 'esconform'
 
 type SpecificationType = { [x: OptionsType['coreName']]: ArbitraryObject } & ArbitraryObject
 
@@ -49,9 +47,8 @@ export default class API {
     // copy options
     this._options = options as OptionsType
     if (!this._options.name) this._options.name = 'apify'
-    if (!this._options.allCaps) this._options.allCaps = []
     if (!this._options.namespacesToFlatten) this._options.namespacesToFlatten = []
-    if (!this._options.overrides) this._options.overrides = {}
+    if (!this._options.aliases) this._options.aliases = {}
 
     if (typeof this._options.getValue !== 'function') this._options.getValue = () => undefined // triggert default
 
@@ -97,28 +94,19 @@ export default class API {
     } else return (objectShape) ? this.getMatchingClass(objectShape) : null
   }
 
-  getMatchingClass = (input: any) => this.get(this._classify.match(input)) 
-
-  _getType = (o: any) => o.neurodata_type_inc ?? o.data_type_inc 
+  getMatchingClass = (input: any, choices?: string[]) => this.get(this._classify.match(input, choices)) 
 
   _setFromObject = (o: any, aggregator: ArbitraryObject = {}, type?: string, path: string[] = []) => {
 
     const isGroup = type === 'group'
 
-    let name = this._options.methodName.reduce((acc:any, str:string) => acc = (!acc) ? o[str] : acc, null)    
-    if (!name) name = this._getType(o) // NAME FOR GROUP (???): name can be specified as a single string for the inheritance value (allows inheritance on top-level classes with groups)
-    let isClass = (name) ? test.isClass(name) : true
+    const getInheritance = (o: any) => this._options.inheritsFrom.reduce((acc:any, str:string) => acc = (!acc) ? o[str] : acc, null) // Get inherited type
 
-    // check groups one level down
-    let inherit = {
-      type,
-      value: this._getType(o) ?? ((o.groups) ? o.groups.map((g: any) => this._getType(g)).filter((v:any) => !!v) : null)
-    }
-
-    // Use camelcase for non-classes
-    if (!isClass) {
-      const camelCase = caseUtils.set(rename.base(name, this._options.allCaps))
-      name = camelCase
+    let name = this._options.propertyName.reduce((acc:any, str:string) => acc = (!acc) ? o[str] : acc, null)    
+    if (!name) {
+      const name = getInheritance(o) // Class that children can inherit from
+      if (!aggregator[childrenTypes]) Object.defineProperty(aggregator, childrenTypes, { value: new Set() })
+      aggregator[childrenTypes].add(name)
     }
 
 
@@ -126,29 +114,20 @@ export default class API {
 
     if (name) {
 
-      // Class
-      if (typeof aggregator[name] === 'function') {
-        const isClass = isNativeClass(aggregator[name])
-        if (isClass) aggregator[name].prototype[name] = inherit
+      // check groups one level down
+      let gotType = getInheritance(o)
+
+      let inherit = {
+        type,
+        value: gotType
       }
 
-              
-      // Is a class on a group
-      else if (isClass && aggregator[isGroupType]) {
-        delete aggregator[name] // Delete classes on group level
-      }
-      
       // Group
-      else if (isGroup) {
+      if (isGroup) {
         const value = aggregator[name] = {} as any// Set aggregator value
-        if (!isClass) {
           Object.defineProperty(value, isGroupType, { value: true })
           if (aggregator[isGroupType] && !aggregator[hasNestedGroups]) Object.defineProperty(aggregator, hasNestedGroups, { value: true })
-        }
       }      
-
-      // Nested classes
-      else if (isClass) aggregator[name] = {}
       
       // Dataset
       else {
@@ -161,15 +140,13 @@ export default class API {
         //   recognizeUndefinedError = true
         // }
 
-        Object.defineProperty(aggregator, name, {value: objectValue, enumerable: true})
+        Object.defineProperty(aggregator, name, {value: objectValue, enumerable: true, configurable: true})
 
       } 
 
-      const value = aggregator?.[name]
-      if (isClass && value) Object.defineProperty(value, isClassType, { value: true }) // Distinguish classes
 
       // Add to inheritance tree
-      if (inherit.value && inherit.type) this._inheritanceTree.add(inherit.value, name, isClass ? 'classes' : 'groups')
+      if (inherit.value && inherit.type) this._inheritanceTree.add(inherit.value, name, 'classes')
 
     }
 
@@ -184,7 +161,8 @@ export default class API {
           else if (key === 'groups') o.groups.forEach((group: GroupType) => set(group, 'group'))
           else if (key === 'links') o.links.forEach((link: LinkType) => set(link, 'link'))
           else if (key === 'datasets') o.datasets.forEach((dataset: DatasetType) => set(dataset, 'dataset'))
-          if (aggregated) Object.defineProperty(aggregated, key, { value: o[key] })
+          if (name) Object.defineProperty(aggregated, key, { value: o[key] }) // NOTE: This change will limit assignments TO AVOID MULTIPLE DECLARATIONS
+          // if (aggregated) Object.defineProperty(aggregated, key, { value: o[key] })
 
       })
 

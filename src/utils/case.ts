@@ -1,5 +1,6 @@
+// HDF5-IO
 // import { isGroup as isGroupType } from '../../../hdf5-io/src';
-import { isGroup as isGroupType } from 'hdf5-io/dist/index.esm';
+import { isGroup as isGroupType } from 'hdf5-io';
 
 import * as array from "./array"
 

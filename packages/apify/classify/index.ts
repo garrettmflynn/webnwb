@@ -1,15 +1,19 @@
 import * as caseUtils from '../../../src/utils/case'
 import { InfoType, OptionsType } from "../types"
-import * as rename from "../utils/rename"
+// import * as rename from "../utils/rename"
 import ApifyBaseClass, { ClassOptionsType } from "./base"
 import InheritanceTree from "./InheritanceTree"
-import { getPropertyName, setProperty } from "./utils"
-import { hasNestedGroups } from "../utils/globals"
-// import { isGroup as isGroupType } from '../../../../hdf5-io/src';
-import { isGroup as isGroupType } from 'hdf5-io/dist/index.esm';
+import { getPropertyName } from "./utils"
+import { childrenTypes, hasNestedGroups } from "../utils/globals"
 
-// import { newKeySymbol } from '../../../../esmodel/src'
-import * as conform from 'esconform/dist/index.esm'
+// HDF5-IO
+// import { isGroup as isGroupType } from '../../../../hdf5-io/src';
+import { isGroup as isGroupType } from 'hdf5-io';
+import { ArbitraryObject } from 'src/types/general.types'
+
+// ESConform
+// import * as conform from '../../../../esmodel/src/index'
+import * as conform from 'esconform'
 const newKeySymbol = conform.newKeySymbol
 
 type InheritanceType = {
@@ -61,152 +65,97 @@ export default class Classify {
 
           super(info, Object.assign(copy, classOptions), specs)
 
-        // // Map the specification to the class
-        // if (specInfo) {
-        //   const keys = Object.keys(specInfo)
-
-        //   keys.map((k: string) => {
-        //     let specVal = specInfo[k]
-
-        //     const camel = caseUtils.set(rename.base(k, context.info.allCaps)) // force camel case
-        //     let finalKey = camel
-  
-        //     // Allow users to override the specification key / value
-        //     let override = context.info.overrides[name]?.[camel] ?? context.info.overrides[camel] // global override
-  
-        //     if (override) {
-        //       const typeOf = typeof override
-        //       if (typeOf === 'function') specVal = () => override(specInfo)
-        //       else if (typeOf === 'string') {
-        //         finalKey = override
-        //         specInfo[finalKey] = specInfo[k]
-        //         delete specInfo[k]
-        //       }
-        //     }
-            
-        //     const newKey = !(finalKey in this)
-        //     if (newKey) this[finalKey] = specVal  // If a new key, add the specification value
-        //     // reactToProperties.call(this, finalKey, specInfo, specVal)
-        //   })
-  
-  
-        //   // Apply the entire specification
-        //   drill(specInfo, (
-        //     o: any, 
-        //     path: string[], 
-        //     // specParent: any
-        //   ) => {
-  
-        //     let parent = this
-        //     const pathCopy = [...path]
-        //     const key = pathCopy.pop()
-        //     pathCopy.forEach(key => parent = parent?.[key])
-        //     const target = key ? parent?.[key] : undefined
-
-        //     if (key && target) {
-
-        //       // // react to internal group property changes
-        //       // reactToProperties.call(parent, key, specParent)
-
-        //       // proxy internal groups
-        //       if (o[isGroupType] && path.length > 1) {
-        //         if (!(key in this)) {
-        //           Object.defineProperty(this, key, {
-        //             get: () => parent[key],
-        //             set: (val: any) => parent[key] = val,
-        //             enumerable: false, // Do not enumerate these proxies
-        //             configurable: false
-        //           })
-        //         } else console.error(`${name} already has key ${key}`)
-        //       }
-        //     }
-        //   })
-        // } else console.error(`class ${name} does not have any info`);
-  
-        // Apply helpers to the entire class object
-        context.applyHelpers(this, undefined, specInfo, [name]) 
+          context.applyHelpers(this, undefined, specInfo, [name], specInfo[childrenTypes] ?? undefined)   // Apply helpers to the entire class object
         }
       }
     })[name];
   }
 
-  applyHelpers = (instance: any, base?: string, valueToDrill?: any, path: string[] = [], aliases: string | string[] = []) => {
+  applyHelpers = (instance: any, base?: string, valueToDrill?: any, path: string[] = [], typeAliases: Set<string> = valueToDrill?.[childrenTypes] ?? new Set()) => {
 
 
-    const pass = base && valueToDrill[isGroupType] && !valueToDrill[hasNestedGroups] // Has a base and is a group (without internal groups)
+    const pass = valueToDrill[isGroupType] && !valueToDrill[hasNestedGroups] // Has a base and is a group (without internal groups)
 
     const info = this.info as OptionsType
 
-    if (pass && typeof base === 'string') {
+    if (pass) {
 
-      let pascal = caseUtils.set(base, 'pascal') as string
+      const names = Array.from(typeAliases)
+      if (base) names.push(caseUtils.set(base, 'pascal') as string)
 
-      let camel = caseUtils.set(rename.base(base, info.allCaps)) // ensure special all-caps strings are fully lowercase
+      const options = this.info
+      const methods = new Set(names.map(k => getPropertyName.call(instance, k, options))) // Apply any transformations
 
-      let aliasArray = ((aliases && !Array.isArray(aliases)) ? [aliases] : aliases) as string[]
-      aliasArray = aliasArray.map(name => caseUtils.set(name, 'pascal') as string) // All methods are pascal case
-      const pascalMethodNames = new Set(aliases)
-      pascalMethodNames.add(pascal)
+      methods.forEach((method) => {
 
+        const addName = `add${method}`
+        const getName = `get${method}`
+        const createName = `create${method}`
 
-      const _deleted: string[] = []
-
-      const methods = Array.from(pascalMethodNames)
-      methods.forEach(method => {
-
-        const updatedMethod = getPropertyName.call(instance, method, this.info)
-
-        const addName = `add${updatedMethod}`
-        const getName = `get${updatedMethod}`
-        const createName = `create${updatedMethod}`
-
-        pascal = updatedMethod // Use updated property name
-
-        if (!_deleted.includes(method)) {
+        // if (!_deleted.includes(method)) {
           try {
 
-            setProperty.call(instance, addName, {
-              value: function add(obj: any) {
-                const name = obj.name ?? Object.keys(this[camel]).length
-                if (this[camel][newKeySymbol]) return this[camel][newKeySymbol](name, obj)
-                else console.error('Cannot add a new object...', this, obj)
+            
+            Object.defineProperty(instance, addName,{
+              value: function add(...args: [any] | [string, any]) {
+                const obj = args.length === 1 ? args[0] : args[1]
+                const name = (args.length === 1 ? (obj.name ?? options?.propertyName.reduce((acc:any, str:string) => acc = (!acc) ? obj[str] : acc, null)) : args[0]) // Get name by several means // NOTE: Name is a restricted property and always the default
+                if (name) {
+                  const target = base ? instance[base] : instance
+                  if (target[newKeySymbol]) return target[newKeySymbol](name, obj)
+                }
+
+                console.error(`[${info.name}]: Could not add object:`, args);
+
               },
+              configurable: true // In case we decide we don't need these because of duplicates...
             })
 
-            setProperty.call(instance, getName, {
+            Object.defineProperty(instance, getName, {
               value: function get(name: string) {
-                return this[camel][name]
+                const target = base ? instance[base] : instance
+                return target[name]
               },
+              configurable: true
             })
 
             const context = this
-            setProperty.call(instance, createName, {
-              value: function create(o: any, classOptions: ClassOptionsType = context.info as ClassOptionsType) {
+            Object.defineProperty(instance, createName, {
+              value: function create( ...args: [ArbitraryObject] | [string, ArbitraryObject] | [ArbitraryObject, ClassOptionsType] | [string, ArbitraryObject, ClassOptionsType]) {
 
 
-                const clsKey = classOptions.classKey as string
+                const nameFirst = typeof args[0] === 'string'
+                const oIndex = nameFirst ? 1 : 0
+                const o = args[oIndex] as ArbitraryObject
+                const options = (args[oIndex + 1] ?? context.info) as ClassOptionsType
 
-                if (!o[clsKey]) {
-                  // const copy = {...o}
-                  // delete copy.name
-                  o[clsKey] = context.match(o)
+                const name = nameFirst ? args[0] : (o.name ?? (options.propertyName ?? []).reduce((acc:any, str:string) => acc = (!acc) ? o[str] : acc, null)) // Get name by several means // NOTE: Name is a restricted property and always the default
+                if (name) {
+                  const clsKey = options.classKey as string
+
+                  if (!o[clsKey]) {
+                    if (typeAliases.size === 1) o[clsKey] = Array.from(typeAliases)[0]
+                    else o[clsKey] = context.match(o, Array.from(typeAliases)) // Constrain choices
+                  }
+
+                  instance[addName](name, o)
+                  // if (this[newKeySymbol]) this[newKeySymbol]()
+                  // else console.error('Cannot create a new object...', this, o)
+
+                  // const cls = (globalThis as any).apify[classifyInfoName].get(pascal, o) // NOTE: This is a tightly-coupled dependency—but magically creates the right class (if properly constrained)
+                  // if (cls) {
+                  //   const created = new cls(o, classOptions)
+                  //   return this[addName](created)
+                  // } else {
+                  //   console.error(`[${classifyInfoName}]: Could not find class for ${pascal}`, o);
+                  //   return null
+                  // }
+                } else {
+                  console.error(`[${info.name}]: Could not find name for inputs:`, args);
+                  return null
                 }
-
-                console.warn('Trying to create a new object', o.name, o, o[clsKey])
-
-                instance[addName](o)
-                // if (this[newKeySymbol]) this[newKeySymbol]()
-                // else console.error('Cannot create a new object...', this, o)
-
-                // const cls = (globalThis as any).apify[classifyInfoName].get(pascal, o) // NOTE: This is a tightly-coupled dependency—but magically creates the right class (if properly constrained)
-                // if (cls) {
-                //   const created = new cls(o, classOptions)
-                //   return this[addName](created)
-                // } else {
-                //   console.error(`[${classifyInfoName}]: Could not find class for ${pascal}`, o);
-                //   return null
-                // }
               },
+              configurable: true
             })
 
             // // Create from the queue when the function is available
@@ -216,15 +165,12 @@ export default class Classify {
             // }
 
           } catch (e) {
-
-            console.warn(`[${info.name}]: Trying to redeclare a helper function for ${pascal}`, 'removing aliases: ' + aliases);
-
-            (aliases as string[]).forEach((alias: string) => {
-              delete instance[alias]
-              _deleted.push(alias)
-            })
+            console.warn(`[${info.name}]: Trying to redeclare a helper function for ${method}. Removing helpers for:`, method, instance);
+            delete instance[addName]
+            delete instance[getName]
+            delete instance[createName]
           };
-        }
+        // }
       })
     }
 
@@ -232,29 +178,8 @@ export default class Classify {
     if (valueToDrill?.[hasNestedGroups]) {
       for (let key in valueToDrill) {
         const newVal = valueToDrill[key]
-
-        // Group object
         if (newVal && newVal[isGroupType]) {
-
-          const newPath = [...path, key]
-
-          //   const nestedGroup = newVal.inherits && newVal.inherits.value
-
-          //   // Create helpers for nested groups (those which kept their non-enumerable values) and their children (except for deep classes)
-          //   if (nestedGroup) {
-
-          // update / remove class key
-          if (path.length === 1) {
-            let newKey = caseUtils.set(key) as string // Updated key
-            if (newKey != key) {
-              valueToDrill[newKey] = newVal // transfer
-              delete valueToDrill[key] // delete
-              key = newKey // reassign
-            }
-          }
-
-          
-            this.applyHelpers(instance, key, newVal, newPath, newVal?.inherits?.value)
+          this.applyHelpers(instance, key, newVal, [...path, key], newVal[childrenTypes]) // Group object
         }
       }
     }
@@ -286,9 +211,9 @@ export default class Classify {
 
       // Map keys to attributes
       Object.keys(info).map((k: string) => {
-        const camel = caseUtils.set(rename.base(k, options.allCaps)) as string // ensure all keys (even classes) are camel case
-        if (!attrMap[camel]) attrMap[camel] = new Set()
-        attrMap[camel].add(name)
+        const targetCase = k 
+        if (!attrMap[targetCase]) attrMap[targetCase] = new Set()
+        attrMap[targetCase].add(name)
       })
 
       // generatedClassV2.prototype.name = name // always have the name specified
@@ -299,12 +224,10 @@ export default class Classify {
   }
 
   // Fuzzy match for class type
-  // TODO: Ensure that this handles inheritance well
-  match = (input: any) => {
+  match = (input: any, choices: string[] = []) => {
 
     const keys = Object.keys(input)
 
-    let choices: string[] = []
     keys.forEach(k => {
 
       const selection = this.attributeMap[k]

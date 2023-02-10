@@ -27,12 +27,17 @@ const writeEditorDiv = document.getElementById('writeEditorDiv') as HTMLDivEleme
 const writeEditor = new visualscript.ObjectEditor()
 writeEditorDiv.insertAdjacentElement('beforeend', writeEditor)
 
+
+const download = document.getElementById('download') as HTMLButtonElement
+const downloadAcquisition = document.getElementById('downloadAcquisition') as HTMLButtonElement
+
 let localFile: any;
 let dandiFile;
 
 getLocalFileButton.onclick = async () => {
     const io = new nwb.NWBHDF5IO()
     localFile = await io.read()
+    console.log('Local NWB File', localFile)
     localEditor.set(localFile)
     writeEditor.set(localFile)
     localEditorDiv.insertAdjacentElement('beforeend', localEditor)
@@ -50,15 +55,17 @@ const getDandiFile = async () => {
         const io = new nwb.NWBHDF5IO()
         const start = Date.now()
         dandiFile = await io.fetch(asset.metadata.contentUrl[0], 'dandiTest.nwb', { useStreaming: true })
+        console.log('DANDI NWB File', dandiFile)
+
         const now = Date.now()
         const timeToDownload = now - start
 
-        file.fileCreateDate = now
-        console.log(file.fileCreateDate) // [ 1622020000.0 ]
+        file.file_create_date = now
+        console.log(file.file_create_date) // [ 1622020000.0 ]
 
         // const url = 'https://api.dandiarchive.org/api/assets/29ba1aaf-9091-469a-b331-6b8ab818b5a6/download/'
         dandiEditor.set(dandiFile)
-        
+
         if (!localFile) writeEditor.set(dandiFile)
 
         const styles = `
@@ -138,17 +145,16 @@ function deactivateBehavioralRewards() {
 
 
 const file = new nwb.NWBFile({
-    sessionDescription: 'EEG data and behavioral data recorded while navigating a webpage.',
+    session_description: 'EEG data and behavioral data recorded while navigating a webpage.',
     identifier: 'WebNWB_Documentation_Session_' + Math.random().toString(36).substring(7),
-    sessionStartTime: Date.now(),
+    session_start_time: Date.now(),
     experimenter: 'Garrett Flynn',
     institution: 'Brains@Play'
 })
 
-console.log('NWB File', file)
+console.log('Acquisition NWB File', file)
 
-// TODO: Fix this...
-const spatialSeries = new nwb['nwb.behavior'].SpatialSeries({
+const spatialSeries = new nwb.behavior.SpatialSeries({
     name: 'cursor',
     description: 'The position (x, y) of the cursor over time.',
     data: [
@@ -159,36 +165,41 @@ const spatialSeries = new nwb['nwb.behavior'].SpatialSeries({
 })
 console.log('spatialSeries', spatialSeries)
 
-const position = new nwb['nwb.behavior'].Position()
+const position = new nwb.behavior.Position()
 console.log('position', position)
 
-position.addSpatialSeries(spatialSeries) // TODO: Fix this helper function by recognizing the class name
-const behavior = new nwb.ProcessingModule({ description: 'Behavioral data recorded while navigating a webpage.' })
+position.addSpatialSeries(spatialSeries)
+const behavior = new nwb.ProcessingModule({ name: 'behavior', description: 'Behavioral data recorded while navigating a webpage.' })
 console.log('ProcessingModule', behavior)
 
-behavior.addPosition('position', position)
-file.addProcessingModule('behavior', behavior)
+behavior.addDataInterface(position) // NOTE: Might just want to be .add() | Convention is uppercase
+file.addProcessingModule(behavior)
 
 // Create a TimeSeries object to track behavior events
 const data: any = []
 data.unit = 'ms'
-const timeseries = new nwb.TimeSeries({
+
+const behavioralEvents = new nwb.behavior.BehavioralEvents()
+
+// Use the create function...
+behavioralEvents.createTimeSeries({
+    name: 'emojiReactions',
     description: 'The length of time the emoji was shown on the page.',
     data: [],
     timestamps: []
 })
-console.log('timeseries', timeseries)
 
-// Add these behavioral events to the NWB file
-const behavioralEvents = new nwb['nwb.behavior'].BehavioralEvents()
-behavioralEvents.addTimeSeries('buttonPresses', timeseries)
-behavior.addDataInterface('behavioralEvents', behavioralEvents)
 console.log('behavioralEvents', behavioralEvents)
 
+// Add these behavioral events to the NWB file
+behavior.addDataInterface(behavioralEvents) // NOTE: Might just want to be .add() | Convention is uppercase
+
 console.error('ACTUALLY CAN SAVE THE FILE HERE')
-// // Save file
-// const filename = 'myFile.nwb'
-// const io = new nwb.NWBHDF5IO()
-// io.write(file, filename)
-// io.save(filename) // Saves in browser storage
-// io.download(filename) // Downloads to the user's computer
+downloadAcquisition.onclick = () => {
+    const filename = 'myBehavior.nwb'
+    const io = new nwb.NWBHDF5IO()
+    io.write(file, filename)
+    io.download(filename) // Downloads to the user's computer
+}
+
+downloadAcquisition.onclick = () => console.error('NOTHING YET!')
