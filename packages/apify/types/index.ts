@@ -14,11 +14,13 @@ export type OptionsType = {
     getNamespaceLabel: (str: string) => string,
 
 
+    className: string[],
     propertyName: string[],
     inheritsFrom: string[],
 
     singularName: {[x:string]: string}
 
+    // inheritKey?: string,
     classKey?: string,
     specClassKey?: string,
 

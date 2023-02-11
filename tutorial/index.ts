@@ -3,7 +3,7 @@
 import nwb from '../src/index'
 console.log('WebNWB API', nwb)
 // Webtrack
-import * as webtrack from '../external/webtrack/index.esm.js'
+import * as webtrack from 'webtrack'
 
 // DANDI
 // import * as dandi from '../packages/dandi/dist/index.esm.js'
@@ -11,7 +11,7 @@ import * as dandi from '../packages/dandi/src/index'
 // import * as dandi from 'htts://jsdelivr.net/npm/dandi@0.0.2/dist/index.esm'
 
 // Visualscript
-import * as visualscript from "../node_modules/visualscript/dist/index.esm.js"
+import * as visualscript from "visualscript"
 
 const localEditorDiv = document.getElementById('localEditorDiv') as HTMLDivElement
 const dandiEditorDiv = document.getElementById('dandiEditorDiv') as HTMLDivElement
@@ -31,15 +31,18 @@ writeEditorDiv.insertAdjacentElement('beforeend', writeEditor)
 const download = document.getElementById('download') as HTMLButtonElement
 const downloadAcquisition = document.getElementById('downloadAcquisition') as HTMLButtonElement
 
+download.disabled = true
+
 let localFile: any;
 let dandiFile;
 
 getLocalFileButton.onclick = async () => {
     const io = new nwb.NWBHDF5IO()
-    localFile = await io.read()
+    localFile = await io.load()
     console.log('Local NWB File', localFile)
     localEditor.set(localFile)
     writeEditor.set(localFile)
+    download.disabled = false
     localEditorDiv.insertAdjacentElement('beforeend', localEditor)
     getLocalFileButton.remove()
 }
@@ -60,8 +63,9 @@ const getDandiFile = async () => {
         const now = Date.now()
         const timeToDownload = now - start
 
+        // Update Creation Date
         file.file_create_date = now
-        console.log(file.file_create_date) // [ 1622020000.0 ]
+        console.log(file.file_create_date) // [ 1622020000.0 ] // NOTE: Not converting...
 
         // const url = 'https://api.dandiarchive.org/api/assets/29ba1aaf-9091-469a-b331-6b8ab818b5a6/download/'
         dandiEditor.set(dandiFile)
@@ -154,13 +158,37 @@ const file = new nwb.NWBFile({
 
 console.log('Acquisition NWB File', file)
 
+// Subject
+const subject = {
+    subject_id: Math.random().toString(36).substring(7),
+    // age: "P90D",
+    // description: "someone using the website",
+    species: "Homo sapien",
+    // sex: "U",
+}
+
+
+console.warn('Original Subject Value', file.general.subject) // TODO: Make sure this is undefined first...as this is currently an empty class.
+
+// -------- NOTE: All of these methods are equivalent --------
+// file.general.subject = new nwb.Subject(subject) 
+// file.subject = subject // Silenced
+file.general.subject = subject 
+// file.createSubject(subject)
+// file.addSubject(new nwb.Subject(subject))
+// file.addSubject(subject)
+console.log('Subject', file.general.subject) 
+
 const spatialSeries = new nwb.behavior.SpatialSeries({
     name: 'cursor',
     description: 'The position (x, y) of the cursor over time.',
-    data: [
-        [],
-        []
-    ],
+
+    // // TODO: Handle data shapes properly
+    // // Mismatched types for data: numeric is expected but object was provided (because of nested arrays)
+    // data: [
+    //     [],
+    //     []
+    // ],
     referenceFrame: '(0,0) is the top-left corner of the visible portion of the page.'
 })
 console.log('spatialSeries', spatialSeries)
@@ -169,6 +197,7 @@ const position = new nwb.behavior.Position()
 console.log('position', position)
 
 position.addSpatialSeries(spatialSeries)
+
 const behavior = new nwb.ProcessingModule({ name: 'behavior', description: 'Behavioral data recorded while navigating a webpage.' })
 console.log('ProcessingModule', behavior)
 
@@ -181,25 +210,40 @@ data.unit = 'ms'
 
 const behavioralEvents = new nwb.behavior.BehavioralEvents()
 
+console.warn('Creating TimeSeries...')
 // Use the create function...
 behavioralEvents.createTimeSeries({
     name: 'emojiReactions',
     description: 'The length of time the emoji was shown on the page.',
     data: [],
-    timestamps: []
+    timestamps: [],
+    unit: 'ms' // NOTE: Accomodate moving this to the data object
 })
 
 console.log('behavioralEvents', behavioralEvents)
+console.log('emojiReactions (TimeSeries)', behavioralEvents.emojiReactions)
 
 // Add these behavioral events to the NWB file
 behavior.addDataInterface(behavioralEvents) // NOTE: Might just want to be .add() | Convention is uppercase
 
-console.error('ACTUALLY CAN SAVE THE FILE HERE')
-downloadAcquisition.onclick = () => {
+downloadAcquisition.onclick = async () => {
     const filename = 'myBehavior.nwb'
     const io = new nwb.NWBHDF5IO()
-    io.write(file, filename)
+    console.log('Trying to save', file)
+
+    const savedAs = await io.save(file, filename)
     io.download(filename) // Downloads to the user's computer
+
+    console.log('Saved', savedAs)
+    const fileFromLocalStorage = io.load(savedAs)
+    console.log('File from local storage:', fileFromLocalStorage)
 }
 
-downloadAcquisition.onclick = () => console.error('NOTHING YET!')
+download.onclick = async () => {
+    const io = new nwb.NWBHDF5IO()
+    console.log('Trying to save', writeEditor.target)
+    const savedAs = io.save(writeEditor.target)
+    console.log('Saved', savedAs)
+    const fileFromLocalStorage = await io.load(savedAs)
+    console.log('File from local storage:', fileFromLocalStorage)
+}

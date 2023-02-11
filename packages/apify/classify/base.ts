@@ -1,13 +1,13 @@
 import * as caseUtils from "../../../src/utils/case";
 import { OptionsType } from "../types";
-import { hasNestedGroups } from "../utils/globals";
+import { hasNestedGroups, isTypedGroup } from "../utils/globals";
 
 // HDF5-IO
-// import { isGroup as isGroupType } from '../../../../hdf5-io/src';
-import { isGroup as isGroupType } from 'hdf5-io';
+import { isGroup as isGroupType } from '../../../../hdf5-io/src';
+// import { isGroup as isGroupType } from 'hdf5-io';
 
-// import * as conform from "../../../../esmodel/src/index";
-import * as conform from 'esconform'
+import * as conform from "../../../../esmodel/src/index";
+// import * as conform from 'esconform'
 
 export type ClassOptionsType = {
     // Use to skip autorejection and otherwise generate values
@@ -16,18 +16,21 @@ export type ClassOptionsType = {
 } & Partial<OptionsType>
 
 
-const mustTransform = (value: any, options: ClassOptionsType) => {
-    const clsKey = options.classKey as string
-    const specClassKey = options.specClassKey
+// NOTE: The only thing this can't catch is the type suggestions of the parent group (for user-specified keys out of the spec)
+const mustTransform = (value: any, options: ClassOptionsType, spec: any = value) => {
 
     let cls: any; 
     const clsKeys = [
-        clsKey,  // User-specified class key
-        specClassKey // Spec-specified class key
+        options.classKey,  // User-specified class key
+        options.specClassKey, // Spec-specified class key
+        // options.inheritKey, // User-specified inheritance key
     ]
-    const foundClsKey = clsKeys.find(key => key && value && typeof value === 'object' && key in value)
-    if (foundClsKey) {
-        const clsName = caseUtils.set(value[foundClsKey], 'pascal')
+
+    const foundClsKey = clsKeys.find(key => key && spec && typeof spec === 'object' && key in spec)
+    const clsName = spec[isTypedGroup] ?? (foundClsKey ? spec[foundClsKey] : undefined)
+    
+    if (clsName) {
+        // const clsName = caseUtils.set(clsName, 'pascal')
         const name = options.name as string
         cls = (globalThis as any).apify[name].get(clsName, value) // NOTE: This is a tightly-coupled dependency—but magically creates the right class (if properly constrained)
         if (cls) {
@@ -37,9 +40,9 @@ const mustTransform = (value: any, options: ClassOptionsType) => {
     } else return null
 }
 
-const transformClass =(value: any, options: ClassOptionsType) => {
-    const cls = mustTransform(value, options)
-    if (cls === null) return value
+const transformClass =(value: any, options: ClassOptionsType, spec: any) => {
+    const cls = mustTransform(value, options, spec)
+    if (cls === null) return null
     else if (cls === false) return false
     else return new cls(value, options)
 }
@@ -56,9 +59,13 @@ class ApifyBaseClass {
 
         const getValue = (typeof options.getValue === 'function') ? options.getValue : ((_, v) => v) as OptionsType['getValue']
 
+        const name = info.name
+        try { delete info.name } catch {} // Avoid setting the name as an esconform property
+
         const model = new conform.Model({
             
             keys: (key: string | symbol | number, specObj: any) => {
+
 
                 const isPropertyOfGroup = specObj[isGroupType] && !specObj[hasNestedGroups]
 
@@ -80,29 +87,25 @@ class ApifyBaseClass {
             },
 
             // NOTE: Internal keys are not transformed here...
-            values: (key: string | symbol | number, value: any, spec: any) => {
+            values: (key: string | symbol | number, value: any, spec: any, _) => {
                 
-                // ensure groups are resolved as objects
-                if (spec?.[isGroupType] && value === undefined) value = {}
+                // // ensure groups are resolved as objects
+                // if (spec?.[isGroupType] && value === undefined) value = {}
 
-                // Recognize class keys to allow for automatic class transformations
-                const transformed = transformClass(value, options)
-
-                // Transform object into a class
-                if (transformed) return transformed
-
-                // Process based on the user-defined callback
-                else return getValue(key, value, spec)
+                return transformClass(value, options, spec) // Transform object into a class using automatic class recognition
+                    ?? getValue(key, value, spec) // Process based on the user-defined callback
                 
             },
 
-            specification: specs, // Merged together...
+            specification: specs, // Will merge
         })
 
         // Apply file info to the class (basd on the spec in the model)
-        model.apply(info, { target: this })
+        const proxy = model.apply(info, { target: this })
 
-        if ( info.name )  Object.defineProperty(this, 'name', { value: info.name }) // Define name out of spec
+        if ( name && !this.name) Object.defineProperty(this, 'name', { value: name }) // Define name out of spec / proxy. Will be accessible
+
+        return proxy // Provide a proxy of the class rather than the class itself...
 
     }
 }

@@ -55,16 +55,18 @@ nav a {
     padding: 0px 10px;
     font-size: 90%;
 }
+
+/* Demo Section */
 .demo {
     width: 100%;
-    border: 1px solid black;
     /* border-radius: 0px 0px 25px 25px; */
     border-top: 0;
     position: relative;
 }
 
 .demo > div {
-    padding: 25px 50px;
+    padding: 10px 25px;
+    background:rgb(235, 235, 235)
 }
 
 .demo:before {
@@ -73,6 +75,32 @@ nav a {
     padding: 5px 10px;
     font-size: 90%;
     background: black;
+    display: block;
+    color: white;
+    width: 100%;
+    box-sizing: border-box;
+
+}
+
+.issue {
+    width: 100%;
+    /* border: 1px solid black; */
+    /* border-radius: 0px 0px 25px 25px; */
+    border-top: 0;
+    position: relative;
+}
+
+.issue > div {
+    padding: 10px 25px;
+    background: rgb(255, 238, 238);
+}
+
+.issue:before {
+    content: "Issue";
+    font-weight: bold;
+    padding: 5px 10px;
+    font-size: 90%;
+    background: rgb(255, 50, 50);
     display: block;
     color: white;
     width: 100%;

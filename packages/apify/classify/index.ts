@@ -4,22 +4,27 @@ import { InfoType, OptionsType } from "../types"
 import ApifyBaseClass, { ClassOptionsType } from "./base"
 import InheritanceTree from "./InheritanceTree"
 import { getPropertyName } from "./utils"
-import { childrenTypes, hasNestedGroups } from "../utils/globals"
+import { isTypedGroup, hasTypedChildren, hasNestedGroups } from "../utils/globals"
 
 // HDF5-IO
-// import { isGroup as isGroupType } from '../../../../hdf5-io/src';
-import { isGroup as isGroupType } from 'hdf5-io';
+import { isGroup as isGroupType } from '../../../../hdf5-io/src';
+// import { isGroup as isGroupType } from 'hdf5-io';
+
+
 import { ArbitraryObject } from 'src/types/general.types'
 
 // ESConform
-// import * as conform from '../../../../esmodel/src/index'
-import * as conform from 'esconform'
+import * as conform from '../../../../esmodel/src/index'
+// import * as conform from 'esconform'
 const newKeySymbol = conform.newKeySymbol
 
 type InheritanceType = {
   tree: InheritanceTree,
   type: string
 }
+
+
+type HelperArgsType = [ArbitraryObject] | [string, ArbitraryObject] | [ArbitraryObject, ClassOptionsType] | [string, ArbitraryObject, ClassOptionsType]
 
 export default class Classify {
 
@@ -65,16 +70,15 @@ export default class Classify {
 
           super(info, Object.assign(copy, classOptions), specs)
 
-          context.applyHelpers(this, undefined, specInfo, [name], specInfo[childrenTypes] ?? undefined)   // Apply helpers to the entire class object
+          context.applyHelpers(this, undefined, specInfo, [name])   // Apply helpers to the entire class object
         }
       }
     })[name];
   }
 
-  applyHelpers = (instance: any, base?: string, valueToDrill?: any, path: string[] = [], typeAliases: Set<string> = valueToDrill?.[childrenTypes] ?? new Set()) => {
+  applyHelpers = (instance: any, base?: string, spec?: any, path: string[] = [], typeAliases: Set<string> = spec?.[hasTypedChildren] ?? new Set()) => {
 
-
-    const pass = valueToDrill[isGroupType] && !valueToDrill[hasNestedGroups] // Has a base and is a group (without internal groups)
+    const pass = spec[isGroupType] && !spec[hasNestedGroups] // Has a base property to set (not a top-level of the class instance) and is a group without internal groups
 
     const info = this.info as OptionsType
 
@@ -83,8 +87,7 @@ export default class Classify {
       const names = Array.from(typeAliases)
       if (base) names.push(caseUtils.set(base, 'pascal') as string)
 
-      const options = this.info
-      const methods = new Set(names.map(k => getPropertyName.call(instance, k, options))) // Apply any transformations
+      const methods = new Set(names.map(k => getPropertyName.call(instance, k, info))) // Apply any transformations
 
       methods.forEach((method) => {
 
@@ -96,16 +99,46 @@ export default class Classify {
           try {
 
             
-            Object.defineProperty(instance, addName,{
-              value: function add(...args: [any] | [string, any]) {
-                const obj = args.length === 1 ? args[0] : args[1]
-                const name = (args.length === 1 ? (obj.name ?? options?.propertyName.reduce((acc:any, str:string) => acc = (!acc) ? obj[str] : acc, null)) : args[0]) // Get name by several means // NOTE: Name is a restricted property and always the default
-                if (name) {
-                  const target = base ? instance[base] : instance
-                  if (target[newKeySymbol]) return target[newKeySymbol](name, obj)
+            Object.defineProperty(instance, addName, {
+              value: function add(...args: HelperArgsType) {
+
+                const nameFirst = typeof args[0] === 'string'
+                const oIndex = nameFirst ? 1 : 0
+                const obj = args[oIndex] as ArbitraryObject
+                const options = (args[oIndex + 1] ?? context.info) as ClassOptionsType
+                const name = nameFirst ? args[0] : (obj.name ?? (options.propertyName ?? []).reduce((acc:any, str:string) => acc = (!acc) ? obj[str] : acc, null)) // Get name by several means // NOTE: Name is a restricted property and always the default
+                  
+      
+                let target = instance
+                path.slice(1, -1).forEach((p) => target = target[p]) // Ignore class name and base
+
+                const create = base ? target[base][newKeySymbol] : target[newKeySymbol]
+
+
+                // Provide a guess that the class key if none are provided
+                // NOTE: This augments the handler in base.ts to provide suggestions about the type from the parent group 
+                const clsKey = obj.classKey as string
+                if (!obj[clsKey]) {
+                  if (typeAliases.size === 1) {
+                    obj[clsKey] = Array.from(typeAliases)[0] // Get only child type
+                    if (obj[clsKey]) console.warn(`[${info.name}]: No type specified for ${method} (${name}). Defaulting to ${obj[clsKey]}.`, obj)
+                  } else {
+                    obj[clsKey] = context.match(obj, Array.from(typeAliases)) // Constrain choices
+                    if (obj[clsKey]) console.warn(`[${info.name}]: Matched type for ${method} (${name}) = ${obj[clsKey]}.`, obj)
+                  }
                 }
+              
+
+                // Set typed groups directly. Should always have a base
+                if (spec[isTypedGroup] && base) {
+                  target[base] = obj
+                  return target[base]
+                }
+                else if (name && create) return create(name, obj)
 
                 console.error(`[${info.name}]: Could not add object:`, args);
+
+                return null
 
               },
               configurable: true // In case we decide we don't need these because of duplicates...
@@ -121,40 +154,7 @@ export default class Classify {
 
             const context = this
             Object.defineProperty(instance, createName, {
-              value: function create( ...args: [ArbitraryObject] | [string, ArbitraryObject] | [ArbitraryObject, ClassOptionsType] | [string, ArbitraryObject, ClassOptionsType]) {
-
-
-                const nameFirst = typeof args[0] === 'string'
-                const oIndex = nameFirst ? 1 : 0
-                const o = args[oIndex] as ArbitraryObject
-                const options = (args[oIndex + 1] ?? context.info) as ClassOptionsType
-
-                const name = nameFirst ? args[0] : (o.name ?? (options.propertyName ?? []).reduce((acc:any, str:string) => acc = (!acc) ? o[str] : acc, null)) // Get name by several means // NOTE: Name is a restricted property and always the default
-                if (name) {
-                  const clsKey = options.classKey as string
-
-                  if (!o[clsKey]) {
-                    if (typeAliases.size === 1) o[clsKey] = Array.from(typeAliases)[0]
-                    else o[clsKey] = context.match(o, Array.from(typeAliases)) // Constrain choices
-                  }
-
-                  instance[addName](name, o)
-                  // if (this[newKeySymbol]) this[newKeySymbol]()
-                  // else console.error('Cannot create a new object...', this, o)
-
-                  // const cls = (globalThis as any).apify[classifyInfoName].get(pascal, o) // NOTE: This is a tightly-coupled dependency—but magically creates the right class (if properly constrained)
-                  // if (cls) {
-                  //   const created = new cls(o, classOptions)
-                  //   return this[addName](created)
-                  // } else {
-                  //   console.error(`[${classifyInfoName}]: Could not find class for ${pascal}`, o);
-                  //   return null
-                  // }
-                } else {
-                  console.error(`[${info.name}]: Could not find name for inputs:`, args);
-                  return null
-                }
-              },
+              value: (...args: HelperArgsType) => instance[addName](...args),
               configurable: true
             })
 
@@ -175,11 +175,11 @@ export default class Classify {
     }
 
     // Apply helpers to nested groups
-    if (valueToDrill?.[hasNestedGroups]) {
-      for (let key in valueToDrill) {
-        const newVal = valueToDrill[key]
+    if (spec?.[hasNestedGroups]) {
+      for (let key in spec) {
+        const newVal = spec[key]
         if (newVal && newVal[isGroupType]) {
-          this.applyHelpers(instance, key, newVal, [...path, key], newVal[childrenTypes]) // Group object
+          this.applyHelpers(instance, key, newVal, [...path, key]) // Group object
         }
       }
     }
@@ -252,7 +252,7 @@ export default class Classify {
 
     if (inheritance) this.inheritance = inheritance
 
-    this.classes = (clone) ? JSON.parse(JSON.stringify(fullSpec)) : fullSpec
+    this.classes =  (clone) ? JSON.parse(JSON.stringify(fullSpec)) : fullSpec
 
     // Load All Classes
     for (let spec in this.classes) {

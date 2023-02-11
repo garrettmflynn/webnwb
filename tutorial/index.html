@@ -10,7 +10,9 @@
         <link rel="stylesheet" href="./external/highlight/styles/github-dark.min.css">
         <script src="./external/highlight/highlight.min.js"></script>
         <script src="./dist/index.js" defer></script>
-        <script>hljs.highlightAll();</script>
+        <script>
+        hljs.highlightAll();
+        </script>
     </head>
 
     <body>
@@ -29,9 +31,49 @@
         <h2 id="read">Tutorial #1: Reading NWB Files</h2>
         <section>
 
-            <h3>Getting Started with the NWBHDF5IO Class</h3>
-            <p>NWB files can be read from several locations, including <b>local</b> files or <b>remote</b> URLs.</p>
+            <h3>Installing WebNWB</h3>
+            <h4>Browser</h4>
+            <p>WebNWB can be installed in different ways depending on your use-case. You can use a <code>script</code> tag or ES Module imports to access the library on the browser:</p>
+            <pre>
+                <code>
+import nwb from 'https://cdn.jsdelivr.net/npm/webnwb@1.0.0'
+                </code>
+            </pre>
 
+            <pre>
+                <code>
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;script src='https://cdn.jsdelivr.net/npm/webnwb@1.0.0'&gt;&lt;/script&gt;
+    &lt;/head&gt;
+&lt;/html&gt;
+                </code>
+            </pre>
+
+            <h4>Node.js</h4>
+            <p>Instead of using a local file or CDN link, you may also install WebNWB from <a href="https://www.npmjs.com/">NPM</a> when using <a href="https://nodejs.org/en/">Node.js</a> or a bundler like <a href="https://esbuild.github.io/">esbuild</a>.</p>
+            <pre>
+                <code class="language-bash">
+npm install webnwb@1.0.0
+                </code>
+            </pre>
+
+            <p>Depending on your script type, you can then install WebNWB using CommonJS or ESM imports.</p>
+            <pre>
+                <code>
+const nwb = require('webnwb')
+                </code>
+            </pre>
+
+            <pre>
+                <code>
+import nwb from 'webnwb'
+                </code>
+            </pre>
+
+            
+            <h3>Reading Files with the NWBHDF5IO Class</h3>
+            <p>NWB files can be read from several locations, including <b>local</b> files or <b>remote</b> URLs.</p>
             <p>To read files, you'll need to create an <code>NWBHDF5IO</code> instance.</p>
 
             <!-- A codeblock for creating an IO object -->
@@ -42,13 +84,13 @@ const io = new nwb.NWBHDF5IO()
                 </code>
             </pre>
 
-            <h3>Accessing a Local File</h3>
-            <p>To access a file from the local filesystem, you can simply call the <code>read</code> command with no arguments.</p>
+            <h4>Local Files</h4>
+            <p>To access files in the local filesystem, you can simply call the <code>load</code> command with no arguments.</p>
 
             <!-- A codeblock for reading a file from the local file system -->
             <pre>
                 <code>
-const file = await io.read()
+const file = await io.load()
                 </code>
             </pre>
 
@@ -60,15 +102,15 @@ const file = await io.read()
                 </div>
             </div>
 
-            <h3>Accessing a Remote File</h3>
-            <p>Files you'd like to load from a remote endpoint can be specified as the first argument to <code>read</code>, which will automatically be recognized as a URL. Many NWB files can be found on the Brain Initiative's <a href="https://dandiarchive.org">Distributed Archives for Neurophysiology Data Integration Archive (DANDI)</a> and loaded in this manner.</p>
-            <p>Yet since this is a huge file at 160.5GB, you'll want to provide the <code>useStreaming</code> option to avoid downloading the entire file into memory before interacting it!</p>
+            <h4>Remote Files</h4>
+            <p>Files you'd like to load from a remote endpoint can be specified as the first argument to <code>load</code>, which will automatically be recognized as a URL. Many NWB files can be found on the Brain Initiative's <a href="https://dandiarchive.org">Distributed Archives for Neurophysiology Data Integration Archive (DANDI)</a> and loaded in this manner.</p>
+            <p>Since this is a huge file at 160.5GB, you'll want to provide the <code>useStreaming</code> option to avoid downloading the entire file into memory before interacting it.</p>
 
             <!-- A codeblock for reading a file from a remote URL -->
             <pre>
                 <code>
 const url = 'https://api.dandiarchive.org/api/assets/29ba1aaf-9091-469a-b331-6b8ab818b5a6/download/'
-const file = await io.read(url, { useStreaming: true })
+const file = await io.load(url, { useStreaming: true })
                 </code>
             </pre>
             <div class="demo">
@@ -78,7 +120,7 @@ const file = await io.read(url, { useStreaming: true })
                 </div>
             </div>
 
-            <p>We also have a provisional DANDI API to quickly get dandisets and assets based on their IDs.</p>
+            <p>You can alternatively use our provisional DANDI API to quickly get dandisets and assets based on their IDs.</p>
             <pre>
                     <code>
 import * as dandi from 'htts://jsdelivr.net/npm/dandi@0.0.3/dist/index.esm'
@@ -86,28 +128,35 @@ const dandiset = await dandi.get('000003') // Request a dandiset by ID
 // const dandiset = (await dandi.getAll())[0] // Get the first dandiset from the list of all dandisets
 const asset = await dandiset.getAsset('29ba1aaf-9091-469a-b331-6b8ab818b5a6')
 // const asset = (await dandiset.getAssets())[0]
-const file = await io.read(asset.metadata.contentUrl[0], { useStreaming: true })
+const file = await io.load(asset.metadata.contentUrl[0], { useStreaming: true })
                     </code>
             </pre>
         </section>
         <h2 id="write">Tutorial #2: Write NWB Metadata</h2>
         <section>
 
-            <p>Using the file from the last tutorial—either the one from DANDI or the one you've specified—we'll experiment with updating metadata. On any part of the <code>NWBFile</code>, can be achieved simply by updating property.</p>
+
+            <div class="issue">
+                <div>
+                    <p>The NWB@0.1.0 currently has no write support because of memory overload errors experienced from hdf5-io and h5wasm. The following is a description of intended usage and expected behavior.</p>
+                    <p>To learn more about this issue, visit <a>Issue #1</a> on the WebNWB issue tracker.</p>
+                </div>
+            </div>
+
+            <p>Using the file you provided in the last tutorial—or using the streamed DANDI file for dummy data— we'll experiment with updating metadata. On any part of the <code>NWBFile</code>, you can simply update the property to change its representation in memory.</p>
             <pre>
                 <code>
-file.description = 'This is my new description'
+file.file_create_date = Date.now() 
                 </code>
             </pre>
 
-            <p>Importantly, the WebNWB API automatically conforms values provided by users to the <a href="https://nwb-schema.readthedocs.io/en/latest/">NWB Schema</a>.</p>
+            <p>The WebNWB API automatically conforms values provided by users to the <a href="https://nwb-schema.readthedocs.io/en/latest/">NWB Schema</a>.</p>
 
-            <p>For instance, the <code>fileCreateDate</code> should be an array of isodatetime values. So if we provide the output of <code>Date.now()</code> directly, this will be converted into an ISO string inside an array!</p>
+            <p>For instance, the <code>file_create_date</code> value should be an array of isodatetime values. So our <code>Date.now()</code> output will be converted into an ISO string inside an array!</p>
             
-            <p>Additionally, WebNWB ensures that values carry all of their metadata with them. So instead of a standard string, the new <code>fileCreateDate</code> string will be created using the <code>String</code> constructor and have the <code>doc</code> property (as well as others) from the Schema</code><div class=""></div></p>
+            <p>Additionally, WebNWB ensures that values carry all of their metadata with them. Instead of a standard string, then, the new <code>file_create_date</code> string will be created using the <code>String</code> constructor and the Array will have additional properties such as <code>doc</code>, <code>dims</code>, <code>dtype</code>, <code>name</code>, and <code>shape</code> from the <a href="https://nwb-schema.readthedocs.io/en/latest/format.html#nwbfile">NWBFile schema entry</a>.</p>
             <pre>
                 <code>
-file.fileCreateDate = Date.now() 
 console.log(file.file_create_date) // Will look like: [ String('2023-02-08T22:09:34.901Z') ]
                 </code>
             </pre>
@@ -120,16 +169,25 @@ console.log(file.file_create_date) // Will look like: [ String('2023-02-08T22:09
                 </div>
             </div>
 
-            <h3>Saving a NWB File</h3>
-            <p>While all of your changes have been registered in memory, we still have to save them to local browser storage.</p>
+            <h3>Saving Changes</h3>
+            <p>While all of your changes have been registered in memory, we still have to save them to local storage using the <code>save</code> command.</p>
             <pre>
                 <code>
-io.write(file)
+const savedAs = await io.save(file)
+console.log('Saved', savedAs)
                 </code>
             </pre>
 
-            <h3>Downloading a NWB File</h3>
-            <p>Finally, if you'd like to have download the file, simply use the <code>download</code> function to start the download.</p>
+            <p>Once saved, you can access this file by name using the <code>load</code> function.</p>
+            <pre>
+                <code>
+const fileFromLocalStorage = await io.load(savedAs)
+console.log('File from local storage:', fileFromLocalStorage)
+                </code>
+            </pre>
+
+            <h3>Downloading a NWB File from the Browser</h3>
+            <p>Finally, if you'd like to download the updated file to your local computer, simply use the <code>download</code> function.</p>
             <pre>
                     <code>
 io.download(filename)
@@ -150,7 +208,7 @@ io.download(filename)
             <p>In this tutorial, we will show you how to acquire behavioral and electroencephalography (EEG) data and write this to a new NWB
                 file as users navigate a webpage.</p>
 
-            <h3>Creating a NWB File</h3>
+            <h3>Creating a NWB File from Scratch</h3>
             <p>Create a NWBFile object with the required fields (session_description, identifier, session_start_time) and
                 additional metadata.</p>
 
@@ -291,13 +349,13 @@ behavior.addDataInterface('behavioralEvents', behavioralEvents)
                     </code>
                 </pre>
 
-            <h3>Download the New NWB File</h3>
-            <p>Just like in the last tutorial, you'll use the <code>write</code> command to save this data. However, you'll need to provide your own filename this time.</p>
+            <h3>Download the Acquired Data</h3>
+            <p>Just like in the last tutorial, you'll use the <code>save</code> command to save this data. However, you'll need to provide your own filename this time.</p>
             <pre>
                     <code>
 const filename = 'myFile.nwb'
 const io = new nwb.NWBHDF5IO()
-io.write(file, filename)
+io.save(file, filename)
 io.download(filename)
                     </code>
                 </pre>

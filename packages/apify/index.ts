@@ -2,24 +2,24 @@ import { ArbitraryObject, AttributeType, GroupType, LinkType, DatasetType } from
 import { OptionsType } from './types';
 import Classify from './classify';
 import InheritanceTree from './classify/InheritanceTree';
-import { hasNestedGroups, childrenTypes } from './utils/globals';
+import { hasNestedGroups, isTypedGroup, hasTypedChildren } from './utils/globals';
 
 // HDF5-IO
-// import { 
-//   // objectify, 
-//   isGroup as isGroupType, 
-//   isDataset as isDatasetType 
-// } from '../../../hdf5-io/src';
-
 import { 
   // objectify, 
   isGroup as isGroupType, 
   isDataset as isDatasetType 
- } from 'hdf5-io';
+} from '../../../hdf5-io/src';
+
+// import { 
+//   // objectify, 
+//   isGroup as isGroupType, 
+//   isDataset as isDatasetType 
+//  } from 'hdf5-io';
 
 // ESConform
-// import * as conform from '../../../esmodel/src/index';
-import * as conform from 'esconform'
+import * as conform from '../../../esmodel/src/index';
+// import * as conform from 'esconform'
 
 type SpecificationType = { [x: OptionsType['coreName']]: ArbitraryObject } & ArbitraryObject
 
@@ -100,38 +100,44 @@ export default class API {
 
     const isGroup = type === 'group'
 
-    const getInheritance = (o: any) => this._options.inheritsFrom.reduce((acc:any, str:string) => acc = (!acc) ? o[str] : acc, null) // Get inherited type
+    const className = this._options.className.reduce((acc:any, str:string) => acc = (!acc) ? o[str] : acc, null)
+    let name = className ?? o.name //className ?? o.name // Has name by default
 
-    let name = this._options.propertyName.reduce((acc:any, str:string) => acc = (!acc) ? o[str] : acc, null)    
-    if (!name) {
-      const name = getInheritance(o) // Class that children can inherit from
-      if (!aggregator[childrenTypes]) Object.defineProperty(aggregator, childrenTypes, { value: new Set() })
-      aggregator[childrenTypes].add(name)
+
+    const inheritedType = this._options.inheritsFrom.reduce((acc:any, str:string) => acc = (!acc) ? o[str] : acc, null) // Class that children can inherit from
+    if(inheritedType && !name) {
+        if (!aggregator[hasTypedChildren]) Object.defineProperty(aggregator, hasTypedChildren, { value: new Set() })
+        aggregator[hasTypedChildren].add(inheritedType)  
     }
 
 
     const newPath = name ? [...path, name] : path
+    // const isTypedGroup = inheritedType && !name
 
+    // Will throw out (1) top-level specification groups without a name and (2) classes that indicate a typed group
     if (name) {
 
-      // check groups one level down
-      let gotType = getInheritance(o)
-
+      // console.log('Class', className, inheritedType)
       let inherit = {
         type,
-        value: gotType
+        value: inheritedType
       }
 
       // Group
       if (isGroup) {
         const value = aggregator[name] = {} as any// Set aggregator value
-          Object.defineProperty(value, isGroupType, { value: true })
-          if (aggregator[isGroupType] && !aggregator[hasNestedGroups]) Object.defineProperty(aggregator, hasNestedGroups, { value: true })
+        if (inheritedType) {
+          if (className){} // Is a class
+          else Object.defineProperty(value, isTypedGroup, { value: inheritedType }) // Is a typed group
+        }
+
+        Object.defineProperty(value, isGroupType, { value: true })
+        if (aggregator[isGroupType] && !aggregator[hasNestedGroups]) Object.defineProperty(aggregator, hasNestedGroups, { value: true })
       }      
       
       // Dataset
       else {
-        let value = o.value ?? o.default_value // Create a null object
+        let value = o.value ?? o.default_value // Allow for creating a null object
         const objectValue = value = conform.presets.objectify(name, value)
         // if (objectValue) {
           Object.defineProperty(objectValue, isDatasetType, { value: true }) // Setting type on the dataset
@@ -148,7 +154,14 @@ export default class API {
       // Add to inheritance tree
       if (inherit.value && inherit.type) this._inheritanceTree.add(inherit.value, name, 'classes')
 
-    }
+    } 
+    
+    // Indicate typed children on the aggregator
+    else if (inheritedType) {
+      if (!aggregator[hasTypedChildren]) Object.defineProperty(aggregator, hasTypedChildren, { value: new Set() })
+      aggregator[hasTypedChildren].add(inheritedType)  
+  }
+
 
       const aggregated = (name) ? aggregator[name] : aggregator
 

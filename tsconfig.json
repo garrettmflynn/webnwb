@@ -46,9 +46,7 @@
   "exclude": [
     "**/node_modules/**",
     "**/dist/**",
-    "**/__test__/**",
-    "./docs",
-    "./rollup.config.js"
+    "**/__test__/**"
   ],
   "include": ["./"],
 }

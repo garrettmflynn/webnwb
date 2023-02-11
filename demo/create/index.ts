@@ -1,6 +1,6 @@
 // Visualscript
 // import * as visualscript from '../../../visualscript/src/index'
-import * as visualscript from 'visualscript/dist/index.esm'
+import * as visualscript from 'visualscript'
 
 // WebNWB
 import nwb from '../../src/index'
@@ -247,20 +247,20 @@ const step = async (i:number) => {
 
                     
             // 10. Append Information to an Existing NWB File
-            // const nwbFile2 = io4.read()
+            // const nwbFile2 = io4.load()
             // const position2 = nwbFile2.processing['behavior'].dataInterfaces['Position']
             // const data2 = Array.from({length: 10}, (v,i) => 300 + 10*i)
 
             // const testSpatialSeries = new nwb.behavior.SpatialSeries('test_spatialseries2', data2, 'starting_gate', {timestamps})
             // position2.addSpatialSeries(testSpatialSeries)
-            // io4.write(nwbFile2)
+            // io4.save(nwbFile2)
     }
 
     
-    await io.write(nwbFile, fileName)
+    await io.save(nwbFile, fileName)
 
     // ----------------- Check Saved NWB File -----------------
-    const nwbFileIn = await io.read()
+    const nwbFileIn = await io.load()
     console.log('Latest NWB File from Local Storage', nwbFileIn)
 
 

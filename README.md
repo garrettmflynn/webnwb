@@ -48,14 +48,14 @@ To save the file, you'll need an `NWBHDF5IO` instance to handle interactions wit
 ```javascript
 import nwb from 'webnwb'
 const io = new nwb.NWBHDF5IO()
-io.write(file, 'my_file.nwb')
+io.save(file, 'my_file.nwb')
 ```
 
 ### File Access Mode
 Accessing an existing file allows you to proxy the underlying [h5wasm] API.
 
 ```javascript
-const file = io.read('my_file.nwb')
+const file = io.load('my_file.nwb')
 const timeseries = file.acquisition['testTimeseries']
 console.log(timeseries.fileId)
 ```

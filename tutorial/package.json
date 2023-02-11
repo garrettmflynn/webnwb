@@ -9,6 +9,8 @@
     "esconform": "^0.0.3",
     "h5wasm": "^0.4.9",
     "hdf5-io": "^0.0.9",
+    "visualscript": "0.0.11",
+    "webtrack": "0.0.3",
     "yaml": "^2.2.1"
   }
 }

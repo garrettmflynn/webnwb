@@ -2,8 +2,8 @@ import { ArbitraryObject } from './types/general.types';
 import schemas from './schema'
 import API from '../packages/apify';
 import NWBBaseClass from './base';
-// import { objectify } from '../../hdf5-io/src';
-import { objectify } from 'hdf5-io';
+import { objectify } from '../../hdf5-io/src';
+// import { objectify } from 'hdf5-io';
 
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 type SpecificationType = { 'core': ArbitraryObject } & ArbitraryObject
@@ -30,8 +30,14 @@ export default class NWBAPI extends API {
       debug, // Show Debug Messages
       name: 'webnwb', // Name of the API
 
-      propertyName: ['neurodata_type_def',  'data_type_def', 'name', 'default_name' ],
+
+      classKey: 'neurodata_type', // Key to use for the class name
+      specClassKey: 'neurodata_type_def',
+      // inheritKey: 'neurodata_type_inc', // Key to use for the class inheritance
+
+      className: ['neurodata_type_def', 'data_type_def'], //, 'name', 'default_name'],
       inheritsFrom: ['neurodata_type_inc', 'data_type_inc'],
+      propertyName: ['name', 'default_name'],
 
       coreName: 'core', // Name of the core schema
       namespacesToFlatten: ['base', 'file'], // Namespaces to flatten into the base of the API
@@ -106,9 +112,6 @@ export default class NWBAPI extends API {
           } 
           else return handleSingleValue(value, o.dtype)
       },
-
-      classKey: 'neurodata_type', // Key to use for the class name
-      specClassKey: 'neurodata_type_def',
 
       // Override properties of a generated class instance
       aliases: {

@@ -1,6 +1,6 @@
 // Visualscript
 // import * as visualscript from '../../../visualscript/src/index'
-import * as visualscript from 'visualscript/dist/index.esm'
+import * as visualscript from 'visualscript'
 
 // Freerange
 import * as NWBCodec from '../../external/freerange/nwb/index'
@@ -265,7 +265,10 @@ loader.id = 'loader'
 editorDiv.insertAdjacentElement('beforeend', loader)
 
 // Add object editor
-let editor = new visualscript.ObjectEditor({ onRender })
+let editor = new visualscript.ObjectEditor({ 
+  onRender, 
+  readOnly: true 
+})
 // let editor = new visualscript.Tree()
 editor.id = 'editor'
 editorDiv.insertAdjacentElement('afterbegin', editor)
