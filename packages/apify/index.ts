@@ -146,7 +146,7 @@ export default class API {
         // Mirror HDF5-IO Symbol Behaviors on the JSON Specification
         if (type === 'dataset') Object.defineProperty(objectValue, isDatasetType, { value: true, configurable: true}) // Setting type on the dataset (set as configurable to avoid downstream errors...)
         else if (type === 'attribute') Object.defineProperty(objectValue, isAttribute, { value: true, configurable: true}) // Setting type on the dataset (set as configurable to avoid downstream errors...)
-        else console.error('Failed to handle type', type, path)
+        // else console.error('Failed to handle type', type, path)
         
         // Set the value on the aggregator
         Object.defineProperty(aggregator, name, {value: objectValue, enumerable: true, configurable: true})

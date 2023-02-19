@@ -1,11 +1,12 @@
 import './node/setBlob' // There's an issue with tinybuild where it expects to have a Blob class but doesn't provide it in Node.js
-import nwb from '../src/index';
+import nwb, { ready } from '../src/index';
 
 describe(`Can create an NWB file`, () => {
 
   let nwbFile: any;
 
-  beforeAll(() => {
+  beforeAll(async () => {
+      await ready
       nwbFile = new nwb.NWBFile({
         session_description: 'test',
         identifier: 'test',

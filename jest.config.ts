@@ -27,6 +27,10 @@ const config: Config = {
   reporters: ['default'],
   extensionsToTreatAsEsm: ['.ts'],
 
+  fakeTimers: {
+    enableGlobally: true,
+  },
+  
   testTimeout: 10000, // Double the default timeout (to support fetch requests)
 
   verbose: true,

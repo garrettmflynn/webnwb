@@ -51,7 +51,7 @@ import nwb from 'https://cdn.jsdelivr.net/npm/webnwb@1.0.0'
             </pre>
 
             <h4>Node.js</h4>
-            <p>Instead of using a local file or CDN link, you may also install WebNWB from <a href="https://www.npmjs.com/">NPM</a> when using <a href="https://nodejs.org/en/">Node.js</a> or a bundler like <a href="https://esbuild.github.io/">esbuild</a>.</p>
+            <p>Instead of using a local file or CDN link, you may also install WebNWB from <a href="https://www.npmjs.com/"  target="_blank">NPM</a> when using <a href="https://nodejs.org/en/"  target="_blank">Node.js</a> or a bundler like <a href="https://esbuild.github.io/"  target="_blank">esbuild</a>.</p>
             <pre>
                 <code class="language-bash">
 npm install webnwb@1.0.0
@@ -103,7 +103,7 @@ const file = await io.load()
             </div>
 
             <h4>Remote Files</h4>
-            <p>Files you'd like to load from a remote endpoint can be specified as the first argument to <code>load</code>, which will automatically be recognized as a URL. Many NWB files can be found on the Brain Initiative's <a href="https://dandiarchive.org">Distributed Archives for Neurophysiology Data Integration Archive (DANDI)</a> and loaded in this manner.</p>
+            <p>Files you'd like to load from a remote endpoint can be specified as the first argument to <code>load</code>, which will automatically be recognized as a URL. Many NWB files can be found on the Brain Initiative's <a href="https://dandiarchive.org"  target="_blank">Distributed Archives for Neurophysiology Data Integration Archive (DANDI)</a> and loaded in this manner.</p>
             <p>Since this is a huge file at 160.5GB, you'll want to provide the <code>useStreaming</code> option to avoid downloading the entire file into memory before interacting it.</p>
 
             <!-- A codeblock for reading a file from a remote URL -->
@@ -138,8 +138,8 @@ const file = await io.load(asset.metadata.contentUrl[0], { useStreaming: true })
 
             <div class="issue">
                 <div>
-                    <p>The NWB@0.1.0 currently has no write support because of memory overload errors experienced from hdf5-io / h5wasm. The following is a description of intended usage and expected behavior.</p>
-                    <p>To learn more about this issue, visit <a>Issue #1</a> on the WebNWB issue tracker.</p>
+                    <p>The NWB@0.1.0 currently has experimental write support because memory overload errors from h5wasm limit our capacity to write new data to existing files. The following is a description of intended usage and expected behavior.</p>
+                    <p>To learn more about this issue, visit <a href="https://github.com/brainsatplay/webnwb/issues/2" target="_blank">Issue #2</a> on the WebNWB issue tracker.</p>
                 </div>
             </div>
 
@@ -150,11 +150,11 @@ file.file_create_date = Date.now()
                 </code>
             </pre>
 
-            <p>The WebNWB API automatically conforms values provided by users to the <a href="https://nwb-schema.readthedocs.io/en/latest/">NWB Schema</a>.</p>
+            <p>The WebNWB API automatically conforms values provided by users to the <a href="https://nwb-schema.readthedocs.io/en/latest/"  target="_blank">NWB Schema</a>.</p>
 
             <p>For instance, the <code>file_create_date</code> value should be an array of isodatetime values. So our <code>Date.now()</code> output will be converted into an ISO string inside an array!</p>
             
-            <p>Additionally, WebNWB ensures that values carry all of their metadata with them. Instead of a standard string, then, the new <code>file_create_date</code> string will be created using the <code>String</code> constructor and the Array will have additional properties such as <code>doc</code>, <code>dims</code>, <code>dtype</code>, <code>name</code>, and <code>shape</code> from the <a href="https://nwb-schema.readthedocs.io/en/latest/format.html#nwbfile">NWBFile schema entry</a>.</p>
+            <p>Additionally, WebNWB ensures that values carry all of their metadata with them. Instead of a standard string, then, the new <code>file_create_date</code> string will be created using the <code>String</code> constructor and the Array will have additional properties such as <code>doc</code>, <code>dims</code>, <code>dtype</code>, <code>name</code>, and <code>shape</code> from the <a href="https://nwb-schema.readthedocs.io/en/latest/format.html#nwbfile"  target="_blank">NWBFile schema entry</a>.</p>
             <pre>
                 <code>
 console.log(file.file_create_date) // Will look like: [ String('2023-02-08T22:09:34.901Z') ]
@@ -173,15 +173,15 @@ console.log(file.file_create_date) // Will look like: [ String('2023-02-08T22:09
             <p>While all of your changes have been registered in memory, we still have to save them to local storage using the <code>save</code> command.</p>
             <pre>
                 <code>
-const savedAs = await io.save(file)
-console.log('Saved', savedAs)
+const filename = await io.save(file)
+console.log('Saved:', filename)
                 </code>
             </pre>
 
             <p>Once saved, you can access this file by name using the <code>load</code> function.</p>
             <pre>
                 <code>
-const fileFromLocalStorage = await io.load(savedAs)
+const fileFromLocalStorage = await io.load(filename)
 console.log('File from local storage:', fileFromLocalStorage)
                 </code>
             </pre>

@@ -20,7 +20,7 @@ import hdmfResources from './hdmf-common-schema/common/resources.yaml'
 import hdmfSparse from './hdmf-common-schema/common/sparse.yaml'
 import hdmfTable from './hdmf-common-schema/common/table.yaml'
 
-const parse = (input: string) => JSON.stringify(yaml.parse(input))
+const parse = (input: string) => JSON.stringify(typeof input === 'string' ? yaml.parse(input) : input)
 
 export const namespaces = {
     nwb: typeof namespace === 'string' ? yaml.parse(namespace) : namespace,

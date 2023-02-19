@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "esconform": "^0.0.5",
-    "hdf5-io": "^0.0.18",
+    "hdf5-io": "^0.0.19",
     "lit": "^2.6.1",
     "resize-observer-polyfill": "^1.5.1",
     "visualscript": "0.0.11",

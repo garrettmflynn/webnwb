@@ -3,7 +3,7 @@ import schemas from './schema'
 import API from '../packages/apify';
 import NWBBaseClass from './base';
 // import { objectify } from '../../hdf5-io/src';
-import { changesSymbol, indexedDBFilenameSymbol, isDataset, isGroup, objectify } from 'hdf5-io';
+import { changesSymbol, indexedDBFilenameSymbol, objectify } from 'hdf5-io';
 
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 type SpecificationType = { 'core': ArbitraryObject } & ArbitraryObject
