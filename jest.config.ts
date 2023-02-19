@@ -20,12 +20,14 @@ const config: Config = {
   },
 
   testEnvironment: 'node',
-  testMatch: ['**/tests/**'],
+  testMatch: ['**/tests/**/*.test.[jt]s?(x)'],
   testPathIgnorePatterns: ['/node_modules/'],
   coverageDirectory: './coverage',
   coveragePathIgnorePatterns: ['node_modules'],
   reporters: ['default'],
   extensionsToTreatAsEsm: ['.ts'],
+
+  testTimeout: 10000, // Double the default timeout (to support fetch requests)
 
   verbose: true,
   silent: false

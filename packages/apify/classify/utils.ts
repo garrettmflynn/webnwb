@@ -1,12 +1,14 @@
-import { OptionsType } from "../types"
+import { ArbitraryObject, OptionsType } from "../types"
 
 // NOTE: Must be bound to resolve this value
-export function getPropertyName(name: string, options: Partial<OptionsType>) {
+export function getPropertyName(this: ArbitraryObject, name: string, options: Partial<OptionsType>) {
+
+    const instance = this
     const aliases = options?.aliases
     if (aliases && typeof aliases === 'object') {
       let override = aliases?.[name] as any
       if (!override || typeof override === 'object') {
-        const namespace = aliases[this.name]
+        const namespace = aliases[instance.name]
         override = (namespace && typeof namespace === 'object') ?  namespace[name] : namespace
       }
       if (override) name = override

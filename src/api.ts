@@ -2,8 +2,8 @@ import { ArbitraryObject } from './types/general.types';
 import schemas from './schema'
 import API from '../packages/apify';
 import NWBBaseClass from './base';
-import { objectify } from '../../hdf5-io/src';
-// import { objectify } from 'hdf5-io';
+// import { objectify } from '../../hdf5-io/src';
+import { changesSymbol, indexedDBFilenameSymbol, isDataset, isGroup, objectify } from 'hdf5-io';
 
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 type SpecificationType = { 'core': ArbitraryObject } & ArbitraryObject
@@ -79,7 +79,7 @@ export default class NWBAPI extends API {
               }
               else if (expectedType === 'numeric' || expectedType.includes('float') || expectedType.includes('int')) {
                 if (typeOf === 'number') toReturn = objectify(value)
-                else if (typeOf === 'bigint') toReturn = objectify(Number(value))
+                else if (typeOf === 'bigint' || value instanceof globalThis.BigInt) toReturn = objectify(Number(value))
                 else if (!(value instanceof Number)) onMismatch()
               }
             else console.error('Unconverted dtype', expectedType, value, typeOf, o)
@@ -91,6 +91,7 @@ export default class NWBAPI extends API {
         }
         
         // -------------- HDF5 Schema Support --------------
+        const name = value.constructor?.name ?? ''
           if (o.shape) {
             // if (o.shape) {
               let wasTypedArray = false
@@ -98,18 +99,19 @@ export default class NWBAPI extends API {
               // Try making a specific type of array
               if (typeof o.dtype === 'string') {
                 const arrayType = `${o.dtype[0].toUpperCase() + o.dtype.slice(1)}Array`
-                const typedArray = globalThis[arrayType]
+                let typedArray = (globalThis as any)[arrayType] ?? (name !== 'Array') ? (globalThis as any)[value.constructor.name] : undefined
                 wasTypedArray = !!typedArray
                 if (typedArray) value = new typedArray(value)
               }
               
-              toReturn = (Array.isArray(value) || (value instanceof TypedArray) ? value : [value]) // Create an array object here (if required)
+              toReturn = (Array.isArray(value) || (value instanceof TypedArray ) ? value : [value]) // Create an array object here (if required)
 
               // Otherwise map the values of the normal array
               if (wasTypedArray) return toReturn
               else return toReturn.map((v: any) => handleSingleValue(v, o.dtype)) // Map single values
             // }
           } 
+          else if (name.includes('Array') && !Array.isArray(value)) return value // BigInt64 Arrays
           else return handleSingleValue(value, o.dtype)
       },
 
@@ -140,6 +142,8 @@ export default class NWBAPI extends API {
     const fileConfig = core[version].file.NWBFile
     fileConfig.specifications = specification // Add specification to the file
 
-
+    // Allow Certain HDF5-IO Properties (effectively unset on specification)
+    Object.defineProperty(fileConfig, indexedDBFilenameSymbol, { writable: false })
+    Object.defineProperty(fileConfig, changesSymbol, { writable: false })
   }
 }

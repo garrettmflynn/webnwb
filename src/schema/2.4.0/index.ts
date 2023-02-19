@@ -23,8 +23,8 @@ import hdmfTable from './hdmf-common-schema/common/table.yaml'
 const parse = (input: string) => JSON.stringify(yaml.parse(input))
 
 export const namespaces = {
-    nwb: yaml.parse(namespace),
-    hdmf: yaml.parse(hdmfNamespace)
+    nwb: typeof namespace === 'string' ? yaml.parse(namespace) : namespace,
+    hdmf: typeof hdmfNamespace === 'string' ? yaml.parse(hdmfNamespace) : hdmfNamespace
 }
 
 export const core = {

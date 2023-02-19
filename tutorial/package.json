@@ -6,10 +6,12 @@
     "start": "tinybuild"
   },
   "dependencies": {
-    "esconform": "^0.0.3",
-    "h5wasm": "^0.4.9",
-    "hdf5-io": "^0.0.9",
+    "esconform": "^0.0.5",
+    "hdf5-io": "^0.0.18",
+    "lit": "^2.6.1",
+    "resize-observer-polyfill": "^1.5.1",
     "visualscript": "0.0.11",
+    "webgl-plot": "^0.7.0",
     "webtrack": "0.0.3",
     "yaml": "^2.2.1"
   }

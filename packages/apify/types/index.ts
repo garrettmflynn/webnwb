@@ -13,7 +13,6 @@ export type OptionsType = {
     getNamespaceKey: (str: string) => string,
     getNamespaceLabel: (str: string) => string,
 
-
     className: string[],
     propertyName: string[],
     inheritsFrom: string[],
@@ -36,3 +35,6 @@ export type OptionsType = {
 export type InfoType = OptionsType & {
     version: string
 }
+s
+
+export type ArbitraryObject = {[x:string | symbol]: any}

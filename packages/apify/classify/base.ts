@@ -1,13 +1,12 @@
-import * as caseUtils from "../../../src/utils/case";
 import { OptionsType } from "../types";
 import { hasNestedGroups, isTypedGroup } from "../utils/globals";
 
 // HDF5-IO
-import { isGroup as isGroupType } from '../../../../hdf5-io/src';
-// import { isGroup as isGroupType } from 'hdf5-io';
+// import { isGroup as isGroupType } from '../../../../hdf5-io/src';
+import { isGroup as isGroupType } from 'hdf5-io';
 
-import * as conform from "../../../../esmodel/src/index";
-// import * as conform from 'esconform'
+// import * as conform from "../../../../esmodel/src/index";
+import * as conform from "esconform";
 
 export type ClassOptionsType = {
     // Use to skip autorejection and otherwise generate values
@@ -66,7 +65,6 @@ class ApifyBaseClass {
             
             keys: (key: string | symbol | number, specObj: any) => {
 
-
                 const isPropertyOfGroup = specObj[isGroupType] && !specObj[hasNestedGroups]
 
                 const toReturn = { 
@@ -82,18 +80,38 @@ class ApifyBaseClass {
                     toReturn.silence = false // Do not silence arbitrary properties
                 }
 
-
                 return toReturn
             },
 
-            // NOTE: Internal keys are not transformed here...
-            values: (key: string | symbol | number, value: any, spec: any, _) => {
-                
-                // // ensure groups are resolved as objects
-                // if (spec?.[isGroupType] && value === undefined) value = {}
+            values: (key: string | symbol | number, value: any, spec: any) => {
 
-                return transformClass(value, options, spec) // Transform object into a class using automatic class recognition
-                    ?? getValue(key, value, spec) // Process based on the user-defined callback
+                if (spec?.[isTypedGroup]) {}
+
+                // Handle missing values
+                else if (value === undefined && spec !== undefined) {
+                    if (spec[isGroupType]) value = {} // Resolve untyped groups as empty objects
+                    else {
+
+                        // Provide the specification as a value if not an object
+                        const isObject = spec && typeof spec === 'object'
+                        if (!isObject) value = spec
+                    }
+                }
+
+                // Handle class transformations
+                let returned
+                if (value !== undefined) {
+                    returned = transformClass(value, options, spec) // Transform value (if defined) into a class using automatic class recognition
+                    // if (activated) console.error('path (Transform)', path, res, value)
+                }
+                
+                // Forward non-classes to users
+                if (returned == undefined) returned = getValue(key, value, spec) // Process based on the user-defined callback
+                return returned
+                
+                // EQUIVALENT BUT HARDER TO SEPARATE LOGIC
+                // return ((value === undefined) ? undefined : transformClass(value, options, spec))// Transform value (if defined) into a class using automatic class recognition
+                //     ?? getValue(key, value, spec) // Process based on the user-defined callback
                 
             },
 

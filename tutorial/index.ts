@@ -12,6 +12,7 @@ import * as dandi from '../packages/dandi/src/index'
 
 // Visualscript
 import * as visualscript from "visualscript"
+// import * as visualscript from "../../visualscript/src/index"
 
 const localEditorDiv = document.getElementById('localEditorDiv') as HTMLDivElement
 const dandiEditorDiv = document.getElementById('dandiEditorDiv') as HTMLDivElement
@@ -171,9 +172,9 @@ const subject = {
 console.warn('Original Subject Value', file.general.subject) // TODO: Make sure this is undefined first...as this is currently an empty class.
 
 // -------- NOTE: All of these methods are equivalent --------
+file.general.subject = subject  
 // file.general.subject = new nwb.Subject(subject) 
 // file.subject = subject // Silenced
-file.general.subject = subject 
 // file.createSubject(subject)
 // file.addSubject(new nwb.Subject(subject))
 // file.addSubject(subject)
@@ -210,7 +211,6 @@ data.unit = 'ms'
 
 const behavioralEvents = new nwb.behavior.BehavioralEvents()
 
-console.warn('Creating TimeSeries...')
 // Use the create function...
 behavioralEvents.createTimeSeries({
     name: 'emojiReactions',

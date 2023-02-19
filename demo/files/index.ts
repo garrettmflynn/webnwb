@@ -14,7 +14,7 @@ import links from '../links'
 import * as dandi from '../../packages/dandi/src/index'
 import { Asset } from '../../packages/dandi/src/index'
 
-let file:string, name:string
+let file:string, name:string, activeFile: any | undefined
 
 function formatBytes(bytes: number, decimals: number = 2) {
   if(bytes == 0) return '0 Bytes';
@@ -45,9 +45,9 @@ async function onRender(key: string, target: any, history: {key: string, value: 
   // let key = Object.keys(acquisition)[0]
 
   // let stimKey = (presentation) ? Object.keys(presentation)[0] : undefined
-  const presentationObj = undefined //(stimKey) ? await presentation[stimKey] : undefined
+  // const presentationObj = undefined //(stimKey) ? await presentation[stimKey] : undefined
 
-  const lines = []
+  // const lines = []
   let dataValue
 
   // Show Images
@@ -257,7 +257,7 @@ const save = document.getElementById('save') as HTMLButtonElement
 
 // Divs
 const editorDiv = document.getElementById('editorDiv') as HTMLDivElement
-const plot = document.getElementById('plot') as HTMLDivElement
+// const plot = document.getElementById('plot') as HTMLDivElement
 
 // Add loader
 let loader = new visualscript.Loader({ color: '#7aff80', type: 'linear', text: 'Select a file', showPercent: false, textBackground: 'black', textColor: 'white'})
@@ -276,6 +276,32 @@ editorDiv.insertAdjacentElement('afterbegin', editor)
 console.log('API', nwb)
 
 const io = new nwb.NWBHDF5IO(true)
+
+
+const indexedDBSelect = document.getElementById('indexedDBSelect') as HTMLSelectElement
+const indexedDBButton = document.getElementById('indexedDBButton') as HTMLSelectElement
+
+io.list().then((arr: string[]) => {
+  if (arr.length === 0) {
+    indexedDBButton.disabled = true
+    indexedDBSelect.disabled = true
+    return
+  }
+
+  arr.forEach((str) => {
+    const option = document.createElement('option')
+    option.value = str
+    option.innerHTML = str
+    indexedDBSelect.insertAdjacentElement('beforeend', option)
+  })
+})
+
+indexedDBButton.onclick = async () => {
+  file = indexedDBSelect.value
+  name = file
+  const loaded = await io.load(file)
+  parseFile(loaded)
+}
 
 globalThis.onbeforeunload = () => {
     io.syncFS(false) // Sync IndexedDB
@@ -321,10 +347,10 @@ sampleButton.onclick = () => {
 async function parseFile(file: any, isStreamed: boolean = false){
   console.log('File', file)
   editor.deferValues = isStreamed
+  activeFile = file
 
-
-loader.progress = 1
-editor.set(file)
+  loader.progress = 1
+  editor.set(file)
 
 // progressDiv.innerHTML = 'Loaded ' + name + '. Check the console for output.'
 }
@@ -411,12 +437,14 @@ input.onclick = async () => parseFile(await io.upload())
 // }
 
 save.onclick = () => {
-    io.save(name)
+    if (activeFile) io.save(activeFile)
     // nwbFile.save() // restrict experimentation to one file
 }
 
 // 3. Allow User to Download an NWB File off the Browser
 get.onclick = async () => {
-    io.save(name) // save current object edits
+  if (activeFile) {
+    io.save(activeFile) // save current object edits
     io.download(name)
+  }
 }

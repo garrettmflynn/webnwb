@@ -15,7 +15,7 @@ dandiarchive.org/#/)).
 - 📦 Create NWB files from scratch.
 - ⚒️ Use helper functions like `addAcquisition`, `getAcquisition`, and `createAcquisition` to quickly write data to new and existing NWB files.
 
-> **Note:** While the read access API is stable, the write access API is still in development and not well-documented. Please see the [Contributing](#contributing) section for more information.
+> **Note:** While the read access is stable, write access still experimental and not well-documented. Future version of WebNWB will use the same syntax—but will likely re-implement many of the underlying write functions. Please see the [Contributing](#contributing) section for more information.
 
 ## Getting Started
 ### File Creation Mode
@@ -36,12 +36,9 @@ const newFile = new nwb.NWBFile({
 // Create dummy timeseries data
 const timestamps = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 const data = Array.from(timestamps, e => 100 + e * 10)
-newFile.addAcquisition({
-    name: 'testTimeseries', 
-    data: data, 
-    units: 'm',
-    timestamps
-})
+data.units = 'm'
+
+newFile.addAcquisition('testTimeseries', { data, timestamps })
 ```
 
 To save the file, you'll need an `NWBHDF5IO` instance to handle interactions with the underlying [h5wasm] API:
@@ -51,20 +48,26 @@ const io = new nwb.NWBHDF5IO()
 io.save(file, 'my_file.nwb')
 ```
 
-### File Access Mode
-Accessing an existing file allows you to proxy the underlying [h5wasm] API.
+### Loading a Local File
+Existing files can be loaded using the `io.load` method:
 
 ```javascript
 const file = io.load('my_file.nwb')
 const timeseries = file.acquisition['testTimeseries']
-console.log(timeseries.fileId)
+```
+
+Changes can be made directly to the file object, and then saved using the `io.save` method. If a name is not provided, the file will be saved to the original location.
+
+```javascript
+timeseries.data = [1, 2, 3, 4, 5]
+io.save(file)
 ```
 
 ### Streaming Mode
 Streaming mode allows you to lazy-load data from a file without loading the entire file into memory. This is useful for large files, like those hosted on [DANDI](https://gui.dandiarchive.org/#/).
 
 ```javascript
-const streamed = io.stream('https://example.com/my_file.nwb')
+const streamed = io.load('http://localhost/my_file.nwb', { useStreaming: true })
 ```
 
 These files require you to await properties, as they are not loaded until you request them.
@@ -79,31 +82,21 @@ The essential features of the WebNWB API are aggregated in the [api.ts](./src/ap
 
 Anyone who would like to contribute to the acceptance of `webnwb` as an official NWB API is welcome to message[Garrett Flynn](mailto:garrettmflynn@gmail) to coordinate work on the following areas (or anything else you think will be useful):
 
-#### Read Access
-1. Handle links
-2. Handle references
-3. Handle tables with reference
-
-#### Write Access
-##### Scripting
-1. Use neurodata_type_def to limit the type produced at a certain position (instead of blind matching)
-
-##### File Creation
 1. Validate writing a dataset using [best practices](https://www.nwb.org/best-practices/) and the [schema](https://nwb-schema.readthedocs.io/en/latest/format_description.html#nwbcontainer-nwbdata-nwbdatainterface-base-neurodata-types-for-containers-and-datasets)
-2. Allow writing a dataset in place using the File Access API (Chrome)
-
-#### Stretch Goals
-##### Backend File Support
-3. Zarr
-
-#### Documentation
-1. Demonstrate in the documentation with [tutorials](https://pynwb.readthedocs.io/en/latest/tutorials/general/scratch.html#raw-data) and a viewer like [Vizarr](https://github.com/hms-dbmi/vizarr)
+2. Allow writing a dataset in place using the File Access API (Chrome)t
+3. Support Zarr as a backend file format
 
 ## Derivative Packages
 - [hdf5-io](https://github.com/garrettmflynn/hdf5-io): Load HDF5 files as JavaScript objects using [h5wasm].
 - [apify](./src/apify/index.ts): A way to generate APIs from simple specification languages (e.g. the NWB Schema)
     - [esconform]((https://github.com/garrettmflynn/esconform): A generic library for enforcing schema properties
 - [dandi](./src/dandi/index.ts): A basic API for making calls to the DANDI REST API.
+
+## Known Issues
+1. `.specloc` is not rewritten as an object reference
+2. Since there isn't a file mode that allows overwriting existing properties, we have to create an entire new file representation when saving—and attributes are not written with the exact same type as they were at the beginning (e.g. from 64-bit floating-point to 32-bit integer). **Is this a problem?**
+3. Sometimes we get a **memory overload error** before the file is completely written. This leads to partial rewrites...
+4. **Links, references, and tables (with references) are not yet supported.**
 
 ## Acknowledgments
 Since January 2023, the development of **WebNWB** has been generously supported by a contract from the [Kavli Foundation](https://kavlifoundation.org/). The basic API was originally prototyped as part of the [2022 NWB-DANDI Remote Developer Hackathon](https://neurodatawithoutborders.github.io/nwb_hackathons/HCK12_2022_Remote/) and refined during the [2022 NWB User Days](https://neurodatawithoutborders.github.io/nwb_hackathons/HCK13_2022_Janelia/) event by [Garrett Flynn](https://github.com/garrettmflynn) from [Brains@Play](https://github.com/brainsatplay).

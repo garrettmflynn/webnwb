@@ -4,22 +4,23 @@ import Classify from './classify';
 import InheritanceTree from './classify/InheritanceTree';
 import { hasNestedGroups, isTypedGroup, hasTypedChildren } from './utils/globals';
 
-// HDF5-IO
-import { 
-  // objectify, 
-  isGroup as isGroupType, 
-  isDataset as isDatasetType 
-} from '../../../hdf5-io/src';
-
+// // HDF5-IO
 // import { 
 //   // objectify, 
 //   isGroup as isGroupType, 
 //   isDataset as isDatasetType 
-//  } from 'hdf5-io';
+// } from '../../../hdf5-io/src';
+
+import { 
+  // objectify, 
+  isGroup as isGroupType, 
+  isDataset as isDatasetType, 
+  isAttribute
+ } from 'hdf5-io';
 
 // ESConform
-import * as conform from '../../../esmodel/src/index';
-// import * as conform from 'esconform'
+// import * as conform from '../../../esmodel/src/index';
+import * as conform from 'esconform'
 
 type SpecificationType = { [x: OptionsType['coreName']]: ArbitraryObject } & ArbitraryObject
 
@@ -130,22 +131,24 @@ export default class API {
           if (className){} // Is a class
           else Object.defineProperty(value, isTypedGroup, { value: inheritedType }) // Is a typed group
         }
-
-        Object.defineProperty(value, isGroupType, { value: true })
+        
+        // Mirror HDF5-IO Symbol Behaviors on the JSON Specification
+        Object.defineProperty(value, isGroupType, { value: true }) // NOTE: Set as configurable to avoid downstream errors...
         if (aggregator[isGroupType] && !aggregator[hasNestedGroups]) Object.defineProperty(aggregator, hasNestedGroups, { value: true })
       }      
       
       // Dataset
       else {
+        
         let value = o.value ?? o.default_value // Allow for creating a null object
         const objectValue = value = conform.presets.objectify(name, value)
-        // if (objectValue) {
-          Object.defineProperty(objectValue, isDatasetType, { value: true }) // Setting type on the dataset
-        // } else if (recognizeUndefinedError === false) {
-        //   console.error('Get this to recognize undefined...')
-        //   recognizeUndefinedError = true
-        // }
 
+        // Mirror HDF5-IO Symbol Behaviors on the JSON Specification
+        if (type === 'dataset') Object.defineProperty(objectValue, isDatasetType, { value: true, configurable: true}) // Setting type on the dataset (set as configurable to avoid downstream errors...)
+        else if (type === 'attribute') Object.defineProperty(objectValue, isAttribute, { value: true, configurable: true}) // Setting type on the dataset (set as configurable to avoid downstream errors...)
+        else console.error('Failed to handle type', type, path)
+        
+        // Set the value on the aggregator
         Object.defineProperty(aggregator, name, {value: objectValue, enumerable: true, configurable: true})
 
       } 
@@ -169,6 +172,7 @@ export default class API {
       const set = (o: any, type:string) => this._setFromObject(o, aggregated, type, newPath)
 
       const keys = Object.keys(o)
+
       keys.forEach(key => {
           if (key === 'attributes')  o.attributes.forEach((attr: AttributeType) => set(attr, 'attribute'))
           else if (key === 'groups') o.groups.forEach((group: GroupType) => set(group, 'group'))

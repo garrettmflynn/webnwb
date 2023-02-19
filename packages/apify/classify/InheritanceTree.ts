@@ -1,5 +1,4 @@
-import { ArbitraryObject } from "../../types/general.types";
-
+import { ArbitraryObject } from "../types/index"
 
 let thrownError = false
 class InheritanceTree {

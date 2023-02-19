@@ -7,15 +7,16 @@ import { getPropertyName } from "./utils"
 import { isTypedGroup, hasTypedChildren, hasNestedGroups } from "../utils/globals"
 
 // HDF5-IO
-import { isGroup as isGroupType } from '../../../../hdf5-io/src';
-// import { isGroup as isGroupType } from 'hdf5-io';
+// import { isGroup as isGroupType } from '../../../../hdf5-io/src';
+import { isGroup as isGroupType } from 'hdf5-io';
 
 
 import { ArbitraryObject } from 'src/types/general.types'
 
 // ESConform
-import * as conform from '../../../../esmodel/src/index'
-// import * as conform from 'esconform'
+// import * as conform from '../../../../esmodel/src/index'
+import * as conform from 'esconform'
+
 const newKeySymbol = conform.newKeySymbol
 
 type InheritanceType = {
@@ -117,14 +118,16 @@ export default class Classify {
 
                 // Provide a guess that the class key if none are provided
                 // NOTE: This augments the handler in base.ts to provide suggestions about the type from the parent group 
-                const clsKey = obj.classKey as string
+                const clsKey = options.classKey as string
                 if (!obj[clsKey]) {
                   if (typeAliases.size === 1) {
                     obj[clsKey] = Array.from(typeAliases)[0] // Get only child type
-                    if (obj[clsKey]) console.warn(`[${info.name}]: No type specified for ${method} (${name}). Defaulting to ${obj[clsKey]}.`, obj)
+                    if (obj[clsKey]) console.warn(`[${info.name}]: No class specified on ${name} object. Using child type of ${obj[clsKey]}.`, obj)
                   } else {
                     obj[clsKey] = context.match(obj, Array.from(typeAliases)) // Constrain choices
-                    if (obj[clsKey]) console.warn(`[${info.name}]: Matched type for ${method} (${name}) = ${obj[clsKey]}.`, obj)
+                    if (obj[clsKey]) {
+                      console.warn(`[${info.name}]: No class specified on ${name} object. Matched to ${obj[clsKey]}.`, obj)
+                    }
                   }
                 }
               
