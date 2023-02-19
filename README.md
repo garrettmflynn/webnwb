@@ -6,7 +6,7 @@ Neurodata without Borders — directly on the browser.
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Discord](https://img.shields.io/badge/community-discord-7289da.svg?sanitize=true)](https://discord.gg/CDxskSh9ZB)
 
-`webnwb` is a library for reading and writing Neurodata without Borders (NWB) files on the web. Visit [nwb.brainsatplay.com] for al
+`webnwb` is a library for reading and writing Neurodata without Borders (NWB) files on the web.
 
 ## Features
 - 🔬 Read data from NWB files based on the included specification.
@@ -44,22 +44,25 @@ newFile.addAcquisition('testTimeseries', { data, timestamps })
 To save the file, you'll need an `NWBHDF5IO` instance to handle interactions with the underlying [h5wasm] API:
 ```javascript
 import nwb from 'webnwb'
+
 const io = new nwb.NWBHDF5IO()
-io.save(file, 'my_file.nwb')
+
+const filename = 'my_file.nwb'
+io.save(file, filename)
 ```
 
 ### Loading a Local File
 Existing files can be loaded using the `io.load` method:
 
 ```javascript
-const file = io.load('my_file.nwb')
+const file = io.load(filename)
 const timeseries = file.acquisition['testTimeseries']
 ```
 
 Changes can be made directly to the file object, and then saved using the `io.save` method. If a name is not provided, the file will be saved to the original location.
 
 ```javascript
-timeseries.data = [1, 2, 3, 4, 5]
+timeseries.data = Array.from(timestamps, e => 200 - e * 10) // NOTE: timeseries.data.units is still maintained as 'm' on the new array
 io.save(file)
 ```
 
