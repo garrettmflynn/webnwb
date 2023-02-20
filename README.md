@@ -10,8 +10,7 @@ Neurodata without Borders — directly on the browser.
 
 ## Features
 - 🔬 Read data from NWB files based on the included specification.
-- ⚡ Lazy-load large files (e.g. from the NIH Brain Initiative’s [Distributed Archives for Neurophysiology Data Integration (DANDI)](https://gui.
-dandiarchive.org/#/)).
+- ⚡ Lazy-load large files (e.g. from the NIH Brain Initiative’s [Distributed Archives for Neurophysiology Data Integration (DANDI)](https://gui.dandiarchive.org/#/)).
 - 📦 Create NWB files from scratch.
 - ⚒️ Use helper functions like `addAcquisition`, `getAcquisition`, and `createAcquisition` to quickly write data to new and existing NWB files.
 
