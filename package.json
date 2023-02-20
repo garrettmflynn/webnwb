@@ -1,6 +1,6 @@
 {
   "name": "webnwb",
-  "version": "0.0.12",
+  "version": "0.1.0",
   "description": "A JavaScript API for working with Neurodata stored in the NWB Format",
   "type": "module",
   "main": "dist/index.js",
