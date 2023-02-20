@@ -120,7 +120,7 @@ const step = async (i:number) => {
             
 
             // Add data interface
-            nwbFile.processing['behavior'].addDataInterface(position)
+            nwbFile.processing['behavior'].add(position)
 
             update(nwbFile)
             break;
@@ -248,7 +248,7 @@ const step = async (i:number) => {
                     
             // 10. Append Information to an Existing NWB File
             // const nwbFile2 = io4.load()
-            // const position2 = nwbFile2.processing['behavior'].dataInterfaces['Position']
+            // const position2 = nwbFile2.processing['behavior']['Position']
             // const data2 = Array.from({length: 10}, (v,i) => 300 + 10*i)
 
             // const testSpatialSeries = new nwb.behavior.SpatialSeries('test_spatialseries2', data2, 'starting_gate', {timestamps})

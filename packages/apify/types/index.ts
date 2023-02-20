@@ -26,7 +26,7 @@ export type OptionsType = {
     baseClass?: ApifyBaseClass // Add functionality to the base class
 
     // Override properties on a generated class instance
-    aliases: {
+    overrides: {
       [x: string]: NamespaceOverride | OverrideType
     },
     getValue: (key: string | symbol | number, value: any, o: any) => any

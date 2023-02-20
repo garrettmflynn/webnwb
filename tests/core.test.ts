@@ -1,5 +1,7 @@
 import './node/setBlob' // There's an issue with tinybuild where it expects to have a Blob class but doesn't provide it in Node.js
-import nwb, { ready } from '../src/index';
+import { ready } from '../src/index';
+
+import create, { save } from './create'
 
 describe(`Can create an NWB file`, () => {
 
@@ -7,16 +9,17 @@ describe(`Can create an NWB file`, () => {
 
   beforeAll(async () => {
       await ready
-      nwbFile = new nwb.NWBFile({
-        session_description: 'test',
-        identifier: 'test',
-        session_start_time: new Date(),
-        experimenter: 'Garrett Flynn',
-    })
+      nwbFile = create()
   })
 
   test('instantiated file is an object', () => {
     expect(nwbFile).toBeInstanceOf(Object)
+  })
+
+  test('saved file is an object', async () => {
+    console.log('NWB File', nwbFile)
+    const savedFile = await save(nwbFile, 'myTestFile.nwb')
+    expect(savedFile).toBeInstanceOf(Object)
   })
 
 })

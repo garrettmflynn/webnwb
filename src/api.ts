@@ -10,6 +10,8 @@ type SpecificationType = { 'core': ArbitraryObject } & ArbitraryObject
 
 const getNamespaceKey = (str: string) => str.replace('.yaml', '')//.replace('.extensions', '')
 
+const isAnyArray = (value: any) => (Array.isArray(value) || (value instanceof TypedArray ));
+
 var TypedArray = Object.getPrototypeOf(Uint8Array);
 
 // Generate the NWB API from included specification
@@ -83,6 +85,7 @@ export default class NWBAPI extends API {
                 else if (!(value instanceof Number)) onMismatch()
               }
             else console.error('Unconverted dtype', expectedType, value, typeOf, o)
+
             // else if (o.dtype === 'bool') return new Boolean(value)
             // else if (o.dtype === 'float') return new Number(value)
           }
@@ -92,23 +95,31 @@ export default class NWBAPI extends API {
         
         // -------------- HDF5 Schema Support --------------
         const name = value.constructor?.name ?? ''
+
           if (o.shape) {
             // if (o.shape) {
-              let wasTypedArray = false
+              let wasTypedArray
 
               // Try making a specific type of array
               if (typeof o.dtype === 'string') {
                 const arrayType = `${o.dtype[0].toUpperCase() + o.dtype.slice(1)}Array`
-                let typedArray = (globalThis as any)[arrayType] ?? (name !== 'Array') ? (globalThis as any)[value.constructor.name] : undefined
-                wasTypedArray = !!typedArray
-                if (typedArray) value = new typedArray(value)
+                const typedArray = (globalThis as any)[arrayType] ?? (name !== 'Array' && name.includes('Array')) ? (globalThis as any)[value.constructor.name] : undefined
+                if (typedArray) {
+                  value = (isAnyArray(value) && value.length) ? new typedArray(value) : new typedArray()
+                  wasTypedArray = arrayType
+                }
               }
               
-              toReturn = (Array.isArray(value) || (value instanceof TypedArray ) ? value : [value]) // Create an array object here (if required)
+              toReturn = isAnyArray(value) ? value : (o.shape.length === 1 ? [value] : Array.from({length: o.shape.length}, (_,i) => (i === 0) ? [value] : [])) // Create an array object here (if required)
 
               // Otherwise map the values of the normal array
               if (wasTypedArray) return toReturn
-              else return toReturn.map((v: any) => handleSingleValue(v, o.dtype)) // Map single values
+              else {
+                return toReturn.map((v: any) => {
+                  if (Array.isArray(v)) return v.map((v: any) => handleSingleValue(v, o.dtype))
+                  else return handleSingleValue(v, o.dtype)
+                }) // Map single values
+              }
             // }
           } 
           else if (name.includes('Array') && !Array.isArray(value)) return value // BigInt64 Arrays
@@ -116,9 +127,10 @@ export default class NWBAPI extends API {
       },
 
       // Override properties of a generated class instance
-      aliases: {
+      overrides: {
 
-        NWBDataInterface: 'DataInterface', // NOTE: Why is this in camel case?
+        NWBDataInterface: '', // NOTE: Why is this in camel case?
+        
       },
 
       // In pascal case

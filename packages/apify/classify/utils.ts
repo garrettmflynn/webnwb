@@ -4,14 +4,14 @@ import { ArbitraryObject, OptionsType } from "../types"
 export function getPropertyName(this: ArbitraryObject, name: string, options: Partial<OptionsType>) {
 
     const instance = this
-    const aliases = options?.aliases
-    if (aliases && typeof aliases === 'object') {
-      let override = aliases?.[name] as any
-      if (!override || typeof override === 'object') {
-        const namespace = aliases[instance.name]
+    const overrides = options?.overrides
+    if (overrides && typeof overrides === 'object') {
+      let override = overrides?.[name] as any
+      if (override == undefined || typeof override === 'object') {
+        const namespace = overrides[instance.name]
         override = (namespace && typeof namespace === 'object') ?  namespace[name] : namespace
       }
-      if (override) name = override
+      if (override !== undefined) name = override
     }
   
   

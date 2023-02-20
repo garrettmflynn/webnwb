@@ -57,20 +57,24 @@ nav a {
 }
 
 /* Demo Section */
-.demo {
+.demo, .issue, .workinprogress {
     width: 100%;
     /* border-radius: 0px 0px 25px 25px; */
     border-top: 0;
     position: relative;
 }
 
-.demo > div {
+.demo > div, .issue  > div, .workinprogress > div {
     padding: 10px 25px;
     background:rgb(235, 235, 235)
 }
 
-.demo:before {
-    content: "Demo";
+.demo > div {
+    background: rgb(235, 235, 235);
+}
+
+.demo:before, .issue:before, .workinprogress:before {
+    content: "Info";
     font-weight: bold;
     padding: 5px 10px;
     font-size: 90%;
@@ -79,31 +83,22 @@ nav a {
     color: white;
     width: 100%;
     box-sizing: border-box;
-
 }
 
-.issue {
-    width: 100%;
-    /* border: 1px solid black; */
-    /* border-radius: 0px 0px 25px 25px; */
-    border-top: 0;
-    position: relative;
+.issue:before { 
+    content: "Issue";
+    background: rgb(255, 50, 50);
 }
 
 .issue > div {
-    padding: 10px 25px;
     background: rgb(255, 238, 238);
 }
 
-.issue:before {
-    content: "Issue";
-    font-weight: bold;
-    padding: 5px 10px;
-    font-size: 90%;
-    background: rgb(255, 50, 50);
-    display: block;
-    color: white;
-    width: 100%;
-    box-sizing: border-box;
+.workinprogress:before { 
+    content: "Work in Progress";
+    background: rgb(240, 213, 1);
+}
 
+.workinprogress > div {
+    background: rgb(255, 253, 238);
 }

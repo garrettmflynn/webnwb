@@ -120,10 +120,9 @@ export default class Classify {
                 // NOTE: This augments the handler in base.ts to provide suggestions about the type from the parent group 
                 const clsKey = options.classKey as string
                 if (!obj[clsKey]) {
-                  if (typeAliases.size === 1) {
-                    obj[clsKey] = Array.from(typeAliases)[0] // Get only child type
-                    if (obj[clsKey]) console.warn(`[${info.name}]: No class specified on ${name} object. Using child type of ${obj[clsKey]}.`, obj)
-                  } else {
+                  if (typeAliases.has(method)) obj[clsKey] = method // use the method called to create the object
+                  else if (typeAliases.size === 1) obj[clsKey] = Array.from(typeAliases)[0] // Get only child type
+                  else {
                     obj[clsKey] = context.match(obj, Array.from(typeAliases)) // Constrain choices
                     if (obj[clsKey]) {
                       console.warn(`[${info.name}]: No class specified on ${name} object. Matched to ${obj[clsKey]}.`, obj)
@@ -131,8 +130,7 @@ export default class Classify {
                   }
                 }
               
-
-                // Set typed groups directly. Should always have a base
+                // Set typed groups directly to conform to the spec
                 if (spec[isTypedGroup] && base) {
                   target[base] = obj
                   return target[base]
@@ -140,6 +138,7 @@ export default class Classify {
                 else if (name && create) return create(name, obj)
 
                 console.error(`[${info.name}]: Could not add object:`, args);
+
 
                 return null
 

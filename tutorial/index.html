@@ -36,7 +36,7 @@
             <p>WebNWB can be installed in different ways depending on your use-case. You can use a <code>script</code> tag or ES Module imports to access the library on the browser:</p>
             <pre>
                 <code>
-import nwb from 'https://cdn.jsdelivr.net/npm/webnwb@1.0.0'
+import nwb from 'https://cdn.jsdelivr.net/npm/webnwb@0.1.0'
                 </code>
             </pre>
 
@@ -44,7 +44,7 @@ import nwb from 'https://cdn.jsdelivr.net/npm/webnwb@1.0.0'
                 <code>
 &lt;html&gt;
     &lt;head&gt;
-        &lt;script src='https://cdn.jsdelivr.net/npm/webnwb@1.0.0'&gt;&lt;/script&gt;
+        &lt;script src='https://cdn.jsdelivr.net/npm/webnwb@0.1.0'&gt;&lt;/script&gt;
     &lt;/head&gt;
 &lt;/html&gt;
                 </code>
@@ -143,7 +143,7 @@ const file = await io.load(asset.metadata.contentUrl[0], { useStreaming: true })
                 </div>
             </div>
 
-            <p>Using the file you provided in the last tutorial—or using the streamed DANDI file for dummy data— we'll experiment with updating metadata. On any part of the <code>NWBFile</code>, you can simply update the property to change its representation in memory.</p>
+            <p>Using the file you provided in the last tutorial—or using the streamed DANDI file for dummy data—we'll experiment with updating metadata. On any part of the <code>NWBFile</code>, you can simply update the property to change its representation in memory.</p>
             <pre>
                 <code>
 file.file_create_date = Date.now() 
@@ -188,7 +188,7 @@ console.log('File from local storage:', fileFromLocalStorage)
 
             <h3>Downloading a NWB File from the Browser</h3>
             <p>Finally, if you'd like to download the updated file to your local computer, simply use the <code>download</code> function.</p>
-            <pre>
+            <pre class="language-javascript">
                     <code>
 io.download(filename)
                     </code>
@@ -208,10 +208,21 @@ io.download(filename)
             <p>In this tutorial, we will show you how to acquire behavioral and electroencephalography (EEG) data and write this to a new NWB
                 file as users navigate a webpage.</p>
 
+
+            <div class="workinprogress">
+                <div>
+                    <p>Tutorial #3 currently shows how to track user behavioral data. In the near future, we will add the following explanations:</p>
+                    <ol>
+                        <li>How to acquire fNIRS device data using <a href="https://github.com/brainsatplay/device-decoder" target="_blank"><code>device-decoder</code></a> + the <a href="https://github.com/agencyenterprise/ndx-nirs" target="_blank">ndx-nirs extension</a></li>
+                        <li>How to define a new EMG extension for NWB files + acquire data using <a href="https://github.com/brainsatplay/device-decoder" target="_blank"><code>device-decoder</code></a></li>
+                    </ol>
+                </div>
+            </div>
+
             <h3>Creating a NWB File from Scratch</h3>
             <p>Create a NWBFile object with the required fields (session_description, identifier, session_start_time) and
                 additional metadata.</p>
-
+    
             <!-- A codeblock for declaring a NWB File -->
             <pre>
                     <code>
@@ -225,6 +236,26 @@ const file = new nwb.NWBFile({
 })
                     </code>
                 </pre>
+
+            <p>We will also add a Subject to this experiment.</p>
+            <pre>
+                    <code>
+const subject = new nwb.Subject({
+    subject_id: Math.random().toString(36).substring(7),
+    description: "someone using the website",
+    species: "Homo sapien",
+    sex: "U",
+})
+
+// All of these methods for setting the property are equivalent and align with the NWB Schema
+file.general.subject = subject  
+// file.general.subject = new nwb.Subject(subject) 
+// file.createSubject(subject)
+// file.addSubject(new nwb.Subject(subject))
+// file.addSubject(subject)
+                </code>
+            </pre>
+
 
             <h3>Acquiring Behavioral Data</h3>
             <p>SpatialSeries is a subclass of TimeSeries that represents data in space, such as the position of the user's
@@ -245,10 +276,7 @@ const tracker = webtrack.Tracker()
 const spatialSeries = new nwb.SpatialSeries({
     name: 'cursor',
     description: 'The position (x, y) of the cursor over time.',
-    data: [
-        [],
-        []
-    ],
+    data: [[],[]],
     reference_frame: '(0,0) is the top-left corner of the visible portion of the page.'
 })
 
@@ -288,8 +316,8 @@ position.addSpatialSeries(spatialSeries)
             <pre>
                     <code>
 const behavior = new nwb.ProcessingModule({ description: 'Behavioral data recorded while navigating a webpage.' })
-behavior.addPosition('position', position)
-file.addProcessingModule('behavior', behavior)
+behavior.add(position)
+file.addProcessingModule(behavior)
                     </code>
                 </pre>
 
@@ -344,9 +372,10 @@ tracker.set('click', (info) => {
 
 // Add these behavioral events to the NWB file
 const behavioralEvents = new nwb.BehavioralEvents()
-behavioralEvents.addTimeSeries('buttonPresses', timeseries)
-behavior.addDataInterface('behavioralEvents', behavioralEvents)
+behavioralEvents.addTimeSeries('emojiReactions', timeseries)
+behavior.add(behavioralEvents)
                     </code>
+
                 </pre>
 
             <h3>Download the Acquired Data</h3>
@@ -364,7 +393,7 @@ io.download(filename)
                 <div class="demo">
                     <div>
                         <div>
-                            <button id="downloadAcquisition">Download file</button>
+                            <button id="downloadAcquisition" disabled>Download file</button>
                         </div>
                     </div>
                 </div>

@@ -39,7 +39,7 @@ const mustTransform = (value: any, options: ClassOptionsType, spec: any = value)
     } else return null
 }
 
-const transformClass =(value: any, options: ClassOptionsType, spec: any) => {
+const transformClass = (value: any, options: ClassOptionsType, spec: any) => {
     const cls = mustTransform(value, options, spec)
     if (cls === null) return null
     else if (cls === false) return false
@@ -83,7 +83,12 @@ class ApifyBaseClass {
                 return toReturn
             },
 
-            values: (key: string | symbol | number, value: any, spec: any) => {
+            values: (
+                key: string | symbol | number, 
+                value: any, 
+                spec: any, 
+                // path
+            ) => {
 
                 if (spec?.[isTypedGroup]) {}
 
@@ -106,7 +111,8 @@ class ApifyBaseClass {
                 }
                 
                 // Forward non-classes to users
-                if (returned == undefined) returned = getValue(key, value, spec) // Process based on the user-defined callback
+                if (!returned) returned = getValue(key, value, spec) // Process based on the user-defined callback
+
                 return returned
                 
                 // EQUIVALENT BUT HARDER TO SEPARATE LOGIC

@@ -49,7 +49,7 @@ export default class API {
     this._options = options as OptionsType
     if (!this._options.name) this._options.name = 'apify'
     if (!this._options.namespacesToFlatten) this._options.namespacesToFlatten = []
-    if (!this._options.aliases) this._options.aliases = {}
+    if (!this._options.overrides) this._options.overrides = {}
 
     if (typeof this._options.getValue !== 'function') this._options.getValue = () => undefined // triggert default
 

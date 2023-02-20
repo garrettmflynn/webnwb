@@ -86,7 +86,7 @@ The essential features of the WebNWB API are aggregated in the [api.ts](./src/ap
 Anyone who would like to contribute to the acceptance of `webnwb` as an official NWB API is welcome to message[Garrett Flynn](mailto:garrettmflynn@gmail) to coordinate work on the following areas (or anything else you think will be useful):
 
 1. Validate writing a dataset using [best practices](https://www.nwb.org/best-practices/) and the [schema](https://nwb-schema.readthedocs.io/en/latest/format_description.html#nwbcontainer-nwbdata-nwbdatainterface-base-neurodata-types-for-containers-and-datasets)
-2. Allow writing a dataset in place using the File Access API (Chrome)t
+2. Allow writing a dataset in place using the File Access API (Chrome)
 3. Support Zarr as a backend file format
 
 ## Derivative Packages
@@ -100,6 +100,8 @@ Anyone who would like to contribute to the acceptance of `webnwb` as an official
 2. Since there isn't a file mode that allows overwriting existing properties, we have to create an entire new file representation when saving—and attributes are not written with the exact same type as they were at the beginning (e.g. from 64-bit floating-point to 32-bit integer). **Is this a problem?**
 3. Sometimes we get a **memory overload error** before the file is completely written. This leads to partial rewrites...
 4. **Links, references, and tables (with references) are not yet supported.**
+5. **Cannot save multidimensional arrays** like the data property in a SpatialSeries.
+5. **Timestamp arrays can't be written** (e.g. `timestamps` in a TimeSeries) because they are trying to convert to a BigInt by `h5wasm`.
 
 ## Acknowledgments
 Since January 2023, the development of **WebNWB** has been generously supported by a contract from the [Kavli Foundation](https://kavlifoundation.org/). The basic API was originally prototyped as part of the [2022 NWB-DANDI Remote Developer Hackathon](https://neurodatawithoutborders.github.io/nwb_hackathons/HCK12_2022_Remote/) and refined during the [2022 NWB User Days](https://neurodatawithoutborders.github.io/nwb_hackathons/HCK13_2022_Janelia/) event by [Garrett Flynn](https://github.com/garrettmflynn) from [Brains@Play](https://github.com/brainsatplay).

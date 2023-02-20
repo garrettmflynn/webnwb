@@ -5,13 +5,11 @@ console.log('WebNWB API', nwb)
 // Webtrack
 import * as webtrack from 'webtrack'
 
-// DANDI
-// import * as dandi from '../packages/dandi/dist/index.esm.js'
-import * as dandi from '../packages/dandi/src/index'
-// import * as dandi from 'htts://jsdelivr.net/npm/dandi@0.0.2/dist/index.esm'
-
 // Visualscript
 import * as visualscript from "visualscript"
+import create from 'tests/create'
+import getFromDandi from 'tests/dandi'
+
 // import * as visualscript from "../../visualscript/src/index"
 
 const localEditorDiv = document.getElementById('localEditorDiv') as HTMLDivElement
@@ -50,23 +48,21 @@ getLocalFileButton.onclick = async () => {
 
 
 const getDandiFile = async () => {
-    const id = '000003'
-    const dandiset = await dandi.get(id) // Request a dandiset by ID
+    const start = Date.now()
 
-    if (dandiset) {
-        // const gotDandiset = (await dandi.getAll()).find(o => o.identifier === id)// Get the first dandiset from the list of all dandisets
-        const asset = await dandiset.getAsset('29ba1aaf-9091-469a-b331-6b8ab818b5a6')
-        const io = new nwb.NWBHDF5IO()
-        const start = Date.now()
-        dandiFile = await io.fetch(asset.metadata.contentUrl[0], 'dandiTest.nwb', { useStreaming: true })
+    const id = '000003'
+    const asset_id = '29ba1aaf-9091-469a-b331-6b8ab818b5a6'
+
+    dandiFile = await getFromDandi(id, asset_id)
+    if (dandiFile) {
         console.log('DANDI NWB File', dandiFile)
 
         const now = Date.now()
         const timeToDownload = now - start
 
         // Update Creation Date
-        file.file_create_date = now
-        console.log(file.file_create_date) // [ 1622020000.0 ] // NOTE: Not converting...
+        dandiFile.file_create_date = now
+        console.log('Updated File Create Date', dandiFile.file_create_date) // [ 1622020000.0 ] // NOTE: Not converting...
 
         // const url = 'https://api.dandiarchive.org/api/assets/29ba1aaf-9091-469a-b331-6b8ab818b5a6/download/'
         dandiEditor.set(dandiFile)
@@ -91,6 +87,8 @@ const getDandiFile = async () => {
 
 getDandiFile()
 
+const file = create()
+
 const spanX = document.getElementById('cursorX') as HTMLSpanElement
 const spanY = document.getElementById('cursorY') as HTMLSpanElement
 const spanTime = document.getElementById('cursorTime') as HTMLSpanElement
@@ -99,11 +97,19 @@ const activateBehaviors = document.getElementById('activateBehaviors') as HTMLBu
 const tracker = new webtrack.Tracker()
 tracker.start()
 
+const spatialSeries = file.processing.behavior.Position.cursor
+
 tracker.set('pointermove', (info: any) => {
     const { x, y, timestamp } = info
     spanTime.innerText = (timestamp / 1000).toFixed(2)
     spanX.innerText = x.toFixed(2)
     spanY.innerText = y.toFixed(2)
+
+    spatialSeries.data[0].push(x)
+    spatialSeries.data[1].push(y)
+    const secondsSincePageLoad = timestamp / 1000
+    spatialSeries.timestamps.push(secondsSincePageLoad)
+    // TODO: actually link this in
 })
 
 // const emoji = document.getElementById('emoji')
@@ -117,6 +123,8 @@ emoji.style.fontSize = '100px'
 emoji.style.zIndex = '1000'
 emoji.style.userSelect = 'none'
 document.body.appendChild(emoji)
+
+const timeseries = file.processing.behavior.BehavioralEvents.emojiReactions
 
 const activateBehavioralRewards = () => {
 
@@ -133,98 +141,24 @@ const activateBehavioralRewards = () => {
             setTimeout(() => {
                 emoji.style.display = 'none'
                 active = false  
+                timeseries.data.push(msToShow)
+                timeseries.timestamps.push(info.timestamp / 1000)
             }, msToShow)
         }
     }) 
 
     activateBehaviors.innerHTML = 'deactivate'
-    activateBehaviors.onclick = () => deactivateBehavioralRewards()
+    activateBehaviors.onclick = deactivateBehavioralRewards
 }
 
-activateBehaviors.onclick = () => activateBehavioralRewards()
+activateBehaviors.onclick = activateBehavioralRewards
 
 function deactivateBehavioralRewards() {
-    tracker.set('click', () => {})
+    tracker.set('click', activateBehavioralRewards)
     activateBehaviors.innerHTML = 'activate'
 }
 
-
-const file = new nwb.NWBFile({
-    session_description: 'EEG data and behavioral data recorded while navigating a webpage.',
-    identifier: 'WebNWB_Documentation_Session_' + Math.random().toString(36).substring(7),
-    session_start_time: Date.now(),
-    experimenter: 'Garrett Flynn',
-    institution: 'Brains@Play'
-})
-
 console.log('Acquisition NWB File', file)
-
-// Subject
-const subject = {
-    subject_id: Math.random().toString(36).substring(7),
-    // age: "P90D",
-    // description: "someone using the website",
-    species: "Homo sapien",
-    // sex: "U",
-}
-
-
-console.warn('Original Subject Value', file.general.subject) // TODO: Make sure this is undefined first...as this is currently an empty class.
-
-// -------- NOTE: All of these methods are equivalent --------
-file.general.subject = subject  
-// file.general.subject = new nwb.Subject(subject) 
-// file.subject = subject // Silenced
-// file.createSubject(subject)
-// file.addSubject(new nwb.Subject(subject))
-// file.addSubject(subject)
-console.log('Subject', file.general.subject) 
-
-const spatialSeries = new nwb.behavior.SpatialSeries({
-    name: 'cursor',
-    description: 'The position (x, y) of the cursor over time.',
-
-    // // TODO: Handle data shapes properly
-    // // Mismatched types for data: numeric is expected but object was provided (because of nested arrays)
-    // data: [
-    //     [],
-    //     []
-    // ],
-    referenceFrame: '(0,0) is the top-left corner of the visible portion of the page.'
-})
-console.log('spatialSeries', spatialSeries)
-
-const position = new nwb.behavior.Position()
-console.log('position', position)
-
-position.addSpatialSeries(spatialSeries)
-
-const behavior = new nwb.ProcessingModule({ name: 'behavior', description: 'Behavioral data recorded while navigating a webpage.' })
-console.log('ProcessingModule', behavior)
-
-behavior.addDataInterface(position) // NOTE: Might just want to be .add() | Convention is uppercase
-file.addProcessingModule(behavior)
-
-// Create a TimeSeries object to track behavior events
-const data: any = []
-data.unit = 'ms'
-
-const behavioralEvents = new nwb.behavior.BehavioralEvents()
-
-// Use the create function...
-behavioralEvents.createTimeSeries({
-    name: 'emojiReactions',
-    description: 'The length of time the emoji was shown on the page.',
-    data: [],
-    timestamps: [],
-    unit: 'ms' // NOTE: Accomodate moving this to the data object
-})
-
-console.log('behavioralEvents', behavioralEvents)
-console.log('emojiReactions (TimeSeries)', behavioralEvents.emojiReactions)
-
-// Add these behavioral events to the NWB file
-behavior.addDataInterface(behavioralEvents) // NOTE: Might just want to be .add() | Convention is uppercase
 
 downloadAcquisition.onclick = async () => {
     const filename = 'myBehavior.nwb'
