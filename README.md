@@ -98,9 +98,12 @@ Anyone who would like to contribute to the acceptance of `webnwb` as an official
 1. `.specloc` is not rewritten as an object reference
 2. Since there isn't a file mode that allows overwriting existing properties, we have to create an entire new file representation when saving—and attributes are not written with the exact same type as they were at the beginning (e.g. from 64-bit floating-point to 32-bit integer). **Is this a problem?**
 3. Sometimes we get a **memory overload error** before the file is completely written. This leads to partial rewrites...
+    - Some of these issues might be resolved by moving to the [WorkerFS filesystem](https://github.com/usnistgov/h5wasm/issues/40#issuecomment-1336314071) and uniformly making the API asynchronous.
 4. **Links, references, and tables (with references) are not yet supported.**
 5. **Cannot save multidimensional arrays** like the data property in a SpatialSeries.
 5. **Timestamp arrays can't be written** (e.g. `timestamps` in a TimeSeries) because they are trying to convert to a BigInt by `h5wasm`.
+6. The Node.js filesystem calls did not work through `h5wasm` directly, so they had to be created in `hdf5-io`. 
+    - This might just be an issue with esbuild that has been addressed in [Issue #31](https://github.com/usnistgov/h5wasm/issues/31)
 
 ## Acknowledgments
 Since January 2023, the development of **WebNWB** has been generously supported by a contract from the [Kavli Foundation](https://kavlifoundation.org/). The basic API was originally prototyped as part of the [2022 NWB-DANDI Remote Developer Hackathon](https://neurodatawithoutborders.github.io/nwb_hackathons/HCK12_2022_Remote/) and refined during the [2022 NWB User Days](https://neurodatawithoutborders.github.io/nwb_hackathons/HCK13_2022_Janelia/) event by [Garrett Flynn](https://github.com/garrettmflynn) from [Brains@Play](https://github.com/brainsatplay).
