@@ -4,12 +4,12 @@ import { all } from "./properties"
 export const shallow = (obj, opts={}) => {
     if (typeof obj === 'object') {
         if (Array.isArray(obj)) {
-            obj = [...obj] // Clone the orignal object
+            obj = [...obj] // Clone the original object
             opts.accumulator = []
         } else {
             const keys = (opts.nonenumerable === false) ? Object.keys(obj) : all(obj)
             const newObj = {}
-            for (let key of keys)  newObj[key] = obj[key] // Clone the orignal object
+            for (let key of keys)  newObj[key] = obj[key] // Clone the original object
             obj = newObj
             opts.accumulator =  {}
         }

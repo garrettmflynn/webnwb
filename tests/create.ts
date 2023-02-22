@@ -66,7 +66,7 @@ export const addBehaviorEvents = (processingModule: any) => {
             description: 'The length of time the emoji was shown on the page.',
             data,
             timestamps: [],
-            // unit: 'ms' // TODO: Accomodate moving this to the data object
+            // unit: 'ms' // TODO: Accommodate moving this to the data object
         })
     
         // Add these behavioral events to the NWB file
