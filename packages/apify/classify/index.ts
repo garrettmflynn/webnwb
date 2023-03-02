@@ -275,7 +275,7 @@ export default class Classify {
     }
 
 
-    // Populate all classes now thay ou can reference their information globally
+    // Populate all classes now that they can reference their information globally
     for (let key in this.flat.info) this.get(key)
 
 
