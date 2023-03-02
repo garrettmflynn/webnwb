@@ -1,0 +1,3 @@
+[codespell]
+skip = .git,external,dist,libraries,schema
+# ignore-words-list = 
