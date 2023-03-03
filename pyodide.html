@@ -1,0 +1,80 @@
+<html>
+  <head>
+    <title>Pyodide Test</title>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
+    <script type="text/javascript">
+      async function main() {
+
+        const start = performance.now()
+        let pyodide = await loadPyodide();
+        await pyodide.loadPackage("micropip");
+        const micropip = pyodide.pyimport("micropip");
+        await pyodide.loadPackage("h5py");
+        await pyodide.loadPackage("pandas");
+        await pyodide.loadPackage("numpy");
+        await pyodide.loadPackage("scipy");
+        await pyodide.loadPackage("jsonschema");
+        await pyodide.loadPackage("setuptools");
+        await pyodide.loadPackage("ruamel.yaml");
+        await micropip.install("hdmf");
+        await micropip.install("pynwb==2.2.0");
+
+         console.log("Time to setup: %s ms", (performance.now() - start)/1000)
+
+         const downloadstart = performance.now()
+        const file = await pyodide.runPythonAsync(`
+        # Check HDMF version
+        import hdmf
+        print("HDMF Version: %s" % hdmf.__version__)
+
+        # Check PyNWB version
+        import pynwb
+        print("PyNWB Version: %s" % pynwb.__version__)
+
+        # Check h5py version
+        import h5py
+        print("h5py Version: %s" % h5py.__version__)
+        print("h5py Drivers: %s" % str(h5py.registered_drivers()))
+
+        # Download a small file from DANDI for testing from dandiset 000126:
+        # https://dandiarchive.org/dandiset/000126/0.210813.0327/files?location= 
+        from pyodide.http import pyfetch
+        nwb_testfile = "test.nwb"
+        response = await pyfetch("https://dandiarchive.s3.amazonaws.com/blobs/11e/c89/11ec8933-1456-4942-922b-94e5878bb991")
+        if response.status == 200:
+           with open(nwb_testfile, "wb") as f:
+              f.write(await response.bytes())
+
+        # Try to open the nwb file
+        from pynwb import NWBHDF5IO
+        io = NWBHDF5IO(nwb_testfile, mode='r')
+        nwbfile = io.read()
+       `);
+       
+       console.log("Time to download NWB file", (performance.now() - downloadstart)/1000)
+       console.log('file', file)
+        //  console.log('First file_create_date', Object.keys(file.file_create_date));
+        console.log('session_start_time', file.session_start_time.strftime("%m/%d/%Y, %H:%M:%S"));
+        console.log('session_description', file.session_description);
+        console.log('identifier', file.identifier);
+
+        console.log('Acquisitions?', Object.keys(file.acquisition))
+        console.log('To JS', file.toJs())
+        console.log('To string', file.toString())
+
+        // const acquisition = file.acquisition;
+        // Object.keys(acquisition).forEach((key) => {
+        //     const testData = acquisition.get(key);
+        //     Object.keys(testData).forEach((key) => {
+        //     console.log(key, testData[key]);
+        //     })
+        //   console.log(key, testData[key]);
+        // })
+      }
+      main();
+    </script>
+  </body>
+</html>
