@@ -46,19 +46,33 @@ export class ObjectEditor extends LitElement {
       box-sizing: border-box;
     }
 
+
+    :host  {
+      display: block;
+      background: white;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid gray;
+      height: 100%;
+      width: 100%;
+      position: relative;
+    }
+
     delete-icon, open-icon, add-icon, edit-icon {
       width: 25px;
       cursor: pointer;
     }
 
-    :host > * {
-      background: white;
-      border-radius: 4px;
-      overflow: hidden;
-      box-shadow: 0 1px 5px 0 rgb(0 0 0 / 20%);
-      height: 100%;
-      width: 100%;
-      position: relative;
+    nwb-editor-property { 
+      border-bottom: 1px solid lightgray;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+    }
+
+    nwb-editor-property:last-child {
+      border-bottom: none;
+      padding-bottom: 0px;
+      margin-bottom: 0px;
     }
 
     img {
