@@ -1,0 +1,8 @@
+{
+    "name": "easynwb",
+    "version": "0.0.1",
+    "type": "module",
+    "dependencies": {
+        "lit": "^2.7.0"
+    }
+}

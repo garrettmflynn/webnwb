@@ -6,6 +6,8 @@ docs/docs/reference
 
 # Library Builds
 docs/dist
+packages/dandi/dist
+packages/apify/dist
 /dist
 
 **.lock
