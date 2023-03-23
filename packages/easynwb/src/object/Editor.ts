@@ -15,6 +15,10 @@ import './icons/EditIcon'
 // Buttons
 import { Button } from '../Button'
 import { Property } from './Property';
+import { newKeySymbol } from '../../../../dist/index.esm';
+import { hasTypedChildren } from 'packages/apify/utils/globals';
+import { Select } from '../input/Select';
+import { TypedInput } from '../input/TypedInput';
 
 
 var TypedArray = Object.getPrototypeOf(Uint8Array);
@@ -98,6 +102,14 @@ export class ObjectEditor extends LitElement {
       display: flex;
       align-items: center;
       justify-content: space-between;
+    }
+
+    #add-property-inputs > * {
+      margin-right: 10px;
+    }
+
+    #add-property-inputs > *:last-child {
+      margin-right: 0px;
     }
 
     #history span {
@@ -383,6 +395,9 @@ export class ObjectEditor extends LitElement {
       const propertyInput = (this.shadowRoot as ShadowRoot).querySelector('#add-property-inputs') as HTMLElement
       if (propertyInput) return // Already adding a property
 
+
+      const availableTypes = parent[hasTypedChildren] ?? new Set(['string', 'number', 'boolean', 'object', 'array', 'undefined'])
+
       let resolvedKey = key ?? ''
         const keyInput = new Input({
           value: key, 
@@ -390,18 +405,27 @@ export class ObjectEditor extends LitElement {
           onInput: (ev: any) => resolvedKey = ev.target.value
         })
 
-        // const valueSelector = new Input({
-        //   value, 
-        //   label: 'Value',
-        //   onInput: (ev: any) => value = ev.target.value
-        // })
+        const valueInput = new TypedInput({ value, type: value ? typeof value : 'undefined' })
+        const renderType = (type: string) => valueInput.type = type
+
+        const typeSelector = new Select({
+          value: valueInput.type, 
+          label: 'Type',
+          options: Array.from(availableTypes),
+          onChange: (ev: any) => {
+            renderType(ev.target.value)
+          }
+        })
 
         const submit = new Button()
         submit.onclick = () => {
           div.remove()
           if (!resolvedKey) throw new Error(`No property key specified.`)
 
-          parent[resolvedKey] = value
+          // Create a new key on the parent
+          if (parent[newKeySymbol]) parent[newKeySymbol](resolvedKey, valueInput.value) // Ensure property reacts to new key
+          else parent[resolvedKey] = valueInput.value
+
           if (!(resolvedKey in parent)) throw new Error(`Cannot add ${resolvedKey} to this object.`)
           this.set(parent)
         }
@@ -411,16 +435,19 @@ export class ObjectEditor extends LitElement {
         const div = document.createElement('div')
         div.id="add-property-inputs"
         keyInput.style.flexGrow = '1'
-        // valueSelector.style.flexGrow = '1'
+        valueInput.style.flexGrow = '1'
+        typeSelector.style.flexGrow = '1'
+        typeSelector.style.width = '100%'
 
 
         div.appendChild(keyInput)
-        // div.appendChild(valueSelector)
+        div.appendChild(typeSelector)
+        div.appendChild(valueInput)
         div.appendChild(submit)
 
         const container = (this.shadowRoot as ShadowRoot).querySelector('#container') as HTMLElement
         container.appendChild(div)
-    }
+     }
 
     isClassValue = (val: any) => {
       let classes = [String, Boolean, Number]
@@ -430,7 +457,6 @@ export class ObjectEditor extends LitElement {
     }
 
     change = async (key: string, parent=this.target) => {
-      console.log(key, parent, this.target)
       const previousKey = this.header as string
       const val = await Promise.resolve(parent[key])
       this.updateHistory(parent, previousKey)

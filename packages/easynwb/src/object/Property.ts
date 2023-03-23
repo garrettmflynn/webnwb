@@ -140,9 +140,12 @@ deferValues: boolean
 
     change = async (key: resolvedKeyTypes, parent=this.parent): Promise<any> => {} // User-defined function
 
+    onDelete = (key: resolvedKeyTypes, parent=this.parent) => {} // User-defined function
+
     delete = () => {
       try {
         delete this.parent[this.key]
+        this.remove()
       } catch (e) {
         let val = this.parent[this.key]
         this.parent[this.key] = undefined

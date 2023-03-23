@@ -1,5 +1,5 @@
 import { OptionsType } from "../types";
-import { hasNestedGroups, isTypedGroup } from "../utils/globals";
+import { hasNestedGroups, hasTypedChildren, isTypedGroup } from "../utils/globals";
 
 // HDF5-IO
 // import { isGroup as isGroupType } from '../../../../hdf5-io/src';
@@ -16,17 +16,21 @@ export type ClassOptionsType = {
 
 
 // NOTE: The only thing this can't catch is the type suggestions of the parent group (for user-specified keys out of the spec)
-const mustTransform = (value: any, options: ClassOptionsType, spec: any = value) => {
+const mustTransform = (value: any, options: ClassOptionsType, spec: any | string = value) => {
 
     let cls: any; 
-    const clsKeys = [
-        options.classKey,  // User-specified class key
-        options.specClassKey, // Spec-specified class key
-        // options.inheritKey, // User-specified inheritance key
-    ]
+    let clsName: string | undefined;
+    // if (typeof spec === 'string') clsName = spec
+    // else {
+        const clsKeys = [
+            options.classKey,  // User-specified class key
+            options.specClassKey, // Spec-specified class key
+            // options.inheritKey, // User-specified inheritance key
+        ]
 
-    const foundClsKey = clsKeys.find(key => key && spec && typeof spec === 'object' && key in spec)
-    const clsName = spec[isTypedGroup] ?? (foundClsKey ? spec[foundClsKey] : undefined)
+        const foundClsKey = clsKeys.find(key => key && spec && typeof spec === 'object' && key in spec)
+        clsName = spec[isTypedGroup] ?? (foundClsKey ? spec[foundClsKey] : undefined)
+    // }
     
     if (clsName) {
         // const clsName = caseUtils.set(clsName, 'pascal')
@@ -39,7 +43,7 @@ const mustTransform = (value: any, options: ClassOptionsType, spec: any = value)
     } else return null
 }
 
-const transformClass = (value: any, options: ClassOptionsType, spec: any) => {
+const transformClass = (value: any, options: ClassOptionsType, spec: any | string) => {
     const cls = mustTransform(value, options, spec)
     if (cls === null) return null
     else if (cls === false) return false
@@ -86,8 +90,8 @@ class ApifyBaseClass {
             values: (
                 key: string | symbol | number, 
                 value: any, 
-                spec: any, 
-                // path
+                spec: any,
+                // specObject: any
             ) => {
 
                 if (spec?.[isTypedGroup]) {}

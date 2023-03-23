@@ -39,7 +39,7 @@
   "devDependencies": {
     "@jest/globals": "^29.4.1",
     "@types/jest": "^29.4.0",
-    "esconform": "0.0.5",
+    "esconform": "0.0.6",
     "hdf5-io": "0.0.19",
     "jest": "^29.4.1",
     "jest-transform-yaml": "^1.0.0",

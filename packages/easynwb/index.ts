@@ -13,7 +13,9 @@ const io = new nwb.NWBHDF5IO()
 
 const run = async () => {
     const start = performance.now()
-    const file = await io.load("https://dandiarchive.s3.amazonaws.com/blobs/11e/c89/11ec8933-1456-4942-922b-94e5878bb991", {useStreaming: true})
+    const file = await io.load("https://dandiarchive.s3.amazonaws.com/blobs/11e/c89/11ec8933-1456-4942-922b-94e5878bb991", {
+        // useStreaming: true
+    })
     console.log(file, performance.now() - start)
     editor.set(file)
 }

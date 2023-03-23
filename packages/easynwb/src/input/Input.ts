@@ -27,6 +27,7 @@ export class Input extends LitElement {
     // properties getter
     static get properties() {
         return Object.assign(PersistableProps, {
+            type: { type: String, reflect: true },
             disabled: { type: Boolean, reflect: true },
             outline: { type: Boolean, reflect: true },
         });
@@ -36,8 +37,9 @@ export class Input extends LitElement {
         super();
 
         const val =  getPersistent(props)        
-        this.value = props.value ?? (val) ? val : "";
+        this.value = props.value ?? (val) ?? "";
 
+        this.type = props.type ?? "text";
         this.outline = props.outline ?? false;
         this.disabled = props.disabled ?? false;
         this.label = props.label;
@@ -135,7 +137,7 @@ opacity: 0.5;
         return html`
             <div class="form-group">
                 <input
-                value=${this.value}
+                value="${this.value}"
                 class=${classMap({
                             outline: this.outline ?? false
                         })}
