@@ -35,6 +35,5 @@ export type OptionsType = {
 export type InfoType = OptionsType & {
     version: string
 }
-s
 
 export type ArbitraryObject = {[x:string | symbol]: any}

@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@jest/globals": "^29.4.1",
+    "@modyfi/vite-plugin-yaml": "^1.0.4",
     "@types/jest": "^29.4.0",
     "esconform": "0.0.6",
     "hdf5-io": "0.0.19",
@@ -51,6 +52,9 @@
     "tslib": "^2.5.0",
     "typescript": "4.9.5",
     "visualscript": "0.0.11",
+    "vite": "^4.2.1",
+    "vite-plugin-dts": "^2.2.0",
+    "vitest": "^0.30.1",
     "webgl-plot": "^0.7.0",
     "yaml": "^2.1.1"
   }

@@ -1,5 +1,5 @@
 import { OptionsType } from "../types";
-import { hasNestedGroups, hasTypedChildren, isTypedGroup } from "../utils/globals";
+import { hasNestedGroups, isTypedGroup } from "../utils/globals";
 
 // HDF5-IO
 // import { isGroup as isGroupType } from '../../../../hdf5-io/src';
