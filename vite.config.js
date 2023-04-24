@@ -5,6 +5,10 @@ import ViteYaml from '@modyfi/vite-plugin-yaml';
 
 export default defineConfig({
   base: '',
+
+  worker: {
+    format: 'es'
+  },
   build: {
     outDir: 'dist',
     lib: {

@@ -4,19 +4,20 @@ import Classify from './classify';
 import InheritanceTree from './classify/InheritanceTree';
 import { hasNestedGroups, isTypedGroup, hasTypedChildren } from './utils/globals';
 
-// // HDF5-IO
-// import { 
-//   // objectify, 
-//   isGroup as isGroupType, 
-//   isDataset as isDatasetType 
-// } from '../../../hdf5-io/src';
-
+// HDF5-IO
 import { 
   // objectify, 
   isGroup as isGroupType, 
-  isDataset as isDatasetType, 
+  isDataset as isDatasetType,
   isAttribute
- } from 'hdf5-io';
+} from '../../../hdf5-io/src';
+
+// import { 
+//   // objectify, 
+//   isGroup as isGroupType, 
+//   isDataset as isDatasetType, 
+//   isAttribute
+//  } from 'hdf5-io';
 
 // ESConform
 // import * as conform from '../../../esmodel/src/index';

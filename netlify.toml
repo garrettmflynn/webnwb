@@ -4,5 +4,5 @@
     Access-Control-Allow-Origin = "*"
 
 [context.main]
-  publish = "docs/build/"
-  command = "npm run build:docs"
+  publish = "docs/.vitepress/dist"
+  command = "npm run docs:build"

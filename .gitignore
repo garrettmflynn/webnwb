@@ -4,6 +4,9 @@ node_modules
 _bundles
 docs/docs/reference
 
+docs/.vitepress/dist
+docs/.vitepress/cache
+
 # Library Builds
 docs/dist
 packages/dandi/dist
