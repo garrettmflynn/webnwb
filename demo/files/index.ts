@@ -7,7 +7,8 @@ import * as NWBCodec from '../../external/freerange/nwb/index'
 import * as freerange from '../../external/freerange/index.esm'
 
 import nwb from '../../src/index'
-// import nwb from '../../dist/index.js'
+// import nwb from '../../dist/index.es.js'
+// import HDF5IO from 'hdf5-io'
 
 import * as utils from '../utils'
 import links from '../links'
@@ -15,6 +16,11 @@ import links from '../links'
 // import * as nwb from 'https://cdn.jsdelivr.net/npm/webnwb@latest/dist/index.esm.js'
 import * as dandi from '../../packages/dandi/src/index'
 import { Asset } from '../../packages/dandi/src/index'
+
+console.log('API', nwb)
+
+// const io = new HDF5IO()
+const io = new nwb.NWBHDF5IO(true)
 
 let file:string, name:string, activeFile: any | undefined
 
@@ -274,10 +280,6 @@ let editor = new visualscript.ObjectEditor({
 // let editor = new visualscript.Tree()
 editor.id = 'editor'
 editorDiv.insertAdjacentElement('afterbegin', editor)
-
-console.log('API', nwb)
-
-const io = new nwb.NWBHDF5IO(true)
 
 
 const indexedDBSelect = document.getElementById('indexedDBSelect') as HTMLSelectElement

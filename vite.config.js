@@ -6,23 +6,33 @@ import ViteYaml from '@modyfi/vite-plugin-yaml';
 export default defineConfig({
   base: '',
 
-  worker: {
-    format: 'es'
+  // worker: {
+  //   format: 'es'
+  // },
+
+  optimizeDeps: {
+    exclude: [
+      'hdf5-io'
+    ]
   },
+
   build: {
-    outDir: 'dist',
+    target: 'esnext',
     lib: {
       name: 'nwb',
-      entry: {
-        index: 'src/index'
-      }
+      entry: 'src/index',
+      fileName: (format) => `index.${format}.js`,
     },
     rollupOptions: {
+      external: [
+        'hdf5-io'
+      ],
       output: {
         exports: 'named',
       }
     }
   },
+
   test: {
     environment: 'jsdom'
   },

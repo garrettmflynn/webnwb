@@ -33,16 +33,10 @@
   "author": "Garrett Flynn <garrettmflynn@gmail.com>",
   "license": "AGPL-3.0-or-later",
   "private": false,
-  "dependencies": {
-    "h5wasm": "^0.4.9",
-    "node-fetch": "^3.3.0",
-    "typescript-lru-cache": "^2.0.0",
-    "web-worker": "^1.2.0"
-  },
   "devDependencies": {
     "@modyfi/vite-plugin-yaml": "^1.0.4",
     "esconform": "0.0.6",
-    "hdf5-io": "0.0.21",
+    "hdf5-io": "0.0.23",
     "lit": "^2.6.1",
     "resize-observer-polyfill": "^1.5.1",
     "ts-node": "^10.9.1",
