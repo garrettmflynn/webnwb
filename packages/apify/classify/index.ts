@@ -11,10 +11,9 @@ import { isTypedGroup, hasTypedChildren, hasNestedGroups } from "../utils/global
 import { isGroup as isGroupType } from 'hdf5-io';
 
 
-import { ArbitraryObject } from 'src/types/general.types'
+import { ArbitraryObject } from '../../../src/types/general.types'
 
 // ESConform
-// import * as conform from '../../../../esmodel/src/index'
 import * as conform from 'esconform'
 
 const newKeySymbol = conform.newKeySymbol

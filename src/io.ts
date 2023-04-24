@@ -1,5 +1,4 @@
 import NWBAPI from './api';
-// import HDF5IO, { IOInput } from '../../hdf5-io/src/index';
 import HDF5IO, { IOInput } from 'hdf5-io';
 
 export default class NWBHDF5IO extends HDF5IO {
@@ -12,9 +11,10 @@ export default class NWBHDF5IO extends HDF5IO {
       path: "/nwb",
       extension: "nwb",
       mimeType: "application/x-nwb",
-      postprocess: (info: any, transformToSnakeCase = true) => {
+      postprocess: async function (info: any, transformToSnakeCase = true) {
+        const specifications = await this.resolveStream(info.specifications) // Pre-resolve the specifications
         const version = info.nwb_version ?? 'latest'
-        let api = this.apis.get(version) ?? new NWBAPI(info.specifications, options.debug) // Get / Create the API | NOTE: Allow for the IO debug flag to be passed to the API
+        let api = this.apis.get(version) ?? new NWBAPI(specifications, options.debug) // Get / Create the API | NOTE: Allow for the IO debug flag to be passed to the API
         this.apis.set(api._version ?? api._latest, api) // Store the API
         if (api.NWBFile) return new api.NWBFile(info, { transformToSnakeCase })
         else {

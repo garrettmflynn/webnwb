@@ -6,8 +6,8 @@ import * as visualscript from 'visualscript'
 import * as NWBCodec from '../../external/freerange/nwb/index'
 import * as freerange from '../../external/freerange/index.esm'
 
-import nwb from '../../src/index'
-// import nwb from '../../dist/index.es.js'
+// import nwb from '../../src/index'
+import nwb from '../../dist/index.es.js'
 // import HDF5IO from 'hdf5-io'
 
 import * as utils from '../utils'
@@ -349,7 +349,6 @@ sampleButton.onclick = () => {
 }
 
 async function parseFile(file: any, isStreamed: boolean = false){
-  console.log('File', file)
   editor.deferValues = isStreamed
   activeFile = file
 

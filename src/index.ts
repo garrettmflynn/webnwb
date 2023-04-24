@@ -15,6 +15,8 @@ api.NWBHDF5IO = io
 // Export Default API
 export default api
 
+export const NWBHDF5IO = io // Export named IO reference
+
 
 export {
 
@@ -26,5 +28,5 @@ export {
 
     // API
     api,
-    io
+    io,
 }

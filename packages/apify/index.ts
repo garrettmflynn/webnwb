@@ -20,7 +20,6 @@ import {
  } from 'hdf5-io';
 
 // ESConform
-// import * as conform from '../../../esmodel/src/index';
 import * as conform from 'esconform'
 
 type SpecificationType = { [x: OptionsType['coreName']]: ArbitraryObject } & ArbitraryObject
@@ -127,7 +126,8 @@ export default class API {
 
       // Group
       if (isGroup) {
-        const value = aggregator[name] = {} as any// Set aggregator value
+        if (!(name in aggregator)) aggregator[name] = {} as any // Set aggregator value (if not set)
+        const value = aggregator[name]
         if (inheritedType) {
           if (className){} // Is a class
           else Object.defineProperty(value, isTypedGroup, { value: inheritedType }) // Is a typed group

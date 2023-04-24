@@ -3,13 +3,12 @@
   "version": "0.1.0",
   "description": "A JavaScript API for working with Neurodata stored in the NWB Format",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.esm.js",
-  "types": "dist/src/index.d.ts",
+  "main": "dist/index.umd.js",
+  "module": "dist/index.es.js",
+  "types": "dist/index.d.ts",
   "exports": {
-    "require": "./dist/index.node.js",
-    "import": "./dist/index.esm.js",
-    "default": "./dist/index.js"
+    "import": "./dist/index.es.js",
+    "default": "./dist/index.umd.js"
   },
   "files": [
     "dist"
@@ -18,9 +17,8 @@
     "start": "vite",
     "build": "vite build",
     "docs": "cd docs && yarn && yarn run start",
-    "typecheck": "tsc --watch --preserveWatchOutput --noEmit",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --coverage",
-    "build:docs": "cd docs && yarn && yarn run build",
+    "test": "vitest",
+    "coverage": "vitest run --coverage",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
@@ -36,7 +34,7 @@
   "devDependencies": {
     "@modyfi/vite-plugin-yaml": "^1.0.4",
     "esconform": "0.0.6",
-    "hdf5-io": "0.0.23",
+    "hdf5-io": "0.0.26",
     "lit": "^2.6.1",
     "resize-observer-polyfill": "^1.5.1",
     "ts-node": "^10.9.1",

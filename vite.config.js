@@ -22,14 +22,6 @@ export default defineConfig({
       name: 'nwb',
       entry: 'src/index',
       fileName: (format) => `index.${format}.js`,
-    },
-    rollupOptions: {
-      external: [
-        'hdf5-io'
-      ],
-      output: {
-        exports: 'named',
-      }
     }
   },
 
