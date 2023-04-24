@@ -2,6 +2,7 @@ import './node/setBlob' // There's an issue with tinybuild where it expects to h
 import { ready } from '../src/index';
 
 import create, { save } from './create'
+import { beforeAll, describe, expect, test } from 'vitest';
 
 describe(`Can create an NWB file`, () => {
 
