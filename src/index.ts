@@ -5,8 +5,8 @@ import { newKeySymbol } from 'esconform'
 
 
 // Ensure HDF5 Features are ready
-// import { ready } from 'hdf5-io';
-import { ready } from '../../hdf5-io/src/index';
+import { ready } from 'hdf5-io';
+// import { ready } from '../../hdf5-io/src/index';
 
 // Generate API + Attach IO as a Module
 const api = new NWBAPI()

@@ -1,6 +1,6 @@
 import NWBAPI from './api';
-import HDF5IO, { IOInput } from '../../hdf5-io/src/index';
-// import HDF5IO, { IOInput } from 'hdf5-io';
+// import HDF5IO, { IOInput } from '../../hdf5-io/src/index';
+import HDF5IO, { IOInput } from 'hdf5-io';
 
 export default class NWBHDF5IO extends HDF5IO {
 

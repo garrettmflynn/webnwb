@@ -7,8 +7,8 @@ import { getPropertyName } from "./utils"
 import { isTypedGroup, hasTypedChildren, hasNestedGroups } from "../utils/globals"
 
 // HDF5-IO
-import { isGroup as isGroupType } from '../../../../hdf5-io/src';
-// import { isGroup as isGroupType } from 'hdf5-io';
+// import { isGroup as isGroupType } from '../../../../hdf5-io/src';
+import { isGroup as isGroupType } from 'hdf5-io';
 
 
 import { ArbitraryObject } from 'src/types/general.types'

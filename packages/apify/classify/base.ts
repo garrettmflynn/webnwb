@@ -2,8 +2,8 @@ import { OptionsType } from "../types";
 import { hasNestedGroups, isTypedGroup } from "../utils/globals";
 
 // HDF5-IO
-import { isGroup as isGroupType } from '../../../../hdf5-io/src';
-// import { isGroup as isGroupType } from 'hdf5-io';
+// import { isGroup as isGroupType } from '../../../../hdf5-io/src';
+import { isGroup as isGroupType } from 'hdf5-io';
 
 // import * as conform from "../../../../esmodel/src/index";
 import * as conform from "esconform";

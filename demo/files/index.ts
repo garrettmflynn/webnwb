@@ -6,8 +6,8 @@ import * as visualscript from 'visualscript'
 import * as NWBCodec from '../../external/freerange/nwb/index'
 import * as freerange from '../../external/freerange/index.esm'
 
-// import nwb from '../../src/index'
-import nwb from '../../dist/index.js'
+import nwb from '../../src/index'
+// import nwb from '../../dist/index.js'
 
 import * as utils from '../utils'
 import links from '../links'
