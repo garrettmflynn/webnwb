@@ -71,6 +71,10 @@ export default class Classify {
           super(info, Object.assign(copy, classOptions), specs)
 
           context.applyHelpers(this, undefined, specInfo, [name])   // Apply helpers to the entire class object
+
+          if (context.info) context.info.generateInstanceValue.forEach(({ key, fn }) => {
+            if (key in this) this[key] = fn.call(this)
+          })
         }
       }
     })[name];

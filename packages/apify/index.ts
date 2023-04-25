@@ -232,13 +232,15 @@ export default class API {
               const schemaInfo = version[name]
               const info = (typeof schemaInfo === 'string') ? JSON.parse(schemaInfo) : schemaInfo
 
-              base[label] = this._setFromObject(info, undefined, undefined, [label])
+              const spec = base[label] = this._setFromObject(info, undefined, undefined, [label])
+
+              for (let name in spec) this._options.onSchemaValue ? this._options.onSchemaValue(name, spec[name], namespace.name) : info
 
               const path = [namespace.name, namespace.version, label]
 
               // Track Object Namespaces and Paths
-              for (let key in base[label]) this._nameToSchema[key] = { namespace: namespace.name, path }
-              scopedSpec[label] = base[label]
+              for (let key in spec) this._nameToSchema[key] = { namespace: namespace.name, path }
+              scopedSpec[label] = spec
             }
           })
 

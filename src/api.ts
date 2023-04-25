@@ -3,13 +3,13 @@ import schemas from './schema'
 import API from '../packages/apify';
 import NWBBaseClass from './base';
 // import { changesSymbol, indexedDBFilenameSymbol, objectify } from '../../hdf5-io/src';
-import { changesSymbol, indexedDBFilenameSymbol, objectify } from 'hdf5-io';
+import { objectify } from 'hdf5-io';
 import { v4 as uuidv4 } from 'uuid';
 
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 type SpecificationType = { 'core': ArbitraryObject } & ArbitraryObject
 
-type NamespaceURLArray = URL[]
+// type NamespaceURLArray = URL[]
 
 const getNamespaceKey = (str: string) => str.replace('.yaml', '')//.replace('.extensions', '')
 
@@ -58,19 +58,22 @@ export default class NWBAPI extends API {
 
       baseClass: NWBBaseClass, // Base Class to use for all classes
 
-      // onSchemaValue: (key: string, value: any, o: any, namespace: string) => {
-      //   if ('neurodata_type' in o) {
-      //     if (!o.namespace) {
-      //       // return namespace // String representation of the location of the schema
-      //       throw new Error(`Namespace not defined for ${key}`)
-      //     }
-      //     if (!o.object_id) {
-      //       // const id = uuidv4();
-      //       // return uuidv4 // Generate a new UUID for the object
-      //       throw new Error(`object_id not defined for ${key}`)
-      //     }
-      //   }
-      // },
+      onSchemaValue: (key: string, value: any, namespace: string) => {
+        if ('neurodata_type_def' in value) {
+          if (!value.namespace)  value.namespace = namespace // Set the namespace
+          
+          if (!('object_id' in value)) Object.defineProperty(value, 'object_id', {  writable: false,  enumerable: true });
+        }
+      },
+
+      generateInstanceValue: [
+        {
+          key: 'object_id',
+          fn: function(){
+            return (!this.object_id) ? uuidv4() : this.object_id
+          }
+        }
+      ],
 
       // Get the value from the HDF5 schema
       getValue: (key, value, o) => {

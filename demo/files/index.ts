@@ -36,6 +36,15 @@ console.log('API (extended)', api)
 
 console.log('NIRSSourcesTable extends DynamicTable', api.NIRSSourcesTable.prototype instanceof api.DynamicTable, api.NIRSSourcesTable.prototype instanceof api.NWBFile)
 
+const blankFile = new api.NWBFile()
+const idOne = blankFile.object_id
+const idTwo = blankFile.object_id
+console.log('Blank File object_id',idOne.valueOf() == idTwo.valueOf())
+
+
+const otherFile = new api.NWBFile()
+console.log('Other File object_id Different', otherFile.object_id.valueOf() != idTwo)
+
 // const io = new HDF5IO()
 const io = new nwb.NWBHDF5IO(true)
 

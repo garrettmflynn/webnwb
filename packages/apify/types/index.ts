@@ -12,6 +12,9 @@ export type OptionsType = {
     getNamespaceKey: (str: string) => string,
     getNamespaceLabel: (str: string) => string,
 
+    generateInstanceValue: {key: string, fn: (this: ArbitraryObject, key: string, value: any) => any}[],
+    onSchemaValue: (key: string, value: any, namespace: string) => void,
+
     className: string[],
     propertyName: string[],
     inheritsFrom: string[],
