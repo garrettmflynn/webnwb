@@ -1,0 +1,186 @@
+groups:
+- neurodata_type_def: NIRSSourcesTable
+  neurodata_type_inc: DynamicTable
+  default_name: sources
+  doc: A table describing the optical sources of a NIRS device.
+  attributes:
+  - name: description
+    dtype: text
+    default_value: A table describing the optical sources of a NIRS device.
+    doc: A description of this NIRSSourcesTable.
+    required: false
+  datasets:
+  - name: label
+    neurodata_type_inc: VectorData
+    dtype: text
+    shape:
+    - null
+    doc: The label of the source.
+  - name: x
+    neurodata_type_inc: VectorData
+    dtype: float
+    shape:
+    - null
+    doc: The x coordinate in meters of the optical source.
+  - name: y
+    neurodata_type_inc: VectorData
+    dtype: float
+    shape:
+    - null
+    doc: The y coordinate in meters of the optical source.
+  - name: z
+    neurodata_type_inc: VectorData
+    dtype: float
+    shape:
+    - null
+    doc: The z coordinate in meters of the optical source.
+    quantity: '?'
+- neurodata_type_def: NIRSDetectorsTable
+  neurodata_type_inc: DynamicTable
+  default_name: detectors
+  doc: A table describing the optical detectors of a NIRS device.
+  attributes:
+  - name: description
+    dtype: text
+    default_value: A table describing the optical detectors of a NIRS device.
+    doc: A description of this NIRSDetectorsTable.
+    required: false
+  datasets:
+  - name: label
+    neurodata_type_inc: VectorData
+    dtype: text
+    shape:
+    - null
+    doc: The label of the detector.
+  - name: x
+    neurodata_type_inc: VectorData
+    dtype: float
+    shape:
+    - null
+    doc: The x coordinate in meters of the optical detector.
+  - name: y
+    neurodata_type_inc: VectorData
+    dtype: float
+    shape:
+    - null
+    doc: The y coordinate in meters of the optical detector.
+  - name: z
+    neurodata_type_inc: VectorData
+    dtype: float
+    shape:
+    - null
+    doc: The z coordinate in meters of the optical detector.
+    quantity: '?'
+- neurodata_type_def: NIRSChannelsTable
+  neurodata_type_inc: DynamicTable
+  default_name: channels
+  doc: A table describing the optical channels of a NIRS device.
+  attributes:
+  - name: description
+    dtype: text
+    default_value: A table describing the optical channels of a NIRS device.
+    doc: A description of this NIRSChannelsTable.
+    required: false
+  datasets:
+  - name: label
+    neurodata_type_inc: VectorData
+    dtype: text
+    shape:
+    - null
+    doc: The label of the channel.
+  - name: source
+    neurodata_type_inc: DynamicTableRegion
+    shape:
+    - null
+    doc: A reference to the optical source for this channel in NIRSSourcesTable.
+  - name: detector
+    neurodata_type_inc: DynamicTableRegion
+    shape:
+    - null
+    doc: A reference to the optical detector for this channel in NIRSDetectorsTable.
+  - name: source_wavelength
+    neurodata_type_inc: VectorData
+    dtype: float
+    shape:
+    - null
+    doc: The wavelength of light in nm emitted by the source for this channel.
+  - name: emission_wavelength
+    neurodata_type_inc: VectorData
+    dtype: float
+    shape:
+    - null
+    doc: The wavelength of light in nm emitted by the fluorophore under fluorescent
+      spectroscopy for this channel. Only used for fluorescent spectroscopy.
+    quantity: '?'
+  - name: source_power
+    neurodata_type_inc: VectorData
+    dtype: float
+    shape:
+    - null
+    doc: The power of the source in mW used for this channel.
+    quantity: '?'
+  - name: detector_gain
+    neurodata_type_inc: VectorData
+    dtype: float
+    shape:
+    - null
+    doc: The gain applied to the detector for this channel.
+    quantity: '?'
+- neurodata_type_def: NIRSDevice
+  neurodata_type_inc: Device
+  doc: Metadata about a NIRS device.
+  attributes:
+  - name: nirs_mode
+    dtype: text
+    doc: The mode of NIRS measurement performed with this device. Examples include
+      (but are not limited to) continuous-wave, frequency-domain, time-domain, time-domain-moments,
+      diffuse-correlation-spectroscopy, continuous-wave-fluorescence, and diffuse-optical-tomography,
+      as well as variants including fluorescence.
+  - name: frequency
+    dtype: float
+    doc: The modulation frequency in Hz used for frequency domain NIRS. Only used
+      if nirs_mode is a type of frequency domain spectroscopy.
+    required: false
+  - name: time_delay
+    dtype: float
+    doc: The time delay in ns used for gated time domain NIRS. Only used if nirs_mode
+      is a type of gated time domain spectroscopy.
+    required: false
+  - name: time_delay_width
+    dtype: float
+    doc: The time delay width in ns used for gated time domain NIRS. Only used if
+      nirs_mode is a type of gated time domain spectroscopy.
+    required: false
+  - name: correlation_time_delay
+    dtype: float
+    doc: The correlation time delay in ns for diffuse correlation spectroscopy NIRS.
+      Only used if nirs_mode is a type of diffuse correlation spectroscopy.
+    required: false
+  - name: correlation_time_delay_width
+    dtype: float
+    doc: The correlation time delay width in ns for diffuse correlation spectroscopy
+      NIRS. Only used if nirs_mode is a type of diffuse correlation spectroscopy.
+    required: false
+  - name: additional_parameters
+    dtype: text
+    doc: Any additional parameters corresponding to the NIRS device and NIRS mode
+      of operation that are useful for interpreting the data.
+    required: false
+  groups:
+  - name: channels
+    neurodata_type_inc: NIRSChannelsTable
+    doc: A table of the optical channels available on this device.
+  - name: sources
+    neurodata_type_inc: NIRSSourcesTable
+    doc: The optical sources of this device.
+  - name: detectors
+    neurodata_type_inc: NIRSDetectorsTable
+    doc: The optical detectors of this device.
+- neurodata_type_def: NIRSSeries
+  neurodata_type_inc: TimeSeries
+  doc: A timeseries of recorded NIRS data.
+  datasets:
+  - name: channels
+    neurodata_type_inc: DynamicTableRegion
+    doc: DynamicTableRegion reference to the optical channels represented by this
+      NIRSSeries.

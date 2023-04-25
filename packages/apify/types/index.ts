@@ -9,7 +9,6 @@ export type OptionsType = {
     debug?: boolean,
     name: string,
     coreName: string,
-    namespacesToFlatten: string[],
     getNamespaceKey: (str: string) => string,
     getNamespaceLabel: (str: string) => string,
 

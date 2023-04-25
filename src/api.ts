@@ -4,15 +4,20 @@ import API from '../packages/apify';
 import NWBBaseClass from './base';
 // import { changesSymbol, indexedDBFilenameSymbol, objectify } from '../../hdf5-io/src';
 import { changesSymbol, indexedDBFilenameSymbol, objectify } from 'hdf5-io';
+import { v4 as uuidv4 } from 'uuid';
 
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 type SpecificationType = { 'core': ArbitraryObject } & ArbitraryObject
+
+type NamespaceURLArray = URL[]
 
 const getNamespaceKey = (str: string) => str.replace('.yaml', '')//.replace('.extensions', '')
 
 const isAnyArray = (value: any) => (Array.isArray(value) || (value instanceof TypedArray ));
 
 var TypedArray = Object.getPrototypeOf(Uint8Array);
+
+const baseSpec = schemas[latest] ?? {} 
 
 // Generate the NWB API from included specification
 export default class NWBAPI extends API {
@@ -24,9 +29,14 @@ export default class NWBAPI extends API {
   [x: string]: any;
 
   constructor(
-    specification: SpecificationType = schemas[latest] ?? { core: {} }, // Fallback to latest schema or empty specification
+    specification: Partial<SpecificationType> = { core: {} }, // Fallback to empty specification
     debug = false // Show Debug Messages
   ) {
+
+    // Merge partial spec with base spec
+    for (let key in baseSpec) {
+      if (!(key in specification) || !Object.keys(specification[key]).length) specification[key] = baseSpec[key]
+    }
 
     super(specification, {
       debug, // Show Debug Messages
@@ -42,12 +52,25 @@ export default class NWBAPI extends API {
       propertyName: ['name', 'default_name'],
 
       coreName: 'core', // Name of the core schema
-      namespacesToFlatten: ['base', 'file'], // Namespaces to flatten into the base of the API
 
       getNamespaceKey, // Get the key for the namespace
       getNamespaceLabel: (str: string) => getNamespaceKey(str.replace('nwb.', '')), // Get the key for the namespace
 
       baseClass: NWBBaseClass, // Base Class to use for all classes
+
+      // onSchemaValue: (key: string, value: any, o: any, namespace: string) => {
+      //   if ('neurodata_type' in o) {
+      //     if (!o.namespace) {
+      //       // return namespace // String representation of the location of the schema
+      //       throw new Error(`Namespace not defined for ${key}`)
+      //     }
+      //     if (!o.object_id) {
+      //       // const id = uuidv4();
+      //       // return uuidv4 // Generate a new UUID for the object
+      //       throw new Error(`object_id not defined for ${key}`)
+      //     }
+      //   }
+      // },
 
       // Get the value from the HDF5 schema
       getValue: (key, value, o) => {
@@ -153,9 +176,10 @@ export default class NWBAPI extends API {
 
     const fileConfig = core[version].file.NWBFile
     fileConfig.specifications = specification // Add specification to the file
-
-    // Allow Certain HDF5-IO Properties (effectively unset on specification)
-    Object.defineProperty(fileConfig, indexedDBFilenameSymbol, { writable: false })
-    Object.defineProperty(fileConfig, changesSymbol, { writable: false })
   }
+
+  // loadNamespace = async (namespaceURL: URL) => {
+    
+  // }
+
 }

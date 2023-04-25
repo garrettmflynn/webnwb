@@ -6,8 +6,8 @@ import * as visualscript from 'visualscript'
 import * as NWBCodec from '../../external/freerange/nwb/index'
 import * as freerange from '../../external/freerange/index.esm'
 
-// import nwb from '../../src/index'
-import nwb from '../../dist/index.es.js'
+import nwb, { NWBAPI } from '../../src/index'
+// import nwb from '../../dist/index.es.js'
 // import HDF5IO from 'hdf5-io'
 
 import * as utils from '../utils'
@@ -17,7 +17,22 @@ import links from '../links'
 import * as dandi from '../../packages/dandi/src/index'
 import { Asset } from '../../packages/dandi/src/index'
 
-console.log('API', nwb)
+console.log('Default API', nwb)
+
+// Manually declare an extended API
+import ndxNirsNamespaces from '../extensions/ndx-nirs/ndx-nirs.namespace.yaml'
+const namespace = ndxNirsNamespaces.namespaces[0]
+import ndxNirsExtension from '../extensions/ndx-nirs/ndx-nirs.extensions.yaml'
+const api = new NWBAPI({
+    [namespace.name]: {
+        [namespace.version]: {
+            namespace: ndxNirsNamespaces,
+            [`${namespace.name}.extensions`]: ndxNirsExtension
+        }
+    }
+})
+
+console.log('API (extended)', api)
 
 // const io = new HDF5IO()
 const io = new nwb.NWBHDF5IO(true)
@@ -352,6 +367,7 @@ async function parseFile(file: any, isStreamed: boolean = false){
   editor.deferValues = isStreamed
   activeFile = file
 
+  console.log('File', file)
   loader.progress = 1
   editor.set(file)
 

@@ -29,4 +29,7 @@ export {
     // API
     api,
     io,
+
+    // Classes
+    NWBAPI
 }

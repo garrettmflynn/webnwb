@@ -1,0 +1,28 @@
+namespaces:
+- author:
+  - Sumner L Norman
+  - Darin Erat Sleiter
+  - José Ribeiro
+  contact:
+  - sumner@ae.studio
+  - darin@ae.studio
+  - jose@ae.studio
+  doc: An NWB extension for storing Near-Infrared Spectroscopy (NIRS) data.
+  name: ndx-nirs
+  schema:
+  - namespace: core
+    neurodata_types:
+    - TimeSeries
+    - NWBDataInterface
+    - NWBContainer
+    - Device
+  - namespace: hdmf-common
+    neurodata_types:
+    - Container
+    - DynamicTable
+    - DynamicTableRegion
+    - VectorData
+    - Data
+    - ElementIdentifiers
+  - source: ndx-nirs.extensions.yaml
+  version: 0.3.0

@@ -48,7 +48,6 @@ export default class API {
     // copy options
     this._options = options as OptionsType
     if (!this._options.name) this._options.name = 'apify'
-    if (!this._options.namespacesToFlatten) this._options.namespacesToFlatten = []
     if (!this._options.overrides) this._options.overrides = {}
 
     if (typeof this._options.getValue !== 'function') this._options.getValue = () => undefined // triggert default
@@ -226,26 +225,20 @@ export default class API {
               const label = this._options.getNamespaceLabel ? this._options.getNamespaceLabel(schema.source) : schema.source
 
               const base = (extension) ? this.extensions[namespace.name] : this
+              base[label] = {}
 
-              // Don't Overwrite Redundant Namespaces / Schemas
+              // Account for File vs Schema Specification Formats
+              const name = this._options.getNamespaceKey ? this._options.getNamespaceKey(schema.source) : schema.source
+              const schemaInfo = version[name]
+              const info = (typeof schemaInfo === 'string') ? JSON.parse(schemaInfo) : schemaInfo
 
-              if (!base[label]) {
+              base[label] = this._setFromObject(info, undefined, undefined, [label])
 
-                base[label] = {}
+              const path = [namespace.name, namespace.version, label]
 
-                // Account for File vs Schema Specification Formats
-                const name = this._options.getNamespaceKey ? this._options.getNamespaceKey(schema.source) : schema.source
-                const schemaInfo = version[name]
-                const info = (typeof schemaInfo === 'string') ? JSON.parse(schemaInfo) : schemaInfo
-
-                base[label] = this._setFromObject(info, undefined, undefined, [label])
-
-                const path = [namespace.name, namespace.version, label]
-
-                // Track Object Namespaces and Paths
-                for (let key in base[label]) this._nameToSchema[key] = { namespace: namespace.name, path }
-                scopedSpec[label] = base[label]
-              }
+              // Track Object Namespaces and Paths
+              for (let key in base[label]) this._nameToSchema[key] = { namespace: namespace.name, path }
+              scopedSpec[label] = base[label]
             }
           })
 
@@ -287,11 +280,7 @@ export default class API {
     }, false) // get classes for namespace (apply to reference)
     
 
-    // Flatten Certain Schema Classes
-    const arr = this._options.namespacesToFlatten
-    arr.forEach((schema: string) => {
-      for (let clsName in this[schema]) this[clsName] = this[schema][clsName]
-    })
-
+    // Flatten All Schema Classes
+    for (let clsName in this._classify.flat.classes) this[clsName] = this._classify.flat.classes[clsName]
   }
 }
