@@ -31,9 +31,15 @@ export default defineConfig({
         ]
       },
       {
-        text: 'Developer',
+        text: 'EasyNWB',
         items: [
-          { text: 'Overview', link: '/developer/overview' }
+          { text: 'Overview', link: '/easynwb/overview' }
+        ]
+      },
+      {
+        text: 'Development',
+        items: [
+          { text: 'Overview', link: '/development/overview' }
         ]
       }
     ],

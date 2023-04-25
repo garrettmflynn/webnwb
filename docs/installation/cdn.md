@@ -1,4 +1,4 @@
-# Installing WebNWB using a Content Delivery Network (CDN)
+# Using WebNWB with a CDN
 You can use a `script` tag or ES Module imports to access the library using a CDN.
 
 #### ESM Import
