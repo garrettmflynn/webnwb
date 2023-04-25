@@ -34,6 +34,8 @@ const api = new NWBAPI({
 
 console.log('API (extended)', api)
 
+console.log('NIRSSourcesTable extends DynamicTable', api.NIRSSourcesTable.prototype instanceof api.DynamicTable, api.NIRSSourcesTable.prototype instanceof api.NWBFile)
+
 // const io = new HDF5IO()
 const io = new nwb.NWBHDF5IO(true)
 
