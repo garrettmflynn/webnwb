@@ -16,68 +16,8 @@ Neurodata without Borders — directly on the browser.
 
 > **Note:** While the read access is stable, write access still experimental and not well-documented. Future version of WebNWB will use the same syntax—but will likely re-implement many of the underlying write functions. Please see the [Contributing](#contributing) section for more information.
 
-## Getting Started
-### File Creation Mode
-To create a new NWB file, create an `NWBFile` instance using the API handle interactions: 
-```javascript
-import nwb from 'webnwb'
-
-const now = Date.now()
-
-// Instantiate the NWB File
-const newFile = new nwb.NWBFile({
-    sessionDescription: 'demonstrate NWBFile basics',
-    identifier: 'NWB123',
-    sessionStartTime: now,
-    fileCreateDate: now,
-})
-
-// Create dummy timeseries data
-const timestamps = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-const data = Array.from(timestamps, e => 100 + e * 10)
-data.units = 'm'
-
-newFile.addAcquisition('testTimeseries', { data, timestamps })
-```
-
-To save the file, you'll need an `NWBHDF5IO` instance to handle interactions with the underlying [h5wasm] API:
-```javascript
-import nwb from 'webnwb'
-
-const io = new nwb.NWBHDF5IO()
-
-const filename = 'my_file.nwb'
-io.save(file, filename)
-```
-
-### Loading a Local File
-Existing files can be loaded using the `io.load` method:
-
-```javascript
-const file = io.load(filename)
-const timeseries = file.acquisition['testTimeseries']
-```
-
-Changes can be made directly to the file object, and then saved using the `io.save` method. If a name is not provided, the file will be saved to the original location.
-
-```javascript
-timeseries.data = Array.from(timestamps, e => 200 - e * 10) // NOTE: timeseries.data.units is still maintained as 'm' on the new array
-io.save(file)
-```
-
-### Streaming Mode
-Streaming mode allows you to lazy-load data from a file without loading the entire file into memory. This is useful for large files, like those hosted on [DANDI](https://gui.dandiarchive.org/#/).
-
-```javascript
-const streamed = io.load('http://localhost/my_file.nwb', { useStreaming: true })
-```
-
-These files require you to await properties, as they are not loaded until you request them.
-
-```javascript
-const acquisition = await streamed.acquisition
-const timeseries = await acquisition['testTimeseries']
-```
+## Documentation
+Visit [nwb.brainsatplay.com](https://nwb.brainsatplay.com) for documentation and examples.
 
 ## Contributing
 The essential features of the WebNWB API are aggregated in the [api.ts](./src/api.ts) file, which configures [hdf5-io] to process the underlying HDF5 file in a way that conforms with the NWB Schema.

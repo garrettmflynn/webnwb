@@ -14,6 +14,12 @@ export default defineConfig({
 
     sidebar: [
       {
+        text: 'Overview',
+        items: [
+          { text: 'Getting Started', link: '/getting-started' },
+        ]
+      },
+      {
         text: 'Installation',
         link: '/installation/index',
         items: [
@@ -46,6 +52,11 @@ export default defineConfig({
 
     socialLinks: [
       { icon: 'github', link: 'https://github.com/brainsatplay/webnwb' }
-    ]
+    ],
+
+    footer: {
+      message: "Released under the GNU Affero General Public License.",
+      copyright: `Copyright © 2022-${new Date().getFullYear()} Brains@Play`,
+    },
   }
 })

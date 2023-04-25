@@ -7,8 +7,8 @@ hero:
   tagline: Neurodata without Borders on the Web
   actions:
     - theme: brand
-      text: Installation
-      link: /installation/index
+      text: Learn More
+      link: /getting-started
     - theme: alt
       text: Examples
       link: /examples/index
