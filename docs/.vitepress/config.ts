@@ -29,6 +29,12 @@ export default defineConfig({
           { text: 'Write', link: '/examples/write' },
           { text: 'Create', link: '/examples/create' }
         ]
+      },
+      {
+        text: 'Developer',
+        items: [
+          { text: 'Overview', link: '/developer/overview' }
+        ]
       }
     ],
 
