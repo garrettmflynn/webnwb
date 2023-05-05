@@ -30,9 +30,10 @@ Anyone who would like to contribute to the acceptance of `webnwb` as an official
 
 ## Derivative Packages
 - [hdf5-io](https://github.com/garrettmflynn/hdf5-io): Load HDF5 files as JavaScript objects using [h5wasm].
-- [apify](./src/apify/index.ts): A way to generate APIs from simple specification languages (e.g. the NWB Schema)
+- [apify](./packages/apify/index.ts): A way to generate APIs from simple specification languages (e.g. the NWB Schema)
     - [esconform](https://github.com/garrettmflynn/esconform): A generic library for enforcing schema properties
-- [dandi](./src/dandi/index.ts): A basic API for making calls to the DANDI REST API.
+- [dandi](./packages/dandi/index.ts): A basic API for making calls to the DANDI REST API.
+- [nwb-inspector](./packages/nwbinspector/README.md): A port of the original NWB Inspector for the browser
 
 ## Known Issues
 1. `.specloc` is not rewritten as an object reference
@@ -41,8 +42,8 @@ Anyone who would like to contribute to the acceptance of `webnwb` as an official
     - Some of these issues might be resolved by moving to the [WorkerFS filesystem](https://github.com/usnistgov/h5wasm/issues/40#issuecomment-1336314071) and uniformly making the API asynchronous.
 4. **Links, references, and tables (with references) are not yet supported.**
 5. **Cannot save multidimensional arrays** like the data property in a SpatialSeries.
-5. **Timestamp arrays can't be written** (e.g. `timestamps` in a TimeSeries) because they are trying to convert to a BigInt by `h5wasm`.
-6. The Node.js filesystem calls did not work through `h5wasm` directly, so they had to be created in `hdf5-io`. 
+6. **Timestamp arrays can't be written** (e.g. `timestamps` in a TimeSeries) because they are trying to convert to a BigInt by `h5wasm`.
+7. The Node.js filesystem calls did not work through `h5wasm` directly, so they had to be created in `hdf5-io`. 
     - This might just be an issue with esbuild that has been addressed in [Issue #31](https://github.com/usnistgov/h5wasm/issues/31)
 
 ## Acknowledgments
