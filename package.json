@@ -34,8 +34,10 @@
   "private": false,
   "devDependencies": {
     "@modyfi/vite-plugin-yaml": "^1.0.4",
-    "esconform": "0.0.6",
-    "hdf5-io": "0.0.27",
+    "@types/uuid": "^9.0.1",
+    "esconform": "0.0.7",
+    "hdf5-io": "0.0.28",
+    "jsdom": "^22.0.0",
     "lit": "^2.6.1",
     "resize-observer-polyfill": "^1.5.1",
     "ts-node": "^10.9.1",
@@ -43,6 +45,7 @@
     "typedoc": "^0.24.6",
     "typedoc-plugin-markdown": "^3.15.2",
     "typescript": "4.9.5",
+    "uuid": "^9.0.0",
     "visualscript": "0.0.11",
     "vite": "^4.2.1",
     "vite-plugin-dts": "^2.2.0",
@@ -50,8 +53,5 @@
     "vitest": "^0.30.1",
     "webgl-plot": "^0.7.0",
     "yaml": "^2.1.1"
-  },
-  "dependencies": {
-    "uuid": "^9.0.0"
   }
 }

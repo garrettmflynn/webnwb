@@ -6,6 +6,8 @@ import NWBBaseClass from './base';
 import { objectify } from 'hdf5-io';
 import { v4 as uuidv4 } from 'uuid';
 
+export const apiSymbol = Symbol('api')
+
 const latest = Object.keys(schemas).shift() as string // First value should always be the latest (based on insertion order)
 type SpecificationType = { 'core': ArbitraryObject } & ArbitraryObject
 
@@ -179,6 +181,8 @@ export default class NWBAPI extends API {
 
     const fileConfig = core[version].file.NWBFile
     fileConfig.specifications = specification // Add specification to the file
+
+    Object.defineProperty(fileConfig, apiSymbol, { value: this }) // Set API in the specification
   }
 
   // loadNamespace = async (namespaceURL: URL) => {

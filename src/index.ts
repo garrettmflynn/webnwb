@@ -1,6 +1,7 @@
-import NWBAPI from './api'
+import NWBAPI, { apiSymbol } from './api'
 import io from './io'
 
+// import { newKeySymbol } from "../../../../esmodel/src/index";
 import { newKeySymbol } from 'esconform'
 
 
@@ -18,13 +19,18 @@ export default api
 export const NWBHDF5IO = io // Export named IO reference
 
 
+const symbols = {
+    api: apiSymbol,
+    new: newKeySymbol
+}
+
 export {
 
     // Promises
     ready,
 
     // Symbols
-    newKeySymbol,
+    symbols,
 
     // API
     api,

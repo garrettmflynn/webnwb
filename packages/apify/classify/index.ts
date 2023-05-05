@@ -14,6 +14,7 @@ import { isGroup as isGroupType } from 'hdf5-io';
 import { ArbitraryObject } from '../../../src/types/general.types'
 
 // ESConform
+// import * as conform from "../../../../esmodel/src/index";
 import * as conform from 'esconform'
 
 const newKeySymbol = conform.newKeySymbol
@@ -75,6 +76,7 @@ export default class Classify {
           if (context.info) context.info.generateInstanceValue.forEach(({ key, fn }) => {
             if (key in this) this[key] = fn.call(this)
           })
+
         }
       }
     })[name];

@@ -13,10 +13,8 @@ packages/dandi/dist
 packages/apify/dist
 /dist
 
-**.lock
+*-lock.json
 **.log
-
-*-lock
 
 # Jest
 coverage

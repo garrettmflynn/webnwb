@@ -6,7 +6,7 @@ import { hasNestedGroups, isTypedGroup } from "../utils/globals";
 import { isGroup as isGroupType } from 'hdf5-io';
 
 // import * as conform from "../../../../esmodel/src/index";
-import * as conform from "esconform";
+import * as conform from 'esconform';
 
 export type ClassOptionsType = {
     // Use to skip autorejection and otherwise generate values
@@ -102,8 +102,10 @@ class ApifyBaseClass {
                     else {
 
                         // Provide the specification as a value if not an object
-                        const isObject = spec && typeof spec === 'object'
-                        if (!isObject) value = spec
+                        if (spec) {
+                            if (typeof spec !== 'object') value = spec
+                            else if (spec instanceof Object) return spec // Directly return the spec if a complex class instance
+                        }
                     }
                 }
 

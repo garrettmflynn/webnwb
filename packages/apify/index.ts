@@ -20,6 +20,7 @@ import {
  } from 'hdf5-io';
 
 // ESConform
+// import * as conform from "../../../esmodel/src/index";
 import * as conform from 'esconform'
 
 type SpecificationType = { [x: OptionsType['coreName']]: ArbitraryObject } & ArbitraryObject
@@ -35,7 +36,7 @@ export default class API {
   _nameToSchema: ArbitraryObject = {};
   extensions: ArbitraryObject = {};
   _version?: string;
-  _classify: Classify;
+  _classify: Classify = new Classify()
   _inheritanceTree = new InheritanceTree();
 
   [x: string]: any;
@@ -52,8 +53,6 @@ export default class API {
 
     if (typeof this._options.getValue !== 'function') this._options.getValue = () => undefined // triggert default
 
-
-    this._classify = new Classify()
     this._classify.baseClass = this._options.baseClass
 
     // copy user-specified specification

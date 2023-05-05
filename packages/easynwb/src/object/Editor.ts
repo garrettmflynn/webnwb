@@ -15,7 +15,7 @@ import './icons/EditIcon'
 // Buttons
 import { Button } from '../Button'
 import { Property } from './Property';
-import { newKeySymbol } from '../../../../dist/index.esm';
+import { symbols } from '../../../../dist/index.esm';
 import { hasTypedChildren } from 'packages/apify/utils/globals';
 import { Select } from '../input/Select';
 import { TypedInput } from '../input/TypedInput';
@@ -423,7 +423,7 @@ export class ObjectEditor extends LitElement {
           if (!resolvedKey) throw new Error(`No property key specified.`)
 
           // Create a new key on the parent
-          if (parent[newKeySymbol]) parent[newKeySymbol](resolvedKey, valueInput.value) // Ensure property reacts to new key
+          if (parent[symbols.new]) parent[symbols.new](resolvedKey, valueInput.value) // Ensure property reacts to new key
           else parent[resolvedKey] = valueInput.value
 
           if (!(resolvedKey in parent)) throw new Error(`Cannot add ${resolvedKey} to this object.`)

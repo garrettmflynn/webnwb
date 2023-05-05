@@ -6,7 +6,7 @@ import * as visualscript from 'visualscript'
 import * as NWBCodec from '../../external/freerange/nwb/index'
 import * as freerange from '../../external/freerange/index.esm'
 
-import nwb, { NWBAPI } from '../../src/index'
+import nwb, { NWBAPI, symbols } from '../../src/index'
 // import nwb from '../../dist/index.es.js'
 // import HDF5IO from 'hdf5-io'
 
@@ -40,7 +40,6 @@ const blankFile = new api.NWBFile()
 const idOne = blankFile.object_id
 const idTwo = blankFile.object_id
 console.log('Blank File object_id',idOne.valueOf() == idTwo.valueOf())
-
 
 const otherFile = new api.NWBFile()
 console.log('Other File object_id Different', otherFile.object_id.valueOf() != idTwo)
@@ -377,8 +376,6 @@ sampleButton.onclick = () => {
 async function parseFile(file: any, isStreamed: boolean = false){
   editor.deferValues = isStreamed
   activeFile = file
-
-  console.log('File', file)
   loader.progress = 1
   editor.set(file)
 
