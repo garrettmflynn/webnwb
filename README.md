@@ -43,8 +43,15 @@ Anyone who would like to contribute to the acceptance of `webnwb` as an official
 4. **Links, references, and tables (with references) are not yet supported.**
 5. **Cannot save multidimensional arrays** like the data property in a SpatialSeries.
 6. **Timestamp arrays can't be written** (e.g. `timestamps` in a TimeSeries) because they are trying to convert to a BigInt by `h5wasm`.
-7. The Node.js filesystem calls did not work through `h5wasm` directly, so they had to be created in `hdf5-io`. 
-    - This might just be an issue with esbuild that has been addressed in [Issue #31](https://github.com/usnistgov/h5wasm/issues/31)
+7. Using this library again with Vite will require you to specify `hdf5-io` as excluded from the optimized dependencies: 
+```javascript
+// vite.config.js
+export default defineConfig({
+    optimizeDeps: {
+        exclude: ['hdf5-io']
+    }
+})
+```
 
 ## Acknowledgments
 Since January 2023, the development of **WebNWB** has been generously supported by a contract from the [Kavli Foundation](https://kavlifoundation.org/). The basic API was originally prototyped as part of the [2022 NWB-DANDI Remote Developer Hackathon](https://neurodatawithoutborders.github.io/nwb_hackathons/HCK12_2022_Remote/) and refined during the [2022 NWB User Days](https://neurodatawithoutborders.github.io/nwb_hackathons/HCK13_2022_Janelia/) event by [Garrett Flynn](https://github.com/garrettmflynn) from [Brains@Play](https://github.com/brainsatplay).

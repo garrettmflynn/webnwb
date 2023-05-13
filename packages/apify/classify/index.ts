@@ -7,8 +7,8 @@ import { getPropertyName } from "./utils"
 import { isTypedGroup, hasTypedChildren, hasNestedGroups } from "../utils/globals"
 
 // HDF5-IO
-// import { isGroup as isGroupType } from '../../../../hdf5-io/src';
-import { isGroup as isGroupType } from 'hdf5-io';
+// import { symbols } from '../../../../hdf5-io/src';
+import { symbols } from 'hdf5-io';
 
 
 import { ArbitraryObject } from '../../../src/types/general.types'
@@ -84,7 +84,7 @@ export default class Classify {
 
   applyHelpers = (instance: any, base?: string, spec?: any, path: string[] = [], typeAliases: Set<string> = spec?.[hasTypedChildren] ?? new Set()) => {
 
-    const pass = spec[isGroupType] && !spec[hasNestedGroups] // Has a base property to set (not a top-level of the class instance) and is a group without internal groups
+    const pass = spec[symbols.isGroup] && !spec[hasNestedGroups] // Has a base property to set (not a top-level of the class instance) and is a group without internal groups
 
     const info = this.info as OptionsType
 
@@ -185,7 +185,7 @@ export default class Classify {
     if (spec?.[hasNestedGroups]) {
       for (let key in spec) {
         const newVal = spec[key]
-        if (newVal && newVal[isGroupType]) {
+        if (newVal && newVal[symbols.isGroup]) {
           this.applyHelpers(instance, key, newVal, [...path, key]) // Group object
         }
       }

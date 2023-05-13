@@ -36,7 +36,7 @@
     "@modyfi/vite-plugin-yaml": "^1.0.4",
     "@types/uuid": "^9.0.1",
     "esconform": "0.0.7",
-    "hdf5-io": "0.0.28",
+    "hdf5-io": "0.0.33",
     "jsdom": "^22.0.0",
     "lit": "^2.6.1",
     "resize-observer-polyfill": "^1.5.1",

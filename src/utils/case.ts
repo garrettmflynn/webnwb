@@ -1,6 +1,6 @@
 // HDF5-IO
-// import { isGroup as isGroupType } from '../../../hdf5-io/src';
-import { isGroup as isGroupType } from 'hdf5-io';
+// import { symbols } from '../../../hdf5-io/src';
+import { symbols } from 'hdf5-io';
 
 import * as array from "./array"
 
@@ -65,7 +65,7 @@ export const set = (
   export const setAll = (
     info: any, 
     type?: CaseType, 
-    condition: CaseType | Function = () => !info.type[isGroupType], // skip for children of groups
+    condition: CaseType | Function = () => !info.type[symbols.isGroup], // skip for children of groups
     drill: boolean = false
 ) => {
 

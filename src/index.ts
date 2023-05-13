@@ -4,11 +4,6 @@ import io from './io'
 // import { newKeySymbol } from "../../../../esmodel/src/index";
 import { newKeySymbol } from 'esconform'
 
-
-// Ensure HDF5 Features are ready
-import { ready } from 'hdf5-io';
-// import { ready } from '../../hdf5-io/src/index';
-
 // Generate API + Attach IO as a Module
 const api = new NWBAPI()
 api.NWBHDF5IO = io
@@ -25,9 +20,6 @@ const symbols = {
 }
 
 export {
-
-    // Promises
-    ready,
 
     // Symbols
     symbols,

@@ -7,6 +7,7 @@ import * as NWBCodec from '../../external/freerange/nwb/index'
 import * as freerange from '../../external/freerange/index.esm'
 
 import nwb, { NWBAPI, symbols } from '../../src/index'
+
 // import nwb from '../../dist/index.es.js'
 // import HDF5IO from 'hdf5-io'
 
@@ -16,6 +17,7 @@ import links from '../links'
 // import * as nwb from 'https://cdn.jsdelivr.net/npm/webnwb@latest/dist/index.esm.js'
 import * as dandi from '../../packages/dandi/src/index'
 import { Asset } from '../../packages/dandi/src/index'
+import { validate } from '../../packages/nwbinspector/src'
 
 console.log('Default API', nwb)
 
@@ -23,6 +25,7 @@ console.log('Default API', nwb)
 import ndxNirsNamespaces from '../extensions/ndx-nirs/ndx-nirs.namespace.yaml'
 const namespace = ndxNirsNamespaces.namespaces[0]
 import ndxNirsExtension from '../extensions/ndx-nirs/ndx-nirs.extensions.yaml'
+
 const api = new NWBAPI({
     [namespace.name]: {
         [namespace.version]: {
@@ -302,6 +305,7 @@ let editor = new visualscript.ObjectEditor({
   onRender, 
   readOnly: true 
 })
+
 // let editor = new visualscript.Tree()
 editor.id = 'editor'
 editorDiv.insertAdjacentElement('afterbegin', editor)
@@ -377,6 +381,14 @@ async function parseFile(file: any, isStreamed: boolean = false){
   editor.deferValues = isStreamed
   activeFile = file
   loader.progress = 1
+
+  // Validate non-streamed files
+  if (!isStreamed) {
+    const validationResult = validate(file, file[symbols.api])
+    console.error('Validation Result', validationResult)
+  }
+  
+  console.log('File', file)
   editor.set(file)
 
 // progressDiv.innerHTML = 'Loaded ' + name + '. Check the console for output.'

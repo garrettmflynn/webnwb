@@ -2,8 +2,8 @@ import { OptionsType } from "../types";
 import { hasNestedGroups, isTypedGroup } from "../utils/globals";
 
 // HDF5-IO
-// import { isGroup as isGroupType } from '../../../../hdf5-io/src';
-import { isGroup as isGroupType } from 'hdf5-io';
+// import { symbols } from '../../../../hdf5-io/src';
+import { symbols } from 'hdf5-io';
 
 // import * as conform from "../../../../esmodel/src/index";
 import * as conform from 'esconform';
@@ -69,7 +69,7 @@ class ApifyBaseClass {
             
             keys: (key: string | symbol | number, specObj: any) => {
 
-                const isPropertyOfGroup = specObj[isGroupType] && !specObj[hasNestedGroups]
+                const isPropertyOfGroup = specObj[symbols.isGroup] && !specObj[hasNestedGroups]
 
                 const toReturn = { 
                     value: key, 
@@ -98,7 +98,7 @@ class ApifyBaseClass {
 
                 // Handle missing values
                 else if (value === undefined && spec !== undefined) {
-                    if (spec[isGroupType]) value = {} // Resolve untyped groups as empty objects
+                    if (spec[symbols.isGroup]) value = {} // Resolve untyped groups as empty objects
                     else {
 
                         // Provide the specification as a value if not an object

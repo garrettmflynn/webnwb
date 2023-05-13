@@ -6,17 +6,15 @@ import { hasNestedGroups, isTypedGroup, hasTypedChildren } from './utils/globals
 
 // // HDF5-IO
 // import { 
-//   // objectify, 
-//   isGroup as isGroupType, 
-//   isDataset as isDatasetType,
-//   isAttribute
+//   symbols
 // } from '../../../hdf5-io/src';
 
 import { 
+  symbols
   // objectify, 
-  isGroup as isGroupType, 
-  isDataset as isDatasetType, 
-  isAttribute
+  // isGroup as isGroupType, 
+  // isDataset as isDatasetType, 
+  // isAttribute
  } from 'hdf5-io';
 
 // ESConform
@@ -132,8 +130,8 @@ export default class API {
         }
         
         // Mirror HDF5-IO Symbol Behaviors on the JSON Specification
-        Object.defineProperty(value, isGroupType, { value: true }) // NOTE: Set as configurable to avoid downstream errors...
-        if (aggregator[isGroupType] && !aggregator[hasNestedGroups]) Object.defineProperty(aggregator, hasNestedGroups, { value: true })
+        Object.defineProperty(value, symbols.isGroup, { value: true }) // NOTE: Set as configurable to avoid downstream errors...
+        if (aggregator[symbols.isGroup] && !aggregator[hasNestedGroups]) Object.defineProperty(aggregator, hasNestedGroups, { value: true })
       }      
       
       // Dataset
@@ -143,8 +141,8 @@ export default class API {
         const objectValue = value = conform.presets.objectify(name, value)
 
         // Mirror HDF5-IO Symbol Behaviors on the JSON Specification
-        if (type === 'dataset') Object.defineProperty(objectValue, isDatasetType, { value: true, configurable: true}) // Setting type on the dataset (set as configurable to avoid downstream errors...)
-        else if (type === 'attribute') Object.defineProperty(objectValue, isAttribute, { value: true, configurable: true}) // Setting type on the dataset (set as configurable to avoid downstream errors...)
+        if (type === 'dataset') Object.defineProperty(objectValue, symbols.isDataset, { value: true, configurable: true}) // Setting type on the dataset (set as configurable to avoid downstream errors...)
+        else if (type === 'attribute') Object.defineProperty(objectValue, symbols.isAttribute, { value: true, configurable: true}) // Setting type on the dataset (set as configurable to avoid downstream errors...)
         // else console.error('Failed to handle type', type, path)
         
         // Set the value on the aggregator

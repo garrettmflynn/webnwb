@@ -1,5 +1,4 @@
-import './node/worker' // Worker Polyfill, since this API is not supported natively in Node.js
-import { NWBHDF5IO, ready, symbols } from '../src/index';
+import { NWBHDF5IO, symbols } from '../src/index';
 
 import create, { save } from './create'
 import { beforeAll, describe, expect, test } from 'vitest';
@@ -12,7 +11,6 @@ describe(`Can create an NWB file`, () => {
   let nwbFile: any;
 
   beforeAll(async () => {
-      await ready
       nwbFile = create()
   })
 
