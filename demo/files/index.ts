@@ -8,6 +8,8 @@ import * as freerange from '../../external/freerange/index.esm'
 
 import nwb, { NWBAPI, symbols } from '../../src/index'
 
+import '../extensions/ndx-nirs/index'
+import '../extensions/ndx-beadl/index'
 // import nwb from '../../dist/index.es.js'
 // import HDF5IO from 'hdf5-io'
 
@@ -21,30 +23,12 @@ import { validate } from '../../packages/nwbinspector/src'
 
 console.log('Default API', nwb)
 
-// Manually declare an extended API
-import ndxNirsNamespaces from '../extensions/ndx-nirs/ndx-nirs.namespace.yaml'
-const namespace = ndxNirsNamespaces.namespaces[0]
-import ndxNirsExtension from '../extensions/ndx-nirs/ndx-nirs.extensions.yaml'
-
-const api = new NWBAPI({
-    [namespace.name]: {
-        [namespace.version]: {
-            namespace: ndxNirsNamespaces,
-            [`${namespace.name}.extensions`]: ndxNirsExtension
-        }
-    }
-})
-
-console.log('API (extended)', api)
-
-console.log('NIRSSourcesTable extends DynamicTable', api.NIRSSourcesTable.prototype instanceof api.DynamicTable, api.NIRSSourcesTable.prototype instanceof api.NWBFile)
-
-const blankFile = new api.NWBFile()
+const blankFile = new nwb.NWBFile()
 const idOne = blankFile.object_id
 const idTwo = blankFile.object_id
 console.log('Blank File object_id',idOne.valueOf() == idTwo.valueOf())
 
-const otherFile = new api.NWBFile()
+const otherFile = new nwb.NWBFile()
 console.log('Other File object_id Different', otherFile.object_id.valueOf() != idTwo)
 
 // const io = new HDF5IO()
@@ -387,7 +371,7 @@ async function parseFile(file: any, isStreamed: boolean = false){
     const validationResult = validate(file, file[symbols.api])
     console.error('Validation Result', validationResult)
   }
-  
+
   console.log('File', file)
   editor.set(file)
 

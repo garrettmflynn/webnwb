@@ -1,0 +1,27 @@
+namespaces:
+- author:
+  - Ryan Ly
+  - Matthew Avaylon
+  - Oliver Ruebel
+  - Michael Wulf
+  contact:
+  - rly@lbl.gov
+  - mavaylon@lbl.gov
+  - oruebel@lbl.gov
+  - michael.wulf@wustl.edu
+  doc: An NWB extension for storing BEADL programs and data
+  name: ndx-beadl
+  schema:
+  - namespace: core
+    neurodata_types:
+    - NWBData
+    - LabMetaData
+    - TimeIntervals
+  - namespace: hdmf-common
+    neurodata_types:
+    - DynamicTable
+    - VectorData
+    - VectorIndex
+    - DynamicTableRegion
+  - source: ndx-beadl.extensions.yaml
+  version: 0.1.0
