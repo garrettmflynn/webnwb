@@ -35,7 +35,7 @@
   "devDependencies": {
     "@modyfi/vite-plugin-yaml": "^1.0.4",
     "@types/uuid": "^9.0.1",
-    "esconform": "0.0.7",
+    "esconform": "0.0.8",
     "hdf5-io": "0.0.33",
     "jsdom": "^22.0.0",
     "lit": "^2.6.1",
