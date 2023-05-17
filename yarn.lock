@@ -944,10 +944,10 @@ esbuild@^0.17.5:
     "@esbuild/win32-ia32" "0.17.18"
     "@esbuild/win32-x64" "0.17.18"
 
-esconform@0.0.8:
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/esconform/-/esconform-0.0.8.tgz#8f93ae931cf2af76d88e3f1824b1dce983edec34"
-  integrity sha512-NSpC209iIlZ1YzO5B6iFDO93Fw/TUyjF03FTZ7qDlEj2cxLqdDwcoE5xJ4wNXYQ/wKYupiD1ou2ccOIKV0aTKQ==
+esconform@0.0.10:
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/esconform/-/esconform-0.0.10.tgz#1c577174b3cc0810723ed7edabcab313e6402a9d"
+  integrity sha512-sNQ6X/hcu68cQK1bApExUWYoPHs+TnR2e5fF6qmWwbzWaCYC3rXRvogjaU4F+jlMpFS3VBc8OJJ0ahOmzr9pyg==
 
 estree-walker@^2.0.2:
   version "2.0.2"

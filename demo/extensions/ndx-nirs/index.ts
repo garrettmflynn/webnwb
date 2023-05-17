@@ -7,8 +7,8 @@ import ndxNirsExtension from './ndx-nirs.extensions.yaml'
 const nirsAPI = new NWBAPI({
   [namespace.name]: {
     [namespace.version]: {
-      namespace: JSON.stringify(ndxNirsNamespaces),
-      [`${namespace.name}.extensions`]: JSON.stringify(ndxNirsExtension)
+      namespace: ndxNirsNamespaces,
+      [`${namespace.name}.extensions`]: ndxNirsExtension
     }
   }
 })
@@ -148,13 +148,13 @@ nirsFile.addAcquisition(nirs_series)
 console.log('Device', nirsFile.general.devices["nirs_device"])
 console.log('Acquisition', nirsFile.acquisition["nirs_data"])
 
-// Write the NWBFile
-const io = new NWBHDF5IO()
-io.save(nirsFile, 'nirs.nirsFile').then((filename: string) => {
-  io.load(filename).then((reloaded) => {
-    console.log('Reloaded NIRS', reloaded, reloaded.acquisition)
-    console.log('Reloaded Devide', reloaded.general.devices["nirs_device"])
-    console.log('Reloaded Acquisition', reloaded.acquisition["nirs_data"])
-  })
-})
+// // Write the NWBFile
+// const io = new NWBHDF5IO()
+// io.save(nirsFile, 'nirs.nirsFile').then((filename: string) => {
+//   io.load(filename).then((reloaded) => {
+//     console.log('Reloaded NIRS', reloaded, reloaded.acquisition)
+//     console.log('Reloaded Devide', reloaded.general.devices["nirs_device"])
+//     console.log('Reloaded Acquisition', reloaded.acquisition["nirs_data"])
+//   })
+// })
 

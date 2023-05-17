@@ -7,6 +7,7 @@ import { symbols } from 'hdf5-io';
 
 // import * as conform from "../../../../esmodel/src/index";
 import * as conform from 'esconform';
+import { ClassifyInfo } from "./types";
 
 export type ClassOptionsType = {
     // Use to skip autorejection and otherwise generate values
@@ -56,7 +57,7 @@ class ApifyBaseClass {
 
     [x: string|symbol]: any; // arbitrary
 
-    constructor(info: any = {}, options: ClassOptionsType = {}, specs: any[] = []) {
+    constructor(info: any = {}, options: ClassOptionsType = {}, specs: any[] = [], classifyInfo: ClassifyInfo) {
 
         // Object.defineProperty(this, createQueueSymbol, {value: {}}) // ensure queue property is non-enumerable
 
@@ -64,6 +65,9 @@ class ApifyBaseClass {
 
         const name = info.name
         try { delete info.name } catch {} // Avoid setting the name as an esconform property
+        
+        // Create all helpers before assigning any variables
+        specs.forEach(spec => classifyInfo.ref.applyHelpers(this, undefined, spec, [name]))  
 
         const model = new conform.Model({
             

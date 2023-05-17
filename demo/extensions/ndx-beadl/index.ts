@@ -107,7 +107,11 @@ const nwbfile = new beadl.NWBFile({
   })
 })
 
-console.log('NWBFile', nwbfile)
+// nwbfile.addSubject({
+//   subject_id: "SP_W2_RH"
+// })
+
+console.log('BEADL File', nwbfile)
 // Add Beadl Data
 // nwbfile.add_lab_meta_data(task) // NOTE: Broken
 nwbfile.addAcquisition(states)

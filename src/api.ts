@@ -180,7 +180,18 @@ export default class NWBAPI extends API {
     const version = Object.keys(core)[0]
 
     const fileConfig = core[version].file.NWBFile
-    fileConfig.specifications = specification // Add specification to the file
+
+    // Properly stringify the saved specification
+    const specCopy = JSON.parse(JSON.stringify(specification))
+
+    for (let name in specCopy) {
+      for (let version in specCopy[name]) {
+        const value = specCopy[name][version]
+        if (typeof value !== 'string') specCopy[name][version] = JSON.stringify(value)
+      }
+    }
+
+    fileConfig.specifications = specCopy // Add specification to the file
 
     Object.defineProperty(fileConfig, apiSymbol, { value: this }) // Set API in the specification
   }

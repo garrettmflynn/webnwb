@@ -6,6 +6,8 @@ import InheritanceTree from "./InheritanceTree"
 import { getPropertyName } from "./utils"
 import { isTypedGroup, hasTypedChildren, hasNestedGroups } from "../utils/globals"
 
+export * as types from './types'
+
 // HDF5-IO
 // import { symbols } from '../../../../hdf5-io/src';
 import { symbols } from 'hdf5-io';
@@ -69,10 +71,8 @@ export default class Classify {
           if (!specs) specs = [specInfo]
           else specs.push(specInfo)
 
-          super(info, Object.assign(copy, classOptions), specs)
-
-          context.applyHelpers(this, undefined, specInfo, [name])   // Apply helpers to the entire class object
-
+          super(info, Object.assign(copy, classOptions), specs, { name, ref: context })
+          
           if (context.info) context.info.generateInstanceValue.forEach(({ key, fn }) => {
             if (key in this) this[key] = fn.call(this)
           })
@@ -97,6 +97,8 @@ export default class Classify {
 
       methods.forEach((method) => {
 
+        if (!method) return
+        
         const addName = `add${method}`
         const getName = `get${method}`
         const createName = `create${method}`
@@ -112,13 +114,13 @@ export default class Classify {
                 const oIndex = nameFirst ? 1 : 0
                 const obj = args[oIndex] as ArbitraryObject
                 const options = (args[oIndex + 1] ?? context.info) as ClassOptionsType
-                const name = nameFirst ? args[0] : (obj.name ?? (options.propertyName ?? []).reduce((acc:any, str:string) => acc = (!acc) ? obj[str] : acc, null)) // Get name by several means // NOTE: Name is a restricted property and always the default
+                const name = nameFirst ? args[0] : (obj?.name ?? (options.propertyName ?? []).reduce((acc:any, str:string) => acc = (!acc) ? obj?.[str] : acc, null)) // Get name by several means // NOTE: Name is a restricted property and always the default
                   
       
                 let target = instance
                 path.slice(1, -1).forEach((p) => target = target[p]) // Ignore class name and base
 
-                const create = base ? target[base][newKeySymbol] : target[newKeySymbol]
+                const create = base ? target[base]?.[newKeySymbol] : target[newKeySymbol]
 
 
                 // Provide a guess that the class key if none are provided
@@ -129,9 +131,9 @@ export default class Classify {
                   else if (typeAliases.size === 1) obj[clsKey] = Array.from(typeAliases)[0] // Get only child type
                   else {
                     obj[clsKey] = context.match(obj, Array.from(typeAliases)) // Constrain choices
-                    if (obj[clsKey]) {
-                      console.warn(`[${info.name}]: No class specified on ${name} object. Matched to ${obj[clsKey]}.`, obj)
-                    }
+                    // if (obj[clsKey]) {
+                    //   console.warn(`[${info.name}]: No class specified on ${base} ${name ? `(${name})` : ''}object. Matched to ${obj[clsKey]}.`, obj)
+                    // }
                   }
                 }
               
@@ -170,6 +172,14 @@ export default class Classify {
             //   instance[createQueueSymbol][createName].forEach((f: Function) => f())
             //   delete instance[createQueueSymbol][createName]
             // }
+
+            // Proxy nested properties
+            if (path.length > 2 && base && !(base in instance)) {
+              Object.defineProperty(instance, base, {
+                get: () => path.slice(1).reduce((acc, str) => acc[str], instance), // Ignore class name and base,
+                set: (v) => instance[addName](v)
+              })
+            }
 
           } catch (e) {
             console.warn(`[${info.name}]: Trying to redeclare a helper function for ${method}. Removing helpers for:`, method, instance);
