@@ -15,6 +15,9 @@ export const getLatestVersion = async (id: string, instance?: InstanceType) => {
 
 export const getInstance = (instance?: InstanceType) => typeof instance === 'string' ? instances[instance] : instances.main
 
+export const getURL = (path: string, instanceType?: InstanceType) => new URL(path, `https://${getInstance(instanceType)}/api/`)
+
+
 export const getJSON = (url: string) => fetch(url).then(res => res.json())
 
 const getBaseURL = (id: string, instance?: InstanceType) => `https://${getInstance(instance)}/api/dandisets/${id}`
