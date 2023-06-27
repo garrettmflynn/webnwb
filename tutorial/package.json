@@ -10,6 +10,7 @@
     "hdf5-io": "^0.0.19",
     "lit": "^2.6.1",
     "resize-observer-polyfill": "^1.5.1",
+    "uuid": "^9.0.0",
     "visualscript": "0.0.11",
     "webgl-plot": "^0.7.0",
     "webtrack": "0.0.3",

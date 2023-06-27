@@ -269,6 +269,11 @@ dandi.getAll(instance).then(async dandisets => {
 
 const fileStreamingCheckbox = document.getElementById('streaming') as HTMLInputElement
 
+// URL Input
+const urlInput = document.getElementById('url') as HTMLInputElement
+const urlButton = document.getElementById('urlButton') as HTMLButtonElement
+
+
 // sampleSelect
 const sampleSelect = document.getElementById('sampleSelect') as HTMLSelectElement
 const input = document.getElementById('file') as HTMLButtonElement
@@ -358,6 +363,12 @@ sampleButton.onclick = () => {
   file = sampleSelect.value
   const displayName = sampleSelect.options[sampleSelect.selectedIndex].getAttribute('data-displayname') as string
   name = `${displayName.replaceAll(/\s+/g, '')}.nwb` // Must change name for new files to request
+  runFetch()
+}
+
+urlButton.onclick = () => {
+  loader.progress = 0
+  file = name = urlInput.value
   runFetch()
 }
 

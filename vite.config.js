@@ -9,6 +9,10 @@ export default defineConfig({
   // worker: {
   //   format: 'es'
   // },
+  
+  server: {
+    port: 3768
+  },
 
   optimizeDeps: {
     exclude: [
