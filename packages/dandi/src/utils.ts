@@ -1,5 +1,5 @@
 import instances from "./instances"
-import { InstanceType, Options } from "./types"
+import { AssetRequestConfig, InstanceType, Options } from "./types"
 
 export const getLatestVersion = async (id: string, instance?: InstanceType) => {
     const base = await getBase(id, instance)
@@ -17,17 +17,19 @@ export const getInstance = (instance?: InstanceType) => typeof instance === 'str
 
 export const getURL = (path: string, instanceType?: InstanceType) => new URL(path, `https://${getInstance(instanceType)}/api/`)
 
-
 export const getJSON = (url: string) => fetch(url).then(res => res.json())
 
-const getBaseURL = (id: string, instance?: InstanceType) => `https://${getInstance(instance)}/api/dandisets/${id}`
+export const getDandisetURL = (id: string) => `dandisets/${id}`
+export const getAssetUrl = (config: AssetRequestConfig) => `dandisets/${config.dandiset}/versions/${config.options.version || 'draft'}/assets/${config.id}`
+
+const getBaseURL = (id: string, instance?: InstanceType) => `https://${getInstance(instance)}/api/${getDandisetURL(id)}`
 
 export const getBase = (id: string, instance?: InstanceType) => getJSON(getBaseURL(id, instance))
 
-export const getInfoURL = (id: string, options?: Options) => `${getBaseURL(id, options?.instance)}/versions/${options?.version ? options.version : 'draft'}`
+export const getInfoURL = (id: string, options: Options = {}) => `${getBaseURL(id, options.type)}/versions/${options?.version ? options.version : 'draft'}`
 
-export const getInfo = async (id: string, options?: Options) => {
-  const version = options?.version ?? await getLatestVersion(id, options?.instance)
+export const getInfo = async (id: string, options: Options = {}) => {
+  const version = options.version ?? await getLatestVersion(id, options.type)
   if (version) return getJSON(getInfoURL(id, {...options, version}))
 }
 

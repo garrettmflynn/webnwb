@@ -1,6 +1,7 @@
-import { InstanceType } from './types'
+import { get } from './Dandiset'
+import { getBaseHeaders, request } from './request'
+import { InstanceType, Options } from './types'
 import { getURL } from './utils'
-
 export * from './Dandiset'
 export * from './Asset'
 export * as utils from './utils'
@@ -38,34 +39,24 @@ export class API {
         if (!this.authorized) throw new Error('API is not authorized. Please provide a valid token.')
     }
 
+    get = async (id: string, options: Options = {}) => get(id, {...options, ...this})
+
+
+
     create = async (name: string, metadata: VersionMetadata = {}, embargo: boolean = false) => {
         
         this.#checkAuthorization()
 
-        const url = getURL(`dandisets/?embargo=${embargo}`, this.type)
-        const data = JSON.stringify({ name, metadata })
-
-        const created = await fetch(url, {
+        return request(`dandisets/?embargo=${embargo}`, {
+            options: this,
             method: 'POST',
-            headers: this.#getBaseHeaders(),
-            body: data,
+            json: { name, metadata }
         })
-        .then(response => response.json()) // NOTE: Getting a net::ERR_FAILED 200 (OK) because of a CORS issue (even when successful)
-    
-        return created
-    }
-
-    #getBaseHeaders = (token = this.token) => {
-        return {
-            "Authorization": `token ${token}`,
-            'accept': 'application/json',
-            'Content-Type': 'application/json',
-        }
     }
     
     authorize = async (token: string = this.token) => {
 
-        await fetch(getURL('auth/token', this.type), { headers: this.#getBaseHeaders(token) })
+        await request('auth/token', { options: this })
         .catch(e => {
             this.authorized = false
             throw e

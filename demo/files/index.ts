@@ -212,9 +212,9 @@ const loadAsset = () => {
 }
 
 const fromStaging = false 
-const instance = (fromStaging ? 'staging' : 'main') as 'staging' | 'main'
+const dandisetType = (fromStaging ? 'staging' : 'main') as 'staging' | 'main'
 
-const versionOptions =  { instance }
+const versionOptions =  { type: dandisetType }
 
 const setAssetOptions = async () => {
   dandiStatus.innerHTML = `Loading assets for ${ dandisetSelect.options[dandisetSelect.selectedIndex].innerHTML as string}...`
