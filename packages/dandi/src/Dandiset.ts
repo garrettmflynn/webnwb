@@ -121,7 +121,7 @@ export const getAssets = async (config: AssetsRequestConfig) => {
   }
   
 
-  export const getAll = async (options: Options) => {
+  export const getAll = async (options: Options = {}) => {
     const url = `https://${getInstance(options.type)}/api/dandisets`
     const res = await getJSON(url)
     const results = (await paginate(res)).map(o => new Dandiset(o, options))

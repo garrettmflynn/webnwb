@@ -245,7 +245,7 @@ dandisetSelect.onchange = async () =>{
   setAssetOptions()
 }
 
-dandi.getAll(instance).then(async dandisets => {
+dandi.getAll().then(async dandisets => {
 
   // Filter drafts
   dandisets = dandisets.filter(o => o.draft_version.status === 'Valid')
