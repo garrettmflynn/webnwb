@@ -7,8 +7,8 @@ The [NWB:N] format is a powerful standard for storing and sharing neurophysiolog
 - 📦 Create NWB files from scratch.
 - ⚒️ Use helper functions like `addAcquisition`, `getAcquisition`, and `createAcquisition` to quickly write data to new and existing NWB files.
 
-:::details A Brief History of WebNWB
-The first version of WebNWB was prototyped during [NWB workshops and hackathons](https://neurodatawithoutborders.github.io/nwb_hackathons/)in 2022 by [Garrett Flynn] from [Brains@Play](https://brainsatplay.com).
+### A Brief History of WebNWB
+The first version of WebNWB was prototyped during [NWB workshops and hackathons](https://neurodatawithoutborders.github.io/nwb_hackathons/) in 2022 by [Garrett Flynn] from [Brains@Play](https://brainsatplay.com).
 
 For most of 2023, WebNWB was generously supported by the [Kavli Foundation](https://kavlifoundation.org) to bring it from a proof-of-concept to a promising part of the NWB ecosystem. 
 
