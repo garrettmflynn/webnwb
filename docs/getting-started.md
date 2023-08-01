@@ -1,6 +1,12 @@
 # Getting Started with WebNWB
 The [NWB:N] format is a powerful standard for storing and sharing neurophysiology data. Both users and developers typically interact with the NWB:N format through Python or MATLAB APIs, However, these can be difficult to use for non-programmers and are not well-suited for simple web applications—requiring complicated distribution environments (e.g. [NWB Explorer], [NWB GUIDE]) for simple interactions. This limits the accessibility of NWB:N data and derivative tools.
 
+`webnwb` is a JavaScript library designed to provide the optimal experience for **programmatically exploring and editing NWB file metadata** on the web. 
+- 🔬 Read data from NWB files based on the included specification.
+- ⚡ Lazy-load large files (e.g. from the NIH Brain Initiative’s [Distributed Archives for Neurophysiology Data Integration (DANDI)](https://gui.dandiarchive.org/#/)).
+- 📦 Create NWB files from scratch.
+- ⚒️ Use helper functions like `addAcquisition`, `getAcquisition`, and `createAcquisition` to quickly write data to new and existing NWB files.
+
 :::details A Brief History of WebNWB
 The first version of WebNWB was prototyped during [NWB workshops and hackathons](https://neurodatawithoutborders.github.io/nwb_hackathons/)in 2022 by [Garrett Flynn] from [Brains@Play](https://brainsatplay.com).
 
@@ -8,12 +14,6 @@ For most of 2023, WebNWB was generously supported by the [Kavli Foundation](http
 
 Ongoing development of WebNWB is occurring on an as-needed basis by [Garrett Flynn] adjacent to his work as a Neurodata Programmer at [Catalyst Neuro](https://catalystneuro.com).
 :::
-
-`webnwb` is a JavaScript library designed to provide the optimal experience for **programmatically exploring and editing NWB file metadata** on the web. 
-- 🔬 Read data from NWB files based on the included specification.
-- ⚡ Lazy-load large files (e.g. from the NIH Brain Initiative’s [Distributed Archives for Neurophysiology Data Integration (DANDI)](https://gui.dandiarchive.org/#/)).
-- 📦 Create NWB files from scratch.
-- ⚒️ Use helper functions like `addAcquisition`, `getAcquisition`, and `createAcquisition` to quickly write data to new and existing NWB files.
 
 ### Related Tools
 Several tools can be used with `webnwb` to provide a cohesive experience for web developers and users alike:
