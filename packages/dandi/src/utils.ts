@@ -17,10 +17,12 @@ export const getInstance = (instance?: InstanceType) => typeof instance === 'str
 
 export const getURL = (path: string, instanceType?: InstanceType) => new URL(path, `https://${getInstance(instanceType)}/api/`)
 
-export const getJSON = (url: string) => fetch(url).then(res => res.json())
+export const getJSON = (url: string) => {
+  return fetch(url).then(res => res.json())
+}
 
 export const getDandisetURL = (id: string) => `dandisets/${id}`
-export const getAssetUrl = (config: AssetRequestConfig) => `dandisets/${config.dandiset}/versions/${config.options.version || 'draft'}/assets/${config.id}`
+export const getAssetUrl = (config: AssetRequestConfig) => `dandisets/${config.dandiset}/versions/${config.options?.version || 'draft'}/assets/${config.id}`
 
 const getBaseURL = (id: string, instance?: InstanceType) => `https://${getInstance(instance)}/api/${getDandisetURL(id)}`
 

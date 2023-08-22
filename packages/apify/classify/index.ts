@@ -173,10 +173,14 @@ export default class Classify {
             //   delete instance[createQueueSymbol][createName]
             // }
 
+            
             // Proxy nested properties
             if (path.length > 2 && base && !(base in instance)) {
               Object.defineProperty(instance, base, {
-                get: () => path.slice(1).reduce((acc, str) => acc[str], instance), // Ignore class name and base,
+                get: () => path.slice(1).reduce((acc, str) => {
+                  if (typeof acc?.then === 'function') return acc.then(o => o[str])
+                  else return acc[str]
+                }, instance), // Ignore class name and base,
                 set: (v) => instance[addName](v)
               })
             }

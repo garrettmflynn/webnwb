@@ -111,12 +111,14 @@ type DandisetVersionInfo = {
     return `${getInfoURL(dandiset, options)}/assets`
   }
 
-export const getAssets = async (config: AssetsRequestConfig) => {
-    const version = config.options?.version ?? await getLatestVersion(config.dandiset, config.options.type)
+export const getAssets = async (config: AssetsRequestConfig | string) => {
+   const resolvedConfig = (typeof config === 'string') ? { dandiset: config } : config
+   const { options, dandiset } = resolvedConfig
+    const version = options?.version ?? await getLatestVersion(dandiset, options?.type)
     if (version) {
-      const url = `${getAssetsUrl(config.dandiset, {...config.options, version})}`
+      const url = `${getAssetsUrl(dandiset, {...options, version})}`
       const res = await getJSON(url)
-      return await Promise.all((await paginate(res)).map(async pointer => getAsset({...config, id: pointer.asset_id })))
+      return await Promise.all((await paginate(res)).map(async pointer => getAsset({...resolvedConfig, id: pointer.asset_id })))
     }
   }
   

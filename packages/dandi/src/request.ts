@@ -27,7 +27,7 @@ export type APIRequestConfig = {
 } & RequestInit
 
 export const request = async (pathname: string, config: APIRequestConfig) => {
-    const { options } = config
+    const { options = {} } = config
 
     const url = getURL(pathname, options.type)
 
