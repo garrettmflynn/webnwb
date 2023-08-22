@@ -95,9 +95,10 @@ export default class Classify {
 
       const methods = new Set(names.map(k => getPropertyName.call(instance, k, info))) // Apply any transformations
 
+      // If there is only one type of entity to add, just allow for add() to be used
+      if (methods.size === 1) methods.add('')
+      
       methods.forEach((method) => {
-
-        if (!method) return
         
         const addName = `add${method}`
         const getName = `get${method}`

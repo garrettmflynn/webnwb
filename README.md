@@ -22,7 +22,7 @@ Visit [nwb.brainsatplay.com](https://nwb.brainsatplay.com) for documentation and
 ## Contributing
 The essential features of the WebNWB API are aggregated in the [api.ts](./src/api.ts) file, which configures [hdf5-io] to process the underlying HDF5 file in a way that conforms with the NWB Schema.
 
-Anyone who would like to contribute to the acceptance of `webnwb` as an official NWB API is welcome to message[Garrett Flynn](mailto:garrettmflynn@gmail) to coordinate work on the following areas (or anything else you think will be useful):
+Anyone who would like to contribute to the acceptance of `webnwb` as an official NWB API is welcome to message [Garrett Flynn](mailto:garrettmflynn@gmail) to coordinate work on the following areas (or anything else you think will be useful):
 
 1. Validate writing a dataset using [best practices](https://www.nwb.org/best-practices/) and the [schema](https://nwb-schema.readthedocs.io/en/latest/format_description.html#nwbcontainer-nwbdata-nwbdatainterface-base-neurodata-types-for-containers-and-datasets)
 2. Allow writing a dataset in place using the File Access API (Chrome)
@@ -56,8 +56,8 @@ export default defineConfig({
 Since January 2023, the development of **WebNWB** has been generously supported by a contract from the [Kavli Foundation](https://kavlifoundation.org/). The basic API was originally prototyped as part of the [2022 NWB-DANDI Remote Developer Hackathon](https://neurodatawithoutborders.github.io/nwb_hackathons/HCK12_2022_Remote/) and refined during the [2022 NWB User Days](https://neurodatawithoutborders.github.io/nwb_hackathons/HCK13_2022_Janelia/) event by [Garrett Flynn](https://github.com/garrettmflynn) from [Brains@Play](https://github.com/brainsatplay).
 
 
-hdf5-io: https://github.com/garrettmflynn/hdf5-io
+[hdf5-io]: https://github.com/garrettmflynn/hdf5-io
 
-h5wasm: https://github.com/usnistgov/h5wasm
+[h5wasm]: https://github.com/usnistgov/h5wasm
 
-neurosift: https://github.com/flatironinstitute/neurosift
+[neurosift]: https://github.com/flatironinstitute/neurosift

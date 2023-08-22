@@ -47,6 +47,7 @@ export const addBehavior = (file: any) => {
     position.addSpatialSeries(spatialSeries)
 
     const behavior = new nwb.ProcessingModule({ name: 'behavior', description: 'Behavioral data recorded while navigating a webpage.' })
+    console.log(behavior)
     behavior.add(position) // NOTE: Might just want to be .add() | Convention is uppercase
     file.addProcessingModule(behavior)
     return behavior //file.processing.behavior // NOTE: The returned object will not correctly trigger stuff

@@ -14,21 +14,20 @@ const beadl = new NWBAPI({
 })
 
 // Get data for BEADL
-// import test_xsd from './files/BEADL.xsd'
-// import test_xml from './files/LightChasingTask.xml'
-// import beadl_data_file from "./files/BeadlDataSample.mat"
-// console.log(test_xsd, test_xml, beadl_data_file)
+import test_xsd from './files/BEADL.xsd?raw'
+import test_xml from './files/LightChasingTask.xml?raw'
+// import beadl_data_file from "./files/BeadlDataSample.mat?raw"
 
 const beadl_task_schema = new beadl.BEADLTaskSchema({
   name: 'task_schema',
-  // data: test_xsd,
+  data: test_xsd,
   version: "0.1.0",
   language: "XSD"
 })
 
 const beadl_task_program = new beadl.BEADLTaskProgram({
   name: 'task_program',
-  // data: test_xml,
+  data: test_xml,
   schema: beadl_task_schema,
   language: "X"
 })
@@ -40,19 +39,19 @@ const task_arg_table = new beadl.TaskArgumentsTable({
 
 const event_types = new beadl.EventTypesTable({
   description: "description", 
-  // beadl_task_program: beadl_task_program,
+  beadl_task_program: beadl_task_program,
   populate_from_program: true
 })
 
 const action_types = new beadl.ActionTypesTable({
   description: "description", 
-  // beadl_task_program: beadl_task_program,
+  beadl_task_program: beadl_task_program,
   populate_from_program: true
 })
 
 const state_types = new beadl.StateTypesTable({
   description: "description", 
-  // beadl_task_program=beadl_task_program,
+  beadl_task_program: beadl_task_program,
   populate_from_program: true
 })
 
@@ -66,6 +65,8 @@ const task = new beadl.Task({
 })
 
 console.log('API (beadl)', beadl)
+
+console.error('[beadl]: populate_from_matlab is not a method implemented by WebNWB')
 
 // Create Events, Actions, and States
 const events = new beadl.EventsTable({
@@ -101,25 +102,22 @@ const nwbfile = new beadl.NWBFile({
   identifier: "LightChasingTask",
   session_start_time: (new Date()).toISOString(),
 
-  // NOTE: Does this work?
   subject: new beadl.Subject({
     subject_id: "SP_W2_RH"
   })
 })
 
-// nwbfile.addSubject({
-//   subject_id: "SP_W2_RH"
-// })
-
 console.log('BEADL File', nwbfile)
 // Add Beadl Data
-// nwbfile.add_lab_meta_data(task) // NOTE: Broken
+console.error('[beadl]: lab_meta_data is not a property contained in the NWB Schema')
+// nwbfile.add_lab_meta_data(task) // NOTE: Cannot implement based on schema
 nwbfile.addAcquisition(states)
 nwbfile.addAcquisition(events)
 nwbfile.addAcquisition(actions)
 nwbfile.trials = trials // NOTE: Not sure where this will go
 
 // // Write the NWBFile
+console.error('[beadl]: Cannot write certain aspects of the BEADL demo')
 // // NOTE: This is broken at the moment
 // const io = new NWBHDF5IO()
 // const saveName = await io.save(nwbfile, 'beadl.nwb') as string

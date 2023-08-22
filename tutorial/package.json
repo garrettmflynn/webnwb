@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "tinybuild"
+    "start": "vite"
   },
   "dependencies": {
     "esconform": "^0.0.5",
@@ -12,6 +12,7 @@
     "resize-observer-polyfill": "^1.5.1",
     "uuid": "^9.0.0",
     "visualscript": "0.0.11",
+    "vite": "^4.4.9",
     "webgl-plot": "^0.7.0",
     "webtrack": "0.0.3",
     "yaml": "^2.2.1"

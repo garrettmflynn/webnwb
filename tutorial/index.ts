@@ -7,8 +7,8 @@ import * as webtrack from 'webtrack'
 
 // Visualscript
 import * as visualscript from "visualscript"
-import create from 'tests/create'
-import getFromDandi from 'tests/dandi'
+import create from '../tests/create'
+import getFromDandi from '../tests/dandi'
 
 // import * as visualscript from "../../visualscript/src/index"
 
