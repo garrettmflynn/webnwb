@@ -14,7 +14,7 @@ Neurodata without Borders — directly on the browser.
 - 📦 Create NWB files from scratch.
 - ⚒️ Use helper functions like `addAcquisition`, `getAcquisition`, and `createAcquisition` to quickly write data to new and existing NWB files.
 
-> **Note:** While the read access is stable, write access still experimental and not well-documented. Future version of WebNWB will use the same syntax—but will likely re-implement many of the underlying write functions. Please see the [Contributing](#contributing) section for more information.
+> **Note:** While tools like [neurosift] are extraordinarily useful for rapid visualization of NWB files, WebNWB is intended to provide a robust interface for modifying NWB files—a task that requires significantly more preprocessing to accomplish strictly in accordance with the NWB Schema. If you prefer I/O speed, you may wish to look at [hdf5-io], [h5wasm], or other minimal HDF5 readers.
 
 ## Documentation
 Visit [nwb.brainsatplay.com](https://nwb.brainsatplay.com) for documentation and examples.
@@ -37,13 +37,12 @@ Anyone who would like to contribute to the acceptance of `webnwb` as an official
 
 ## Known Issues
 1. `.specloc` is not rewritten as an object reference
-2. Since there isn't a file mode that allows overwriting existing properties, we have to create an entire new file representation when saving—and attributes are not written with the exact same type as they were at the beginning (e.g. from 64-bit floating-point to 32-bit integer). **Is this a problem?**
-3. Sometimes we get a **memory overload error** before the file is completely written. This leads to partial rewrites...
+2. Sometimes we get a **memory overload error** before the file is completely written. This leads to partial rewrites...
     - Some of these issues might be resolved by moving to the [WorkerFS filesystem](https://github.com/usnistgov/h5wasm/issues/40#issuecomment-1336314071) and uniformly making the API asynchronous.
-4. **Links, references, and tables (with references) are not yet supported.**
-5. **Cannot save multidimensional arrays** like the data property in a SpatialSeries.
-6. **Timestamp arrays can't be written** (e.g. `timestamps` in a TimeSeries) because they are trying to convert to a BigInt by `h5wasm`.
-7. Using this library again with Vite will require you to specify `hdf5-io` as excluded from the optimized dependencies: 
+3. **Links, references, and tables (with references) are not yet supported.**
+4. **Cannot save multidimensional arrays** like the data property in a SpatialSeries.
+5. **Timestamp arrays can't be written** (e.g. `timestamps` in a TimeSeries) because they are trying to convert to a BigInt by `h5wasm`.
+6. Using this library again with Vite will require you to specify `hdf5-io` as excluded from the optimized dependencies: 
 ```javascript
 // vite.config.js
 export default defineConfig({
@@ -58,3 +57,5 @@ Since January 2023, the development of **WebNWB** has been generously supported 
 
 
 h5wasm: https://github.com/usnistgov/h5wasm
+
+neurosift: https://github.com/flatironinstitute/neurosift
