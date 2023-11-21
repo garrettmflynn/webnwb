@@ -1,7 +1,10 @@
-import { get } from './Dandiset'
-import { getBaseHeaders, request } from './request'
+import { Dandiset, get } from './Dandiset'
+import { 
+    // getBaseHeaders, 
+    request 
+} from './request'
 import { InstanceType, Options } from './types'
-import { getURL } from './utils'
+// import { getURL } from './utils'
 export * from './Dandiset'
 export * from './Asset'
 export * as utils from './utils'
@@ -47,11 +50,16 @@ export class API {
         
         this.#checkAuthorization()
 
-        return request(`dandisets/?embargo=${embargo}`, {
+        const result = await request(`dandisets/?embargo=${embargo}`, {
             options: this,
             method: 'POST',
             json: { name, metadata }
         })
+
+        if (result.detail) throw new Error(result.detail)
+
+        return this.get(result.identifier)
+
     }
     
     authorize = async (token: string = this.token) => {
