@@ -1,5 +1,5 @@
 import { Asset, getAsset } from "./Asset"
-import { Options, AssetsRequestConfig } from "./types"
+import { Options, AssetsRequestConfig, AssetRequestConfig } from "./types"
 import { getBase, getInfo, getInfoURL, getInstance, getJSON, getLatestVersion, paginate } from "./utils"
 
 type DandisetVersionInfo = {
@@ -113,12 +113,16 @@ type DandisetVersionInfo = {
 
 export const getAssets = async (config: AssetsRequestConfig | string) => {
    const resolvedConfig = (typeof config === 'string') ? { dandiset: config } : config
-   const { options, dandiset } = resolvedConfig
-    const version = options?.version ?? await getLatestVersion(dandiset, options?.type)
+   let options: AssetRequestConfig['options'];
+   const dandiset = resolvedConfig.dandiset
+   if ('options' in resolvedConfig) options = resolvedConfig.options
+   else options = {}
+
+   const version = options.version ?? await getLatestVersion(dandiset, options.type)
     if (version) {
       const url = `${getAssetsUrl(dandiset, {...options, version})}`
       const res = await getJSON(url)
-      return await Promise.all((await paginate(res)).map(async pointer => getAsset({...resolvedConfig, id: pointer.asset_id })))
+      return await Promise.all((await paginate(res)).map(async pointer => getAsset({dandiset, options, id: pointer.asset_id })))
     }
   }
   

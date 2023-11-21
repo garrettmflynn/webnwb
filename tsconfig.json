@@ -33,9 +33,6 @@
 
       /* -- Module Resolution Options -- */
       "moduleResolution": "node",
-      "types": [
-        "@modyfi/vite-plugin-yaml/modules"
-      ],
       "typeRoots": [
           "**/types/**",
           "./node_modules/@types",

@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "declaration": true,
+        "target": "es2021",
+        "module": "esnext",
+        "lib": [
+            "esnext", 
+            "dom"
+        ],
+        "strict": false,
+    },
+    "include": [
+        "./src/**/*"
+    ],
+}
