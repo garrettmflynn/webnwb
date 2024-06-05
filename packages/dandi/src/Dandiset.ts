@@ -1,4 +1,5 @@
 import { Asset, getAsset } from "./Asset"
+import request from "./request"
 import { Options, AssetsRequestConfig, AssetRequestConfig } from "./types"
 import { getBase, getInfo, getInfoURL, getInstance, getJSON, getLatestVersion, paginate } from "./utils"
 
@@ -70,7 +71,7 @@ type DandisetVersionInfo = {
             this.#info = {}
             this.#assets = {}
 
-            const base = await getBase(this.identifier, this.#options.type)
+            const base = await getBase(this.identifier, this.#options)
             if (base) Object.assign(this, base)
         }
 
@@ -79,11 +80,17 @@ type DandisetVersionInfo = {
     }
   
     async getInfo(options: Options = this.#options) {
+      
+      options = { ...this.#options, ...options }
+
       if (Object.keys(this.#info).length === 0) this.#info = await getInfo(this.identifier, options)
       return this.#info
     }
   
     async getAsset(id: string, options: Options = this.#options) {
+
+        options = { ...this.#options, ...options }
+
         if (!this.#assets[id]) this.#assets[id] = await getAsset({
           dandiset: this.identifier, 
           id, 
@@ -118,25 +125,30 @@ export const getAssets = async (config: AssetsRequestConfig | string) => {
    if ('options' in resolvedConfig) options = resolvedConfig.options
    else options = {}
 
-   const version = options.version ?? await getLatestVersion(dandiset, options.type)
+   const version = options.version ?? await getLatestVersion(dandiset, options)
     if (version) {
       const url = `${getAssetsUrl(dandiset, {...options, version})}`
-      const res = await getJSON(url)
-      return await Promise.all((await paginate(res)).map(async pointer => getAsset({dandiset, options, id: pointer.asset_id })))
+      const res = await getJSON(url, options)
+      return await Promise.all((await paginate(res, options)).map(async pointer => getAsset({dandiset, options, id: pointer.asset_id })))
     }
   }
   
 
   export const getAll = async (options: Options = {}) => {
     const url = `https://${getInstance(options.type)}/api/dandisets`
-    const res = await getJSON(url)
-    const results = (await paginate(res)).map(o => new Dandiset(o, options))
+    const res = await getJSON(url, options)
+    const results = (await paginate(res, options)).map(o => new Dandiset(o, options))
     return results
   }
 
   export const get = async (id: string, options: Options = {}) => {
-    const info = await getBase(id, options.type)
+    const info = await getBase(id, options)
     if (info) return new Dandiset(info, options)
     else return null
   }
   
+  export const getMine = async (options: Options = {}) => {
+    const res = await request(`dandisets/?user=me`, { options })
+    const results = (await paginate(res, options)).map(o => new Dandiset(o, options))
+    return results
+  }

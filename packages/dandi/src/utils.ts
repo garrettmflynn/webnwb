@@ -1,8 +1,9 @@
 import instances from "./instances"
+import request from "./request"
 import { AssetRequestConfig, InstanceType, Options } from "./types"
 
-export const getLatestVersion = async (id: string, instance?: InstanceType) => {
-    const base = await getBase(id, instance)
+export const getLatestVersion = async (id: string, options: Options) => {
+    const base = await getBase(id, options)
 
     if (base){
         const recent = base.most_recent_published_version?.version
@@ -15,36 +16,36 @@ export const getLatestVersion = async (id: string, instance?: InstanceType) => {
 
 export const getInstance = (instance?: InstanceType) => typeof instance === 'string' ? instances[instance] : instances.main
 
-export const getURL = (path: string, instanceType?: InstanceType) => new URL(path, `https://${getInstance(instanceType)}/api/`)
-
-export const getJSON = (url: string) => {
-  return fetch(url).then(res => res.json())
+export const getURL = (path: string, instanceType?: InstanceType) => {
+  if (path.startsWith('http')) new URL(path)
+  return new URL(path, `https://${getInstance(instanceType)}/api/`)
 }
+
+export const getJSON = (pathname: string, options: Options) => request(pathname, { options })
 
 export const getDandisetURL = (id: string) => `dandisets/${id}`
 export const getAssetUrl = (config: AssetRequestConfig) => `dandisets/${config.dandiset}/versions/${config.options?.version || 'draft'}/assets/${config.id}`
 
-const getBaseURL = (id: string, instance?: InstanceType) => `https://${getInstance(instance)}/api/${getDandisetURL(id)}`
+// NOTE: Redo
+export const getBase = (id: string, options: Options) => getJSON(getDandisetURL(id), options)
 
-export const getBase = (id: string, instance?: InstanceType) => getJSON(getBaseURL(id, instance))
-
-export const getInfoURL = (id: string, options: Options = {}) => `${getBaseURL(id, options.type)}/versions/${options?.version ? options.version : 'draft'}`
+export const getInfoURL = (id: string, options: Options = {}) => `${getDandisetURL(id)}/versions/${options?.version ? options.version : 'draft'}`
 
 export const getInfo = async (id: string, options: Options = {}) => {
-  const version = options.version ?? await getLatestVersion(id, options.type)
-  if (version) return getJSON(getInfoURL(id, {...options, version}))
+  const version = options.version ?? await getLatestVersion(id, options)
+  if (version) return getJSON(getInfoURL(id, {...options, version}), options)
 }
 
 
-export const paginate = async (o: any) : Promise<any[]> => {
+export const paginate = async (o: any, options) : Promise<any[]> => {
 
     const results = []
   
     if (o.results) results.push(...o.results)
   
     if (o.next) {
-      const info = await getJSON(o.next)
-      results.push(...await paginate(info))
+      const info = await getJSON(o.next, options)
+      results.push(...await paginate(info, options))
     }
     
     return results
