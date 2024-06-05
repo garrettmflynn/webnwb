@@ -45,7 +45,10 @@ export const request = async (pathname: string, config: APIRequestConfig) => {
             headers,
             body: data,
         })
-        .then(response => response.json()) // NOTE: Getting a net::ERR_FAILED 200 (OK) because of a CORS issue (even when successful)
+        .then(res => {
+            if (res.ok) return res.json()
+            throw new Error(`Request failed with status code ${res.status}`)
+        })
         .catch(e => {
             if (e instanceof TypeError) console.error('[dandi]: Backend does not have CORS enabled for POST / PUT requests...')
             return null

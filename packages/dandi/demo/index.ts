@@ -16,7 +16,8 @@ const ACTIVE_API_TOKEN = '55346d570fcf3667cbf2578d2fa3902811a0fefa'
 
 const dandisetId = '000552'
 const api = new dandi.API({ token: ACTIVE_API_TOKEN })
-await api.init()
+const authorized = await api.authorize()
+if (!authorized) throw new Error('API is not authorized.')
 
 const dandiset = await api.get(dandisetId)
 if (dandiset) {
