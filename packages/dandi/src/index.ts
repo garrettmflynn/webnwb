@@ -64,15 +64,24 @@ export class API {
     
     authorize = async (token: string = this.token) => {
 
-        await request('auth/token', { options: this })
-        .catch(e => {
-            this.authorized = false
-            throw e
+        const validated = await validateToken(this).catch(e => {
+            console.error(e)
+            return false
         })
 
+        this.authorized = validated
+        if (!this.authorized) throw new Error('API is not authorized. Please provide a valid token.')
+
         this.token = token
-        this.authorized = true
     }
 
 
+}
+
+export const validateToken = async (options: Options ) => {
+    return await request('auth/token', { options })
+    .then((res) => {
+        if (!res.ok) return false 
+        return true
+    })
 }

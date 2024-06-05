@@ -39,6 +39,7 @@ export const request = async (pathname: string, config: APIRequestConfig) => {
         const data = config.body || JSON.stringify(config.json ?? {})
 
         if (!options.token) throw new Error('No DANDI API token provided.')
+            
         return await fetch(url, {
             method: config.method,
             headers,

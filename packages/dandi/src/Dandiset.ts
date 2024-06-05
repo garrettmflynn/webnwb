@@ -147,8 +147,23 @@ export const getAssets = async (config: AssetsRequestConfig | string) => {
     else return null
   }
   
-  export const getMine = async (options: Options = {}) => {
-    const res = await request(`dandisets/?user=me`, { options })
+  export const getMine = async (
+    options: Options = {},
+    include: Record<string, any> = {}
+  ) => {
+
+    const { draft = true, empty = true, embargoed = false } = include
+
+    const search = new URLSearchParams()
+    search.append('user', 'me')
+    search.append('draft', draft ? 'true' : 'false')
+    search.append('empty', empty ? 'true' : 'false')
+    search.append('embargoed', embargoed ? 'true' : 'false')
+
+    const pathname = `dandisets?${search.toString()}`
+
+    const res = await request(pathname, { options })
+    
     const results = (await paginate(res, options)).map(o => new Dandiset(o, options))
     return results
   }
