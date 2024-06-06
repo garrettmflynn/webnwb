@@ -17,8 +17,7 @@ import * as utils from '../utils'
 import links from '../links'
 
 // import * as nwb from 'https://cdn.jsdelivr.net/npm/webnwb@latest/dist/index.esm.js'
-import * as dandi from '../../packages/dandi/src/index'
-import { Asset } from '../../packages/dandi/src/index'
+import * as dandi from 'dandi'
 import { validate } from '../../packages/nwbinspector/src'
 
 console.log('Default API', nwb)
@@ -222,7 +221,7 @@ const setAssetOptions = async () => {
   // console.log(`Got all assets for ${dandisetSelect.value}`, assets)
   Array.from(assetSelect.children).forEach(o => o.remove()) // Remove all children
   if (assets) {
-   const options = await Promise.all(assets.map(async (o: Asset) => {
+   const options = await Promise.all(assets.map(async (o: dandi.Asset) => {
       const assetInfo = await o.get()
       const option = document.createElement('option')
       option.value = assetInfo.metadata.contentUrl[0]

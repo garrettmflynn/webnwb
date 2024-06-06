@@ -9,7 +9,6 @@ docs/.vitepress/cache
 
 # Library Builds
 docs/dist
-packages/dandi/dist
 packages/apify/dist
 /dist
 

@@ -32,7 +32,7 @@ Anyone who would like to contribute to the acceptance of `webnwb` as an official
 - [hdf5-io]: Load HDF5 files as JavaScript objects using [h5wasm].
 - [apify](./packages/apify/index.ts): A way to generate APIs from simple specification languages (e.g. the NWB Schema)
     - [esconform](https://github.com/garrettmflynn/esconform): A generic library for enforcing schema properties
-- [dandi](./packages/dandi/index.ts): A basic API for making calls to the DANDI REST API.
+- [dandi](https://github.com/neuralinterfaces/dandi-js): A basic API for making calls to the DANDI REST API.
 - [nwb-inspector](./packages/nwbinspector/README.md): A port of the original NWB Inspector for the browser
 
 ## Known Issues
